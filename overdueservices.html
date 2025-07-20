@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Service Tracker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f1f3f5;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 16px rgba(0,0,0,0.05);
+    }
+    h2 {
+      text-align: center;
+      color: #007bff;
+      margin-bottom: 2rem;
+    }
+    .section-title {
+      font-size: 1.2rem;
+      border-bottom: 2px solid #ccc;
+      margin-top: 2rem;
+      padding-bottom: 5px;
+      color: #444;
+    }
+    .card {
+      background: #f9f9f9;
+      padding: 1rem 1.5rem;
+      margin: 1rem 0;
+      border-left: 6px solid #ffc107;
+      border-radius: 10px;
+    }
+    .card.overdue { border-left-color: #dc3545; }
+    .card.today { border-left-color: #17a2b8; }
+    .info { margin: 0.3rem 0; }
+    .label { font-weight: 600; }
+    input[type="date"] {
+      padding: 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #28a745;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      margin-top: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .message {
+      font-size: 0.85rem;
+      color: green;
+      margin-top: 6px;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔧 Overdue & Today's Vehicle Services</h2>
+    <div class="section-title">🔴 Overdue Services</div>
+    <div id="overdueList"></div>
+    <div class="section-title">🟡 Today's Services</div>
+    <div id="todayList"></div>
+  </div>
+
+  <script>
+    const API_TOKEN = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+    const VEHICLE_TABLE_ID = '610171';
+    const MAINTENANCE_TABLE_ID = '610172';
+    const BASE_URL = 'https://api.baserow.io/api/database';
+    const headers = { Authorization: `Token ${API_TOKEN}`, 'Content-Type': 'application/json' };
+
+    async function fetchData() {
+      const [vehiclesRes, maintenanceRes] = await Promise.all([
+        fetch(`${BASE_URL}/rows/table/${VEHICLE_TABLE_ID}/?user_field_names=true`, { headers }),
+        fetch(`${BASE_URL}/rows/table/${MAINTENANCE_TABLE_ID}/?user_field_names=true`, { headers }),
+      ]);
+
+      const vehicles = (await vehiclesRes.json()).results;
+      const maintenances = (await maintenanceRes.json()).results;
+      renderServices(vehicles, maintenances);
+    }
+
+    function renderServices(vehicles, services) {
+      const overdueList = document.getElementById("overdueList");
+      const todayList = document.getElementById("todayList");
+      overdueList.innerHTML = '';
+      todayList.innerHTML = '';
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      const grouped = {};
+      services.forEach(service => {
+        const vNo = Array.isArray(service.Vehicle) ? service.Vehicle[0]?.value : service.Vehicle;
+        if (!vNo) return;
+        grouped[vNo] = grouped[vNo] || [];
+        grouped[vNo].push(service);
+      });
+
+      Object.entries(grouped).forEach(([vNo, entries]) => {
+        entries.sort((a, b) => new Date(b['Next Service Date']) - new Date(a['Next Service Date']));
+        const latest = entries[0];
+        if (!latest || !latest['Next Service Date']) return;
+
+        const nextDate = new Date(latest['Next Service Date']);
+        nextDate.setHours(0,0,0,0);
+
+        const isOverdue = nextDate < today;
+        const isToday = nextDate.getTime() === today.getTime();
+        if (!isOverdue && !isToday) return;
+
+        const vehicle = vehicles.find(v => v['Vehicle Number'] === vNo);
+        if (!vehicle) return;
+
+        const section = isOverdue ? overdueList : todayList;
+        const card = document.createElement('div');
+        card.className = `card ${isOverdue ? 'overdue' : 'today'}`;
+        const status = latest['Status']?.value || 'Not Scheduled';
+        const updatedDate = latest['Status Updated Date'] || 'N/A';
+        const updatedTime = latest['Status Updated Time'] || '';
+
+        card.innerHTML = `
+          <div class="info"><span class="label">Vehicle:</span> ${vehicle['Vehicle Number']}</div>
+          <div class="info"><span class="label">Owner:</span> ${vehicle['Owner Name']}</div>
+          <div class="info"><span class="label">Phone:</span> ${vehicle['Phone']}</div>
+          <div class="info"><span class="label">Model:</span> ${vehicle['Model']}</div>
+          <div class="info"><span class="label">Next Service:</span> ${nextDate.toLocaleDateString('en-GB')}</div>
+          <div class="info"><span class="label">Status:</span> ${status}</div>
+          <div class="info"><span class="label">Updated:</span> ${updatedDate} ${updatedTime}</div>
+          <div class="info">
+            <label class="label">Reschedule:</label>
+            <input type="date" id="date-${latest.id}" />
+            <button onclick="reschedule(${latest.id})">Update</button>
+            <div class="message" id="msg-${latest.id}"></div>
+          </div>
+        `;
+        section.appendChild(card);
+      });
+    }
+
+    async function reschedule(id) {
+      const input = document.getElementById(`date-${id}`);
+      const msg = document.getElementById(`msg-${id}`);
+      if (!input.value) {
+        msg.textContent = 'Please select a date.';
+        return;
+      }
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-GB');
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+      const body = {
+        "Next Service Date": input.value,
+        "Status Updated Date": dateStr,
+        "Status Updated Time": timeStr
+      };
+
+      const res = await fetch(`${BASE_URL}/rows/table/${MAINTENANCE_TABLE_ID}/${id}/?user_field_names=true`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        msg.textContent = '✅ Rescheduled successfully!';
+        setTimeout(fetchData, 1000);
+      } else {
+        msg.textContent = '❌ Update failed.';
+      }
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>

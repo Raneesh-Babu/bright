@@ -1,0 +1,385 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workshop Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f2f5;
+      color: #333;
+    }
+    header {
+      background-color: #343a40;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .container {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+    h2 {
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+      color: #343a40;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 0.6rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.75rem;
+      text-align: left;
+    }
+    th {
+      background-color: #e9ecef;
+    }
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #ccc;
+    }
+    .tab-button {
+      background: none;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-weight: 600;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-button.active {
+      border-color: #007bff;
+      color: #007bff;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .alert {
+      padding: 1rem;
+      border-radius: 5px;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    .alert-success { background-color: #d4edda; color: #155724; }
+    .alert-warning { background-color: #fff3cd; color: #856404; }
+    .alert-danger  { background-color: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <header>🚗 Workshop Manager</header>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-button active" onclick="showTab(event, 'dashboard')">📋 Dashboard</button>
+      <button class="tab-button" onclick="showTab(event, 'vehicleFormCard')">➕ Add Vehicle</button>
+      <button class="tab-button" onclick="showTab(event, 'maintenanceFormCard')">🛠️ Add Maintenance</button>
+    </div><div id="dashboard" class="tab-content active">
+  <div class="card">
+    <div class="section-header">
+      <h2>Vehicle Selection</h2>
+      <input type="text" id="vehicleSearch" placeholder="Search vehicle or owner...">
+    </div>
+    <label for="vehicleSelect">Select Vehicle:</label>
+    <select id="vehicleSelect"></select>
+    <div id="vehicleInfo" class="card"></div>
+  </div>
+  <div class="card">
+    <div class="section-header">
+      <h2>Maintenance History</h2>
+      <div class="actions">
+        <button onclick="printReport()">🖨️ Print Report</button>
+        <button onclick="fetchVehicles()" class="btn-secondary">🔄 Refresh</button>
+      </div>
+    </div>
+    <table id="maintenanceTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Work</th>
+          <th>Parts</th>
+          <th>Cost</th>
+          <th>Mechanic</th>
+          <th>Next Service</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Analytics & Service Reminders</h2>
+    <div id="analytics"></div>
+  </div>
+</div>
+
+<div class="card tab-content" id="vehicleFormCard">
+  <h2>Add New Vehicle</h2>
+  <form id="vehicleForm">
+    <input type="text" name="Vehicle Number" placeholder="Vehicle Number" required>
+    <input type="text" name="Owner Name" placeholder="Owner Name" required>
+    <input type="text" name="Phone" placeholder="Phone">
+    <input type="text" name="Model" placeholder="Model">
+    <input type="text" name="Chassis Number" placeholder="Chassis Number">
+    <input type="date" name="Purchase Date">
+    <textarea name="Remarks" placeholder="Remarks"></textarea>
+    <button type="submit">➕ Add Vehicle</button>
+  </form>
+</div>
+
+<div class="card tab-content" id="maintenanceFormCard">
+  <h2>Add Maintenance Record</h2>
+  <form id="maintenanceForm">
+    <select name="Vehicle" id="maintenanceVehicleSelect" required></select>
+    <input type="date" name="Date" required>
+    <textarea name="Work Description" placeholder="Work Description"></textarea>
+    <input type="text" name="Parts Replaced" placeholder="Parts Replaced">
+    <input type="number" name="Cost" placeholder="Cost">
+    <input type="text" name="Mechanic" placeholder="Mechanic">
+    <input type="date" name="Next Service Date">
+    <button type="submit">🛠️ Add Maintenance</button>
+  </form>
+</div>
+
+  </div>  <script>
+    const API_TOKEN = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+    const VEHICLE_TABLE_ID = '610171';
+    const MAINTENANCE_TABLE_ID = '610172';
+    const baseURL = 'https://api.baserow.io/api/database';
+    const headers = { Authorization: `Token ${API_TOKEN}` };
+
+    const vehicleSelect = document.getElementById('vehicleSelect');
+    const maintenanceVehicleSelect = document.getElementById('maintenanceVehicleSelect');
+    const vehicleInfo = document.getElementById('vehicleInfo');
+    const maintenanceBody = document.querySelector('#maintenanceTable tbody');
+    const vehicleForm = document.getElementById('vehicleForm');
+    const maintenanceForm = document.getElementById('maintenanceForm');
+    const vehicleSearch = document.getElementById('vehicleSearch');
+
+    let vehicleData = [];
+
+    function showTab(evt, id) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      evt.currentTarget.classList.add('active');
+    }
+
+    async function fetchVehicles() {
+      const res = await fetch(`${baseURL}/rows/table/${VEHICLE_TABLE_ID}/?user_field_names=true`, { headers });
+      const data = await res.json();
+      vehicleData = data.results;
+      populateVehicleDropdown(vehicleData);
+      populateMaintenanceDropdown(vehicleData);
+    }
+
+    function populateVehicleDropdown(data) {
+      vehicleSelect.innerHTML = '<option value="">Select Vehicle</option>';
+      data.forEach(v => {
+        vehicleSelect.innerHTML += `<option value="${v.id}">${v['Vehicle Number']} - ${v['Owner Name']}</option>`;
+      });
+    }
+
+    function populateMaintenanceDropdown(data) {
+      maintenanceVehicleSelect.innerHTML = '<option value="">Select Vehicle</option>';
+      data.forEach(v => {
+        maintenanceVehicleSelect.innerHTML += `<option value="${v['Vehicle Number']}">${v['Vehicle Number']} - ${v['Owner Name']}</option>`;
+      });
+    }
+
+    vehicleSearch.addEventListener('input', () => {
+      const term = vehicleSearch.value.toLowerCase();
+      const filtered = vehicleData.filter(v =>
+        v['Vehicle Number'].toLowerCase().includes(term) ||
+        v['Owner Name'].toLowerCase().includes(term)
+      );
+      populateVehicleDropdown(filtered);
+    });
+
+    vehicleSelect.addEventListener('change', () => {
+      if (vehicleSelect.value) {
+        fetchVehicleDetails(vehicleSelect.value);
+      }
+    });
+
+    async function fetchVehicleDetails(id) {
+      const res = await fetch(`${baseURL}/rows/table/${VEHICLE_TABLE_ID}/${id}/?user_field_names=true`, { headers });
+      const v = await res.json();
+      vehicleInfo.innerHTML = `
+        <strong>Owner:</strong> ${v['Owner Name']}<br>
+        <strong>Model:</strong> ${v['Model'] || 'N/A'}<br>
+        <strong>Phone:</strong> ${v['Phone'] || 'N/A'}<br>
+        <strong>Chassis:</strong> ${v['Chassis Number'] || 'N/A'}<br>
+        <strong>Remarks:</strong> ${v['Remarks'] || 'N/A'}
+      `;
+      fetchMaintenanceHistory(v['Vehicle Number']);
+    }
+
+    async function fetchMaintenanceHistory(vehicleNumber) {
+      const res = await fetch(`${baseURL}/rows/table/${MAINTENANCE_TABLE_ID}/?user_field_names=true`, { headers });
+      const data = await res.json();
+      const history = data.results.filter(row => row['Vehicle'] === vehicleNumber || (Array.isArray(row['Vehicle']) && row['Vehicle'][0]?.value === vehicleNumber));
+      maintenanceBody.innerHTML = '';
+
+      let total = 0;
+      let lastDate = null;
+
+      history.forEach(row => {
+        maintenanceBody.innerHTML += `
+          <tr>
+            <td>${formatDate(row['Date'])}</td>
+            <td>${row['Work Description']}</td>
+            <td>${row['Parts Replaced']}</td>
+            <td>₹${row['Cost']}</td>
+            <td>${row['Mechanic']}</td>
+            <td>${formatDate(row['Next Service Date'])}</td>
+          </tr>
+        `;
+        total += parseFloat(row['Cost']) || 0;
+        if (!lastDate || new Date(row['Date']) > new Date(lastDate)) {
+          lastDate = row['Date'];
+        }
+      });
+
+      document.getElementById('analytics').innerHTML = `
+        <strong>Total Spent:</strong> ₹${total.toFixed(2)}<br>
+        <strong>Number of Services:</strong> ${history.length}<br>
+        <strong>Last Service Date:</strong> ${formatDate(lastDate)}<br>
+        ${getServiceReminderHTML(history)}
+      `;
+    }
+
+    function getServiceReminderHTML(history) {
+      const now = new Date();
+      const upcoming = history.filter(row => row['Next Service Date'] &&
+        new Date(row['Next Service Date']) - now <= 7 * 86400000 &&
+        new Date(row['Next Service Date']) >= now
+      );
+      const overdue = history.filter(row => row['Next Service Date'] &&
+        new Date(row['Next Service Date']) < now
+      );
+
+      if (overdue.length > 0) {
+        return `<div class="alert alert-danger">🚨 <strong>${overdue.length}</strong> service(s) are overdue!</div>`;
+      }
+      if (upcoming.length > 0) {
+        return `<div class="alert alert-warning">⏳ <strong>${upcoming.length}</strong> upcoming service(s) within 7 days.</div>`;
+      }
+      return `<div class="alert alert-success">✅ No upcoming or overdue services.</div>`;
+    }
+
+    function formatDate(d) {
+      return d ? new Date(d).toLocaleDateString('en-GB') : 'N/A';
+    }
+
+    vehicleForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(vehicleForm);
+      const data = {};
+      formData.forEach((value, key) => data[key] = value);
+      const res = await fetch(`${baseURL}/rows/table/${VEHICLE_TABLE_ID}/?user_field_names=true`, {
+        method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        alert('✅ Vehicle added!');
+        vehicleForm.reset();
+        fetchVehicles();
+      }
+    });
+
+    maintenanceForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(maintenanceForm);
+      const data = {};
+      formData.forEach((value, key) => {
+        if (key === 'Vehicle') {
+          const vehicle = vehicleData.find(v => v['Vehicle Number'] === value);
+          if (vehicle) {
+            data[key] = [vehicle.id];
+          }
+        } else {
+          data[key] = value;
+        }
+      });
+      const res = await fetch(`${baseURL}/rows/table/${MAINTENANCE_TABLE_ID}/?user_field_names=true`, {
+        method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        alert('✅ Maintenance record added!');
+        maintenanceForm.reset();
+        if (vehicleSelect.value) fetchVehicleDetails(vehicleSelect.value);
+      }
+    });
+
+    function printReport() {
+      const content = `
+        <h1>Vehicle Maintenance Report</h1>
+        ${vehicleInfo.innerHTML}
+        <h2>Maintenance History</h2>
+        ${document.getElementById('maintenanceTable').outerHTML}
+      `;
+      const win = window.open('', '', 'width=900,height=700');
+      win.document.write(`
+        <html><head><title>Report</title>
+          <style>
+            body { font-family: Arial; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 8px; }
+            th { background: #eee; }
+          </style></head>
+    <body>${content}</body></html>
+  `);
+  win.document.close();
+  win.focus();
+  win.print();
+}
+
+fetchVehicles();
+
+  </script>
+</body>
+</html>

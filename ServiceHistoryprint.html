@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Service History</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    h2 {
+      text-align: center;
+      margin: 20px 0 10px;
+      color: #007bff;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0 1rem 1rem;
+    }
+
+    .top-bar input {
+      padding: 8px 12px;
+      font-size: 1rem;
+      width: 250px;
+      max-width: 90%;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .print-btn {
+      padding: 8px 20px;
+      font-weight: bold;
+      font-size: 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    @media print {
+      .print-btn, .top-bar, h2 {
+        display: none;
+      }
+
+      body {
+        background: white;
+      }
+
+      .container {
+        box-shadow: none;
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>Service History</h2>
+  <div class="top-bar">
+    <input type="text" id="searchBox" placeholder="Search vehicle, owner, phone..." oninput="filterTable()" />
+    <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+  </div>
+
+  <div class="container">
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>Vehicle</th>
+          <th>Owner</th>
+          <th>Phone</th>
+          <th>Model</th>
+          <th>Service Date</th>
+          <th>Status</th>
+          <th>Status Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="7">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_TOKEN = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+    const VEHICLE_TABLE_ID = '610171';
+    const MAINTENANCE_TABLE_ID = '610172';
+    const baseURL = 'https://api.baserow.io/api/database';
+    const headers = { Authorization: `Token ${API_TOKEN}` };
+
+    let allRows = [];
+
+    async function loadHistory() {
+      const [vehicleRes, maintenanceRes] = await Promise.all([
+        fetch(`${baseURL}/rows/table/${VEHICLE_TABLE_ID}/?user_field_names=true`, { headers }),
+        fetch(`${baseURL}/rows/table/${MAINTENANCE_TABLE_ID}/?user_field_names=true`, { headers })
+      ]);
+
+      const vehicles = (await vehicleRes.json()).results;
+      const maintenance = (await maintenanceRes.json()).results;
+      const completed = maintenance.filter(row => row['Status']?.value === 'Completed');
+
+      allRows = completed.map(entry => {
+        const vehicleRef = Array.isArray(entry['Vehicle']) ? entry['Vehicle'][0]?.value : entry['Vehicle'];
+        const vehicle = vehicles.find(v => v['Vehicle Number'] === vehicleRef);
+
+        return {
+          vehicle: vehicle?.['Vehicle Number'] || 'N/A',
+          owner: vehicle?.['Owner Name'] || 'N/A',
+          phone: vehicle?.['Phone'] || 'N/A',
+          model: vehicle?.['Model'] || 'N/A',
+          serviceDate: entry['Next Service Date']
+            ? new Date(entry['Next Service Date']).toLocaleDateString('en-GB')
+            : 'N/A',
+          status: entry['Status']?.value || 'N/A',
+          statusUpdated: entry['Status Updated At']
+            ? new Date(entry['Status Updated At']).toLocaleString('en-GB')
+            : 'N/A'
+        };
+      });
+
+      renderTable(allRows);
+    }
+
+    function renderTable(rows) {
+      const tableBody = document.querySelector('#historyTable tbody');
+      if (rows.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No completed services found.</td></tr>';
+        return;
+      }
+
+      tableBody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.vehicle}</td>
+          <td>${r.owner}</td>
+          <td>${r.phone}</td>
+          <td>${r.model}</td>
+          <td>${r.serviceDate}</td>
+          <td>${r.status}</td>
+          <td>${r.statusUpdated}</td>
+        </tr>
+      `).join('');
+    }
+
+    function filterTable() {
+      const search = document.getElementById('searchBox').value.toLowerCase();
+      const filtered = allRows.filter(r =>
+        r.vehicle.toLowerCase().includes(search) ||
+        r.owner.toLowerCase().includes(search) ||
+        r.phone.toLowerCase().includes(search)
+      );
+      renderTable(filtered);
+    }
+
+    loadHistory();
+  </script>
+</body>
+</html>

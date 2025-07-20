@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 20px;
+      background: #f4f4f4;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1e3a8a;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      max-width: 400px;
+      margin: 10px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input {
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 30px;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    .actions button {
+      margin: 0 4px;
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .edit-btn {
+      background-color: #f59e0b;
+    }
+
+    .delete-btn {
+      background-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Admin Panel</h1>
+
+  <form id="linkForm">
+    <input type="text" id="name" placeholder="Enter Name" required />
+    <input type="url" id="url" placeholder="Enter URL" required />
+    <button type="submit" id="submitBtn">Add Link</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>URL</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="linkTableBody">
+      <!-- Rows will be inserted here -->
+    </tbody>
+  </table>
+
+  <script>
+    const tableId = '612224';
+    const apiToken = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+    const apiUrl = `https://api.baserow.io/api/database/rows/table/${tableId}/?user_field_names=true`;
+
+    let editingId = null;
+
+    const nameInput = document.getElementById('name');
+    const urlInput = document.getElementById('url');
+    const form = document.getElementById('linkForm');
+    const tableBody = document.getElementById('linkTableBody');
+    const submitBtn = document.getElementById('submitBtn');
+
+    async function fetchLinks() {
+      const res = await fetch(apiUrl, {
+        headers: { Authorization: `Token ${apiToken}` }
+      });
+      const data = await res.json();
+      tableBody.innerHTML = '';
+      data.results.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.name}</td>
+          <td><a href="${row.url}" target="_blank">${row.url}</a></td>
+          <td class="actions">
+            <button class="edit-btn" onclick="editLink(${row.id}, '${row.name}', '${row.url}')">Edit</button>
+            <button class="delete-btn" onclick="deleteLink(${row.id})">Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const name = nameInput.value.trim();
+      const url = urlInput.value.trim();
+
+      if (!name || !url) return;
+
+      if (editingId) {
+        // Update existing
+        await fetch(`https://api.baserow.io/api/database/rows/table/${tableId}/${editingId}/?user_field_names=true`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Token ${apiToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, url })
+        });
+        editingId = null;
+        submitBtn.textContent = 'Add Link';
+      } else {
+        // Create new
+        await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${apiToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, url })
+        });
+      }
+
+      nameInput.value = '';
+      urlInput.value = '';
+      fetchLinks();
+    };
+
+    async function deleteLink(id) {
+      if (!confirm('Delete this link?')) return;
+      await fetch(`https://api.baserow.io/api/database/rows/table/${tableId}/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Token ${apiToken}`
+        }
+      });
+      fetchLinks();
+    }
+
+    function editLink(id, name, url) {
+      editingId = id;
+      nameInput.value = name;
+      urlInput.value = url;
+      submitBtn.textContent = 'Update Link';
+    }
+
+    fetchLinks();
+  </script>
+</body>
+</html>

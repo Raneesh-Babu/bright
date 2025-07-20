@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upcoming Services</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+
+    h2 {
+      text-align: center;
+      padding: 1rem 0 0.5rem;
+      margin: 0;
+      color: #007bff;
+      font-size: 1.75rem;
+    }
+
+    .filters {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .filters select {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin-bottom: 1.2rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .card strong {
+      display: inline-block;
+      width: 150px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: white;
+      margin-top: 0.5rem;
+    }
+
+    .status-Not\ Scheduled { background-color: #6c757d; }
+    .status-Scheduled { background-color: #ffc107; }
+    .status-Work\ in\ Progress { background-color:#ffc107; } /* RED */
+    .status-Completed { background-color: #28a745; }
+
+    select.status-dropdown {
+      margin-top: 0.5rem;
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .contact-buttons {
+      margin-top: 0.75rem;
+      display: flex;
+      gap: 10px;
+    }
+
+    .contact-buttons a {
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      color: white;
+      border-radius: 5px;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .call-btn { background: #28a745; }
+    .sms-btn { background: #007bff; }
+
+    .alert {
+      text-align: center;
+      padding: 2rem;
+      font-weight: 500;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h2>Upcoming Services</h2>
+
+  <div class="filters">
+    <label for="statusFilter">Filter by Status: </label>
+    <select id="statusFilter">
+      <option value="All">All</option>
+      <option value="Not Scheduled" selected>Not Scheduled</option>
+      <option value="Scheduled">Scheduled</option>
+      <option value="Work in Progress">Work in Progress</option>
+      <option value="Completed">Completed</option>
+    </select>
+  </div>
+
+  <div class="container">
+    <div id="upcomingList">Loading...</div>
+  </div>
+
+  <script>
+    const API_TOKEN = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+    const VEHICLE_TABLE_ID = '610171';
+    const MAINTENANCE_TABLE_ID = '610172';
+    const baseURL = 'https://api.baserow.io/api/database';
+    const headers = { Authorization: `Token ${API_TOKEN}` };
+
+    let vehicleData = [];
+    let maintenanceData = [];
+    const statusOptions = ['Not Scheduled', 'Scheduled', 'Work in Progress', 'Completed'];
+
+    const smsTemplates = {
+      "Not Scheduled": "Your service for {vehicle} is not yet scheduled. Please contact us to fix a date.",
+      "Scheduled": "Reminder: Your vehicle ({vehicle}) is scheduled for service on {date}. Please be available.",
+      "Work in Progress": "Your vehicle ({vehicle}) service is currently in progress.",
+      "Completed": "Your vehicle ({vehicle}) service has been completed. Thank you!"
+    };
+
+    function formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-GB');
+    }
+
+    function formatTime(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getCurrentTimestamp() {
+      return new Date().toISOString();
+    }
+
+    function getUpTime(updatedAt) {
+      if (!updatedAt) return 'N/A';
+      const diff = Date.now() - new Date(updatedAt).getTime();
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      return `${hours}h ${minutes}m ago`;
+    }
+
+    async function fetchData() {
+      const [vehicleRes, maintenanceRes] = await Promise.all([
+        fetch(`${baseURL}/rows/table/${VEHICLE_TABLE_ID}/?user_field_names=true`, { headers }),
+        fetch(`${baseURL}/rows/table/${MAINTENANCE_TABLE_ID}/?user_field_names=true`, { headers })
+      ]);
+      vehicleData = (await vehicleRes.json()).results;
+      maintenanceData = (await maintenanceRes.json()).results;
+      render(document.getElementById('statusFilter').value);
+    }
+
+    function render(filterStatus) {
+      const now = new Date();
+      const next7 = new Date(now.getTime() + 7 * 86400000);
+      const upcomingList = document.getElementById('upcomingList');
+      upcomingList.innerHTML = '';
+
+      const filtered = maintenanceData.filter(row => {
+        const date = new Date(row['Next Service Date']);
+        const statusValue = row['Status']?.value || 'Not Scheduled';
+        const matchStatus = filterStatus === 'All' || statusValue === filterStatus;
+        return date >= now && date <= next7 && matchStatus;
+      });
+
+      const uniqueByVehicle = {};
+      filtered.forEach(entry => {
+        const vehicleKey = Array.isArray(entry['Vehicle']) ? entry['Vehicle'][0]?.value : entry['Vehicle'];
+        if (!vehicleKey) return;
+        const entryDate = new Date(entry['Next Service Date']);
+        if (!uniqueByVehicle[vehicleKey] || entryDate < new Date(uniqueByVehicle[vehicleKey]['Next Service Date'])) {
+          uniqueByVehicle[vehicleKey] = entry;
+        }
+      });
+
+      const uniqueEntries = Object.values(uniqueByVehicle);
+
+      if (uniqueEntries.length === 0) {
+        upcomingList.innerHTML = `<div class="alert">No upcoming services found.</div>`;
+        return;
+      }
+
+      uniqueEntries.forEach(entry => {
+        const vehicle = vehicleData.find(v =>
+          v['Vehicle Number'] === entry['Vehicle'] ||
+          (Array.isArray(entry['Vehicle']) && entry['Vehicle'][0]?.value === v['Vehicle Number'])
+        );
+
+        const status = entry['Status']?.value || 'Not Scheduled';
+        const statusClass = `status-${status.replaceAll(' ', '\\ ')}`;
+        const serviceDate = formatDate(entry['Next Service Date']);
+        const updatedAt = entry['Status Updated At'];
+        const statusUpdateDate = formatDate(updatedAt);
+        const statusUpdateTime = formatTime(updatedAt);
+        const uptime = getUpTime(updatedAt);
+
+        const smsText = encodeURIComponent(
+          smsTemplates[status]
+            .replace('{vehicle}', vehicle?.['Vehicle Number'] || 'your vehicle')
+            .replace('{date}', serviceDate)
+        );
+
+        if (vehicle) {
+          upcomingList.innerHTML += `
+            <div class="card">
+              <div><strong>Vehicle:</strong> ${vehicle['Vehicle Number']}</div>
+              <div><strong>Owner:</strong> ${vehicle['Owner Name']}</div>
+              <div><strong>Phone:</strong> ${vehicle['Phone'] || 'N/A'}</div>
+              <div><strong>Model:</strong> ${vehicle['Model'] || 'N/A'}</div>
+              <div><strong>Next Service:</strong> ${serviceDate}</div>
+              <div><strong>Status Updated:</strong> ${statusUpdateDate} at ${statusUpdateTime} (${uptime})</div>
+              <span class="status-badge ${statusClass}">${status}</span>
+              <select class="status-dropdown" onchange="updateStatus('${entry.id}', this.value)">
+                ${statusOptions.map(s => `<option value="${s}" ${s === status ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+              <div class="contact-buttons">
+                <a class="call-btn" href="tel:${vehicle['Phone']}">📞 Call</a>
+                <a class="sms-btn" href="sms:${vehicle['Phone']}?body=${smsText}">📩 SMS</a>
+              </div>
+            </div>
+          `;
+        }
+      });
+    }
+
+    async function updateStatus(rowId, newStatus) {
+      const updateData = {
+        Status: newStatus,
+        "Status Updated At": getCurrentTimestamp()
+      };
+
+      await fetch(`${baseURL}/rows/table/${MAINTENANCE_TABLE_ID}/${rowId}/?user_field_names=true`, {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+
+      fetchData(); // Refresh after status change
+    }
+
+    document.getElementById('statusFilter').addEventListener('change', (e) => {
+      render(e.target.value);
+    });
+
+    fetchData();
+  </script>
+</body>
+</html>

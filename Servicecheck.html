@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Service Status Checker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #eef1f5;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+
+    h2 {
+      text-align: center;
+      color: #007bff;
+      margin-bottom: 1rem;
+    }
+
+    .search-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .search-box input {
+      padding: 12px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .search-box button {
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .status-card {
+      background: #f8f9fa;
+      border-left: 5px solid #007bff;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+
+    .status-card h3 {
+      margin: 0 0 12px;
+      color: #333;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 6px;
+    }
+
+    .status-item {
+      margin: 8px 0;
+      font-size: 0.95rem;
+    }
+
+    .label {
+      font-weight: bold;
+      color: #555;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .badge-Completed { background-color: #28a745; color: #fff; }
+    .badge-Scheduled { background-color: #ffc107; color: #000; }
+    .badge-Work\ in\ Progress { background-color: #dc3545; color: #fff; }
+    .badge-Not\ Scheduled { background-color: #6c757d; color: #fff; }
+
+    .no-result {
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #cc0000;
+    }
+
+    @media print {
+      .search-box, h2 {
+        display: none;
+      }
+      .container {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔧 Check Your Service Status</h2>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Enter Vehicle Number or Phone" />
+      <button onclick="searchStatus()">Search Status</button>
+    </div>
+    <div id="resultBox"></div>
+  </div>
+
+  <script>
+    const API_TOKEN = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+    const VEHICLE_TABLE_ID = '610171';
+    const MAINTENANCE_TABLE_ID = '610172';
+    const baseURL = 'https://api.baserow.io/api/database';
+    const headers = { Authorization: `Token ${API_TOKEN}` };
+
+    let vehicleData = [];
+    let maintenanceData = [];
+
+    async function fetchData() {
+      const [vehicleRes, maintenanceRes] = await Promise.all([
+        fetch(`${baseURL}/rows/table/${VEHICLE_TABLE_ID}/?user_field_names=true`, { headers }),
+        fetch(`${baseURL}/rows/table/${MAINTENANCE_TABLE_ID}/?user_field_names=true`, { headers })
+      ]);
+
+      vehicleData = (await vehicleRes.json()).results;
+      maintenanceData = (await maintenanceRes.json()).results;
+    }
+
+    async function searchStatus() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const resultBox = document.getElementById('resultBox');
+      resultBox.innerHTML = '';
+
+      if (!query) {
+        resultBox.innerHTML = '<div class="no-result">Please enter vehicle number or phone.</div>';
+        return;
+      }
+
+      if (vehicleData.length === 0 || maintenanceData.length === 0) {
+        await fetchData();
+      }
+
+      const matchedVehicles = vehicleData.filter(v =>
+        v['Vehicle Number'].toLowerCase().includes(query) ||
+        v['Phone'].toLowerCase().includes(query)
+      );
+
+      if (matchedVehicles.length === 0) {
+        resultBox.innerHTML = '<div class="no-result">No matching records found.</div>';
+        return;
+      }
+
+      const vehicle = matchedVehicles[0];
+      const entries = maintenanceData.filter(m => {
+        const ref = Array.isArray(m['Vehicle']) ? m['Vehicle'][0]?.value : m['Vehicle'];
+        return ref === vehicle['Vehicle Number'];
+      });
+
+      if (entries.length === 0) {
+        resultBox.innerHTML = '<div class="no-result">No maintenance entries found for this vehicle.</div>';
+        return;
+      }
+
+      entries.sort((a, b) => new Date(b['Next Service Date']) - new Date(a['Next Service Date']));
+      const latest = entries[0];
+
+      const status = latest['Status']?.value || 'Not Scheduled';
+      const statusClass = `badge-${status.replaceAll(' ', '\\ ')}`;
+      const serviceDate = latest['Next Service Date']
+        ? new Date(latest['Next Service Date']).toLocaleDateString('en-GB')
+        : 'N/A';
+      const mechanic = latest['Mechanic'] || 'Not Assigned';
+      const workDesc = latest['Work Description'] || 'No work description provided.';
+
+      const cardHTML = `
+        <div class="status-card">
+          <h3>Latest Service Information</h3>
+          <div class="status-item"><span class="label">Vehicle Number:</span> ${vehicle['Vehicle Number']}</div>
+          <div class="status-item"><span class="label">Owner Name:</span> ${vehicle['Owner Name']}</div>
+          <div class="status-item"><span class="label">Phone:</span> ${vehicle['Phone']}</div>
+          <div class="status-item"><span class="label">Model:</span> ${vehicle['Model']}</div>
+          <div class="status-item">
+            <span class="label">Status:</span> 
+            <span class="status-badge ${statusClass}">${status}</span>
+          </div>
+          <div class="status-item"><span class="label">Next Service Date:</span> ${serviceDate}</div>
+          <div class="status-item"><span class="label">Work Summary:</span> ${workDesc}</div>
+          <div class="status-item"><span class="label">Contact Mechanic:</span> ${mechanic}</div>
+        </div>
+      `;
+
+      resultBox.innerHTML = cardHTML;
+    }
+  </script>
+</body>
+</html>
