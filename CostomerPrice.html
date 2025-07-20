@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bright EV Scooters - Customer View</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Roboto&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+    .poster-card {
+      background: linear-gradient(to bottom right, #ffffff, #f0fdf4);
+      border: 2px solid #22c55e;
+      box-shadow: 0 8px 16px rgba(34, 197, 94, 0.2);
+      font-family: 'Oswald', sans-serif;
+    }
+    .poster-title {
+      font-size: 1.5rem;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="bg-green-50 text-gray-800 min-h-screen">  <main class="px-4 pt-4">
+    <div class="flex flex-wrap justify-center gap-4 mb-6">
+      <select id="batteryFilter" onchange="renderFiltered()" class="border rounded px-3 py-1">
+        <option value="">All Battery Types</option>
+        <option value="Graphene">Graphene</option>
+        <option value="Li-ion">Li-ion</option>
+      </select>
+      <input type="number" id="minMRP" placeholder="Min MRP" class="border rounded px-2 py-1 w-24" onchange="renderFiltered()"/>
+      <input type="number" id="maxMRP" placeholder="Max MRP" class="border rounded px-2 py-1 w-24" onchange="renderFiltered()"/>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="model-container">
+      <!-- Cards inserted here -->
+    </div>
+  </main>  <footer class="text-center text-sm text-gray-600 p-4">
+    Updated on: <span id="current-date"></span>
+  </footer>  <script>
+    const API_KEY = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+    const TABLE_ID = '613531';
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+    let scooterData = [];
+
+    async function fetchData() {
+      const res = await fetch(API_URL, {
+        headers: { 'Authorization': `Token ${API_KEY}` }
+      });
+      const data = await res.json();
+      scooterData = data.results;
+      renderFiltered();
+    }
+
+    function renderFiltered() {
+      const filter = document.getElementById('batteryFilter').value;
+      const min = parseInt(document.getElementById('minMRP').value) || 0;
+      const max = parseInt(document.getElementById('maxMRP').value) || Infinity;
+
+      const filtered = scooterData.filter(item => {
+        const batteryType = item.Battery?.startsWith('G') ? 'Graphene' : 'Li-ion';
+        return (!filter || batteryType === filter) && item.MRP >= min && item.MRP <= max;
+      });
+
+      renderGroupedCards(filtered);
+    }
+
+    function renderGroupedCards(data) {
+      const container = document.getElementById('model-container');
+      container.innerHTML = '';
+      const grouped = {};
+      data.forEach(item => {
+        if (!grouped[item.Model]) grouped[item.Model] = [];
+        grouped[item.Model].push(item);
+      });
+
+      for (const model in grouped) {
+        const variations = grouped[model]
+          .map(item => {
+            const type = item.Battery?.startsWith('G') ? 'Graphene' : 'Li-ion';
+            return `<li class="text-sm">🔋 ${item.Battery} – <strong>₹${item.MRP}</strong> <span class="ml-2 px-2 py-0.5 text-xs rounded ${type === 'Graphene' ? 'bg-green-200 text-green-900' : 'bg-blue-200 text-blue-900'}">${type}</span></li>`;
+          }).join('');
+
+        const img = grouped[model][0].Picture?.[0]?.url || 'https://via.placeholder.com/300x180?text=No+Image';
+        const logo = 'https://i.ibb.co/vxyv8vj9/IMG-20250719-210558-removebg-preview.png';
+        const qr = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=https://yourwebsite.com';
+
+        container.innerHTML += `
+          <div class="poster-card rounded-xl p-4 relative text-center">
+            <img src="${logo}" class="w-auto h-12 mx-auto mb-2" alt="Logo" />
+            <img src="${img}" class="w-full h-48 object-cover rounded mb-3 border border-green-500" alt="Scooter" />
+            <h2 class="poster-title text-green-700 font-bold mb-2 uppercase">${model}</h2>
+            <ul class="mb-4 space-y-1 text-left">${variations}</ul>
+            <div class="flex justify-between items-end mt-3">
+              <div class="text-xs text-left mt-4">
+                <p class="font-bold text-gray-700">📞6238153007</p>
+                <p class="text-gray-500">brightgroup1956.com</p>
+              </div>
+              <img src="${qr}" alt="QR Code" class="w-16 h-16" />
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function downloadCard(button) {
+      const card = button.parentElement;
+      html2canvas(card).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'EV_Model_Price.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+
+    function downloadAllCards() {
+      const cards = document.querySelectorAll('.poster-card');
+      cards.forEach((card, index) => {
+        html2canvas(card).then(canvas => {
+          const link = document.createElement('a');
+          link.download = `EV_Model_${index + 1}.png`;
+          link.href = canvas.toDataURL();
+          link.click();
+        });
+      });
+    }
+
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString();
+    fetchData();
+  </script></body>
+</html>
