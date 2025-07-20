@@ -1,0 +1,181 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bright EV Scooters Price List</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .tag {
+      @apply inline-block px-2 py-1 text-xs font-semibold rounded;
+    }
+    .fade-in {
+      animation: fadeIn 0.6s ease-in-out forwards;
+      opacity: 0;
+    }
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+    .floating-buttons {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-white text-gray-800 min-h-screen">
+  <header class="bg-white shadow sticky top-0 z-10 p-4 flex flex-wrap gap-2 justify-start items-center">
+    <h1 class="text-2xl font-bold text-green-700">Bright EV Scooters</h1>
+  </header>  <div class="text-center mt-6">
+    <h2 class="text-xl font-bold text-gray-800">📅 Today's Price List</h2>
+  </div>  <div id="loader" class="flex flex-col items-center justify-center h-96 text-center">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
+    <p class="text-green-700 font-medium">Fetching latest price list...</p>
+  </div>  <div id="filter-controls" class="hidden p-4 flex flex-wrap gap-4 justify-center items-center">
+    <button onclick="sortByProfit()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">🔼 Sort by Highest Profit</button>
+    <select id="typeFilter" onchange="applyFilters()" class="border rounded px-3 py-2">
+      <option value="">🔋 All Battery Types</option>
+      <option value="Graphene">Graphene</option>
+      <option value="Li-ion">Li-ion</option>
+    </select>
+    <input type="text" id="modelSearch" oninput="applyFilters()" placeholder="🔍 Search by Model..." class="border rounded px-3 py-2 w-60" />
+  </div>  <main id="main-content" class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden">
+    <!-- Scooter cards inserted here -->
+  </main>  <!-- Floating Action Buttons -->  <div class="floating-buttons">
+    <!-- Download PDF Button -->
+    <button onclick="downloadPDF()" class="bg-green-600 hover:bg-green-700 text-white p-3 rounded-full shadow-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M5 20h14a1 1 0 001-1v-2a1 1 0 10-2 0v1H6v-1a1 1 0 10-2 0v2a1 1 0 001 1zm7-2a1 1 0 001-1v-5.586l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 101.414 1.414L11 11.414V17a1 1 0 001 1z"/>
+      </svg>
+    </button><!-- WhatsApp Share Button -->
+<a href="https://wa.me/?text=Check%20out%20the%20latest%20Bright%20EV%20Scooters%20Price%20List!" 
+   target="_blank" 
+   class="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 32 32" fill="currentColor">
+    <path d="M16.004 2.003c-7.719 0-14 6.281-14 14 0 2.469.66 4.844 1.91 6.941l-1.98 5.766a1 1 0 001.273 1.273l5.766-1.98a13.935 13.935 0 006.941 1.91c7.719 0 14-6.281 14-14s-6.281-14-14-14zm0 2c6.629 0 12 5.371 12 12s-5.371 12-12 12a11.938 11.938 0 01-6.09-1.629l-.609-.359-4.344 1.488 1.488-4.344-.359-.609A11.938 11.938 0 014.004 16c0-6.629 5.371-12 12-12zm-2.344 6.375c-.191 0-.375.008-.562.023-.574.05-1.07.348-1.348.828-.297.523-.426 1.199-.438 1.793-.043 1.879.875 3.977 2.348 5.449 1.473 1.477 3.57 2.395 5.449 2.352.594-.012 1.27-.141 1.793-.438.48-.277.777-.773.828-1.348.145-1.684-.82-2.586-1.48-3.098-.219-.176-.543-.188-.793-.043l-2.484 1.426c-.145.09-.324.09-.469 0l-2.625-2.625a.332.332 0 010-.469l1.426-2.484a.508.508 0 00-.043-.793c-.438-.367-1.105-.793-1.902-.793z" />
+  </svg>
+</a>
+
+  </div>  <!-- Hidden content for PDF generation -->  <div id="pdf-content" class="hidden p-4">
+    <h1 class="text-center text-lg font-bold mb-2">Bright EV Scooters Dealer Price</h1>
+    <p class="text-center mb-4">Updated on: <span id="update-date"></span></p>
+    <table class="w-full text-sm border-collapse border border-gray-300">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="border p-2">SL NO</th>
+          <th class="border p-2">MODEL</th>
+          <th class="border p-2">BATTERY</th>
+          <th class="border p-2">TYPE</th>
+          <th class="border p-2">DEALER PRICE</th>
+          <th class="border p-2">MRP</th>
+          <th class="border p-2">PROFIT</th>
+        </tr>
+      </thead>
+      <tbody id="pdf-table-body">
+        <!-- Populated via JS -->
+      </tbody>
+    </table>
+  </div>  <script>
+    const API_KEY = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+    const TABLE_ID = '613531';
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+
+    let scooterData = [];
+
+    async function fetchData() {
+      const res = await fetch(API_URL, {
+        headers: { 'Authorization': `Token ${API_KEY}` }
+      });
+      const data = await res.json();
+      scooterData = data.results.map(item => {
+        const type = item.Battery.startsWith('G') ? 'Graphene' : 'Li-ion';
+        const img = item.Picture?.[0]?.url || 'https://via.placeholder.com/300x200?text=No+Image';
+        const profit = item.MRP - item.DealerPrice;
+        return { ...item, type, img, profit };
+      });
+      applyFilters();
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('main-content').classList.remove('hidden');
+      document.getElementById('filter-controls').classList.remove('hidden');
+    }
+
+    function renderScooters(data) {
+      const container = document.getElementById('main-content');
+      const pdfBody = document.getElementById('pdf-table-body');
+      const today = new Date().toLocaleDateString();
+      document.getElementById('update-date').textContent = today;
+
+      container.innerHTML = '';
+      pdfBody.innerHTML = '';
+
+      data.forEach((item, index) => {
+        const tagColor = item.type === 'Graphene' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
+
+        container.innerHTML += `
+          <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition fade-in">
+            <img src="${item.img}" class="w-full h-48 object-contain bg-gray-50" alt="Scooter" />
+            <div class="p-4">
+              <h2 class="text-xl font-semibold text-gray-800">${item.Model}</h2>
+              <p class="text-sm text-gray-600 mt-1">Battery: <span class="font-medium">${item.Battery}</span></p>
+              <p class="text-sm mt-1">Type: <span class="tag ${tagColor}">${item.type}</span></p>
+              <div class="mt-2 text-sm">
+                <p>🛒 Dealer Price: <span class="font-semibold text-gray-700">₹${item.DealerPrice}</span></p>
+                <p>🏷️ MRP: <span class="text-gray-700">₹${item.MRP}</span></p>
+                <p class="text-sm mt-1">💰 <span class="text-green-600 font-semibold">Profit: ₹${item.profit}</span></p>
+              </div>
+            </div>
+          </div>
+        `;
+
+        pdfBody.innerHTML += `
+          <tr>
+            <td class="border p-2">${index + 1}</td>
+            <td class="border p-2">${item.Model}</td>
+            <td class="border p-2">${item.Battery}</td>
+            <td class="border p-2">${item.type}</td>
+            <td class="border p-2">₹${item.DealerPrice}</td>
+            <td class="border p-2">₹${item.MRP}</td>
+            <td class="border p-2 text-green-700 font-semibold">₹${item.profit}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function sortByProfit() {
+      const sorted = [...scooterData].sort((a, b) => b.profit - a.profit);
+      renderScooters(sorted);
+    }
+
+    function applyFilters() {
+      const type = document.getElementById('typeFilter').value;
+      const search = document.getElementById('modelSearch').value.toLowerCase();
+      const filtered = scooterData.filter(item => {
+        return (!type || item.type === type) && (!search || item.Model.toLowerCase().includes(search));
+      });
+      renderScooters(filtered);
+    }
+
+    function downloadPDF() {
+      const content = document.getElementById('pdf-content');
+      content.classList.remove('hidden');
+      html2pdf().from(content).set({
+        margin: 0.5,
+        filename: 'Bright_EV_Scooters_Price_List.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      }).save().then(() => content.classList.add('hidden'));
+    }
+
+    fetchData();
+  </script></body>
+</html>
