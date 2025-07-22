@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sales Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-7xl mx-auto">
+    <h2 class="text-3xl font-bold text-center text-indigo-700 mb-6">Sales Dashboard</h2>
+
+    <!-- Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+      <input type="date" id="startDate" class="border p-2 rounded" placeholder="Start Date" />
+      <input type="date" id="endDate" class="border p-2 rounded" placeholder="End Date" />
+      <select id="branchFilter" class="border p-2 rounded">
+        <option value="">All Branches</option>
+        <option value="ANGADIPPURAM">ANGADIPPURAM</option>
+        <option value="MANJERI">MANJERI</option>
+      </select>
+      <select id="salesmanFilter" class="border p-2 rounded">
+        <option value="">All Salesmen</option>
+        <option value="RANEESH BABU SR">RANEESH BABU SR</option>
+        <option value="ARSAL MT">ARSAL MT</option>
+      </select>
+      <select id="specFilter" class="border p-2 rounded">
+        <option value="">All Models</option>
+        <option value="RIDER">RIDER</option>
+        <option value="RIDER PLUS">RIDER PLUS</option>
+        <option value="CUTIE SUPER">CUTIE SUPER</option>
+      </select>
+    </div>
+
+    <button onclick="loadSales()" class="mb-6 px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+      Filter Sales
+    </button>
+
+    <!-- Report -->
+    <div id="report" class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-800 rounded hidden"></div>
+
+    <!-- Sales Cards -->
+    <div id="salesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <script>
+    const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+    const TABLE_ID = "615787";
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+
+    async function fetchSalesData() {
+      const response = await fetch(API_URL, {
+        headers: {
+          Authorization: `Token ${API_KEY}`,
+        },
+      });
+      const data = await response.json();
+      return data.results;
+    }
+
+    function matchesFilter(sale, filters) {
+      const saleDate = sale["Purchase Date"];
+      return (
+        (!filters.start || saleDate >= filters.start) &&
+        (!filters.end || saleDate <= filters.end) &&
+        (!filters.branch || sale.Branch === filters.branch) &&
+        (!filters.salesman || sale.Salesman === filters.salesman) &&
+        (!filters.spec || sale.Spec === filters.spec)
+      );
+    }
+
+    function formatCard(sale) {
+      return `
+        <div class="bg-white border shadow-sm rounded p-4">
+          <p><strong>📅 Date:</strong> ${sale["Purchase Date"]}</p>
+          <p><strong>👤 Name:</strong> ${sale.Name}</p>
+          <p><strong>📞 Mobile:</strong> ${sale.Mob}</p>
+          <p><strong>🛵 Model:</strong> ${sale.Spec}</p>
+          <p><strong>💰 Price:</strong> ₹${sale.Price}</p>
+          <p><strong>🧑‍💼 Salesman:</strong> ${sale.Salesman}</p>
+          <p><strong>🔑 VIN:</strong> ${sale.VIN}</p>
+          <p><strong>🔧 Motor No:</strong> ${sale["Motor No"]}</p>
+        </div>
+      `;
+    }
+
+    async function loadSales() {
+      const sales = await fetchSalesData();
+      const filters = {
+        start: document.getElementById("startDate").value,
+        end: document.getElementById("endDate").value,
+        branch: document.getElementById("branchFilter").value,
+        salesman: document.getElementById("salesmanFilter").value,
+        spec: document.getElementById("specFilter").value,
+      };
+
+      const filteredSales = sales.filter(sale => matchesFilter(sale, filters));
+
+      const container = document.getElementById("salesContainer");
+      container.innerHTML = filteredSales.length
+        ? filteredSales.map(formatCard).join("")
+        : `<p class="text-gray-600 col-span-full text-center">No sales found for the selected filters.</p>`;
+
+      // Report
+      const report = document.getElementById("report");
+      const total = filteredSales.length;
+      const totalAmount = filteredSales.reduce((sum, sale) => sum + (parseFloat(sale.Price) || 0), 0);
+
+      report.innerHTML = `
+        <h3 class="text-xl font-bold mb-2">📊 Sales Report</h3>
+        <p><strong>Total Sales:</strong> ${total}</p>
+        <p><strong>Total Revenue:</strong> ₹${totalAmount.toFixed(2)}</p>
+      `;
+      report.classList.remove("hidden");
+    }
+
+    // Load all data on first visit
+    loadSales();
+  </script>
+</body>
+</html>
