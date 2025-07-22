@@ -1,0 +1,145 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="max-w-7xl mx-auto p-4">
+    <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">Sales Dashboard</h1><!-- Filters -->
+<div class="grid grid-cols-1 md:grid-cols-6 gap-4 bg-white p-4 rounded shadow">
+  <div>
+    <label class="block text-sm font-medium">Start Date</label>
+    <input type="date" id="startDate" class="w-full p-2 border rounded">
+  </div>
+  <div>
+    <label class="block text-sm font-medium">End Date</label>
+    <input type="date" id="endDate" class="w-full p-2 border rounded">
+  </div>
+  <div>
+    <label class="block text-sm font-medium">Spec</label>
+    <select id="filterSpec" class="w-full p-2 border rounded">
+      <option value="">All</option>
+      <option value="RIDER">RIDER</option>
+      <option value="RIDER PLUS">RIDER PLUS</option>
+      <option value="CUTIE SUPER">CUTIE SUPER</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-sm font-medium">Salesman</label>
+    <select id="filterSalesman" class="w-full p-2 border rounded">
+      <option value="">All</option>
+      <option value="RANEESH BABU SR">RANEESH BABU SR</option>
+      <option value="ARSAL MT">ARSAL MT</option>
+    </select>
+  </div>
+  <div>
+    <label class="block text-sm font-medium">Branch</label>
+    <select id="filterBranch" class="w-full p-2 border rounded">
+      <option value="">All</option>
+      <option value="ANGADIPPURAM">ANGADIPPURAM</option>
+      <option value="MANJERI">MANJERI</option>
+    </select>
+  </div>
+  <div class="flex items-end">
+    <button onclick="applyFilters()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Filter</button>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
+  <div class="bg-white p-4 rounded shadow text-center">
+    <h2 class="text-xl font-bold">Total Sales</h2>
+    <p id="totalSales" class="text-2xl text-blue-600 font-semibold">0</p>
+  </div>
+  <div class="bg-white p-4 rounded shadow text-center">
+    <h2 class="text-xl font-bold">Total Revenue</h2>
+    <p id="totalRevenue" class="text-2xl text-green-600 font-semibold">₹0</p>
+  </div>
+  <div class="bg-white p-4 rounded shadow text-center">
+    <h2 class="text-xl font-bold">Unique Models Sold</h2>
+    <p id="uniqueModels" class="text-2xl text-purple-600 font-semibold">0</p>
+  </div>
+</div>
+
+<!-- Sales Cards -->
+<div id="salesList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+
+<!-- Download Button -->
+<button onclick="downloadExcel()" class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-green-700">
+  📥 Download Excel
+</button>
+
+  </div>  <script>
+    const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+    const TABLE_ID = "615787";
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+
+    async function fetchSales() {
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Token ${API_KEY}` }
+      });
+      const data = await res.json();
+      return data.results || [];
+    }
+
+    function applyFilters() {
+      fetchSales().then(data => {
+        const start = new Date(document.getElementById('startDate').value);
+        const end = new Date(document.getElementById('endDate').value);
+        const spec = document.getElementById('filterSpec').value;
+        const salesman = document.getElementById('filterSalesman').value;
+        const branch = document.getElementById('filterBranch').value;
+
+        let filtered = data.filter(item => {
+          const date = new Date(item["Purchase Date"]);
+          return (!isNaN(start) ? date >= start : true)
+            && (!isNaN(end) ? date <= end : true)
+            && (!spec || item.Spec === spec)
+            && (!salesman || item.Salesman === salesman)
+            && (!branch || item.Branch === branch);
+        });
+
+        displaySales(filtered);
+      });
+    }
+
+    function displaySales(data) {
+      const container = document.getElementById("salesList");
+      container.innerHTML = "";
+
+      let total = 0, revenue = 0;
+      const modelSet = new Set();
+
+      data.forEach(sale => {
+        total++;
+        revenue += parseFloat(sale.Price || 0);
+        modelSet.add(sale.Spec);
+
+        const card = `
+          <div class="bg-white p-4 rounded shadow">
+            <div class="text-sm text-gray-500">${sale["Purchase Date"]}</div>
+            <div class="text-lg font-bold text-blue-700">${sale.Name}</div>
+            <div class="text-sm">📞 <a href="tel:${sale.Mob}" class="text-green-600">${sale.Mob}</a></div>
+            <div class="mt-1 text-sm">Model: <b>${sale.Spec}</b>, Battery: ${sale.Battery}</div>
+            <div class="text-sm">Price: ₹${sale.Price}, Salesman: ${sale.Salesman}</div>
+            <div class="text-sm">VIN: ${sale.VIN}, Motor No: ${sale["Motor No"]}</div>
+          </div>`;
+
+        container.innerHTML += card;
+      });
+
+      document.getElementById("totalSales").innerText = total;
+      document.getElementById("totalRevenue").innerText = `₹${revenue}`;
+      document.getElementById("uniqueModels").innerText = modelSet.size;
+    }
+
+    function downloadExcel() {
+      alert("📥 Excel export feature will be implemented here.");
+      // You can later integrate SheetJS or server-side download logic
+    }
+
+    applyFilters(); // Initial load
+  </script></body>
+</html>
