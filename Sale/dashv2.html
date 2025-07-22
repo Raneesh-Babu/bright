@@ -1,0 +1,121 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">Sales Report Dashboard</h1><div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+  <input type="date" id="startDate" class="border rounded p-2 w-full" />
+  <input type="date" id="endDate" class="border rounded p-2 w-full" />
+
+  <select id="filterSpec" class="border rounded p-2 w-full">
+    <option value="">All Models</option>
+    <option value="RIDER">RIDER</option>
+    <option value="RIDER PLUS">RIDER PLUS</option>
+    <option value="CUTIE SUPER">CUTIE SUPER</option>
+  </select>
+
+  <select id="filterSalesman" class="border rounded p-2 w-full">
+    <option value="">All Salesmen</option>
+    <option value="RANEESH BABU SR">RANEESH BABU SR</option>
+    <option value="ARSAL MT">ARSAL MT</option>
+  </select>
+
+  <select id="filterBranch" class="border rounded p-2 w-full">
+    <option value="">All Branches</option>
+    <option value="ANGADIPPURAM">ANGADIPPURAM</option>
+    <option value="MANJERI">MANJERI</option>
+  </select>
+
+  <button onclick="filterData()" class="bg-blue-600 text-white rounded p-2 w-full">Filter</button>
+</div>
+
+<div id="stats" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 text-center"></div>
+<div id="salesCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+<button onclick="downloadExcel()" class="fixed bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700">Download Excel</button>
+
+  </div>  <script>
+    const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+    const TABLE_ID = "615787";
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+
+    let allSales = [];
+
+    async function fetchSales() {
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Token ${API_KEY}` }
+      });
+      const data = await res.json();
+      allSales = data.results;
+      filterData();
+    }
+
+    function filterData() {
+      const start = new Date(document.getElementById("startDate").value);
+      const end = new Date(document.getElementById("endDate").value);
+      const spec = document.getElementById("filterSpec").value;
+      const salesman = document.getElementById("filterSalesman").value;
+      const branch = document.getElementById("filterBranch").value;
+
+      let filtered = allSales.filter(sale => {
+        const saleDate = new Date(sale["Purchase Date"]);
+        return (!isNaN(start) ? saleDate >= start : true) &&
+               (!isNaN(end) ? saleDate <= end : true) &&
+               (spec ? sale.Spec === spec : true) &&
+               (salesman ? sale.Salesman === salesman : true) &&
+               (branch ? sale.Branch === branch : true);
+      });
+
+      renderStats(filtered);
+      renderCards(filtered);
+    }
+
+    function renderStats(data) {
+      const total = data.length;
+      const revenue = data.reduce((sum, d) => sum + parseFloat(d.Price || 0), 0);
+      const models = [...new Set(data.map(d => d.Spec))];
+      const branchCounts = {};
+      data.forEach(d => branchCounts[d.Branch] = (branchCounts[d.Branch] || 0) + 1);
+
+      document.getElementById("stats").innerHTML = `
+        <div class="bg-white rounded shadow p-4 font-bold text-lg">Total Sales: ${total}</div>
+        <div class="bg-white rounded shadow p-4 font-bold text-lg">Total Revenue: ₹${revenue}</div>
+        <div class="bg-white rounded shadow p-4 font-bold text-lg">Models Sold: ${models.join(", ")}</div>
+        <div class="bg-white rounded shadow p-4 font-bold text-lg">Branches: ${Object.entries(branchCounts).map(([b, c]) => `${b}: ${c}`).join(", ")}</div>
+      `;
+    }
+
+    function renderCards(data) {
+      const container = document.getElementById("salesCards");
+      container.innerHTML = "";
+      data.forEach(d => {
+        container.innerHTML += `
+          <div class="bg-white shadow-md rounded-lg p-4 space-y-2">
+            <h3 class="font-bold text-lg text-blue-600">${d.Name}</h3>
+            <div><strong>Date:</strong> ${d["Purchase Date"]}</div>
+            <div><strong>Mobile:</strong> <a href="tel:${d.Mob}" class="text-blue-500">📞 ${d.Mob}</a></div>
+            <div><strong>Spec:</strong> ${d.Spec}</div>
+            <div><strong>Price:</strong> ₹${d.Price}</div>
+            <div><strong>Salesman:</strong> ${d.Salesman}</div>
+            <div><strong>VIN:</strong> ${d.VIN}</div>
+            <div><strong>Motor No:</strong> ${d["Motor No"]}</div>
+          </div>
+        `;
+      });
+    }
+
+    function downloadExcel() {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(allSales);
+      XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
+      XLSX.writeFile(wb, "Sales_Report.xlsx");
+    }
+
+    fetchSales();
+  </script></body>
+</html>
