@@ -1,0 +1,130 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sales Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Filter Section -->
+    <div class="bg-white rounded-xl shadow p-6">
+      <h2 class="text-2xl font-bold text-center text-blue-700 mb-4">Sales Dashboard</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <input type="date" id="startDate" class="border p-2 rounded w-full" placeholder="Start Date">
+        <input type="date" id="endDate" class="border p-2 rounded w-full" placeholder="End Date">
+        <select id="filterSpec" class="border p-2 rounded w-full">
+          <option value="">Filter by Model</option>
+          <option value="RIDER">RIDER</option>
+          <option value="RIDER PLUS">RIDER PLUS</option>
+          <option value="CUTIE SUPER">CUTIE SUPER</option>
+        </select>
+        <select id="filterSalesman" class="border p-2 rounded w-full">
+          <option value="">Filter by Salesman</option>
+          <option value="RANEESH BABU SR">RANEESH BABU SR</option>
+          <option value="ARSAL MT">ARSAL MT</option>
+        </select>
+        <select id="filterBranch" class="border p-2 rounded w-full">
+          <option value="">Filter by Branch</option>
+          <option value="ANGADIPPURAM">ANGADIPPURAM</option>
+          <option value="MANJERI">MANJERI</option>
+        </select>
+      </div>
+      <div class="text-center">
+        <button onclick="loadData()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Filter</button>
+      </div><!-- Stats Section -->
+  <div id="stats" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 hidden">
+    <div class="bg-green-100 p-4 rounded shadow text-center">
+      <div class="text-2xl font-bold" id="totalSales">0</div>
+      <div class="text-gray-700">Total Sales</div>
+    </div>
+    <div class="bg-yellow-100 p-4 rounded shadow text-center">
+      <div class="text-2xl font-bold" id="totalRevenue">₹0</div>
+      <div class="text-gray-700">Total Revenue</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sales Cards -->
+<div id="salesCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+<!-- Floating Excel Download -->
+<button onclick="downloadExcel()" class="fixed bottom-6 right-6 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full shadow-lg">Download Excel</button>
+
+  </div>  <script>
+    const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+    const TABLE_ID = "615787";
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+    let fetchedData = [];
+
+    async function loadData() {
+      const start = document.getElementById("startDate").value;
+      const end = document.getElementById("endDate").value;
+      if (!start || !end) return alert("Please select a date range.");
+
+      const spec = document.getElementById("filterSpec").value;
+      const salesman = document.getElementById("filterSalesman").value;
+      const branch = document.getElementById("filterBranch").value;
+
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Token ${API_KEY}` }
+      });
+      const json = await res.json();
+
+      fetchedData = json.results.filter(row => {
+        const date = row["Purchase Date"];
+        return (
+          date >= start &&
+          date <= end &&
+          (!spec || row.Spec === spec) &&
+          (!salesman || row.Salesman === salesman) &&
+          (!branch || row.Branch === branch)
+        );
+      });
+
+      showStats();
+      showCards();
+    }
+
+    function showStats() {
+      const total = fetchedData.length;
+      const revenue = fetchedData.reduce((sum, r) => sum + parseFloat(r.Price || 0), 0);
+
+      document.getElementById("totalSales").textContent = total;
+      document.getElementById("totalRevenue").textContent = `₹${revenue}`;
+      document.getElementById("stats").classList.remove("hidden");
+    }
+
+    function showCards() {
+      const container = document.getElementById("salesCards");
+      container.innerHTML = "";
+
+      fetchedData.forEach(row => {
+        const card = document.createElement("div");
+        card.className = "bg-white p-4 rounded shadow space-y-2";
+        card.innerHTML = `
+          <div><b>📅 Purchase:</b> ${row["Purchase Date"]}</div>
+          <div><b>👤 Name:</b> ${row.Name}</div>
+          <div><b>📞 Mobile:</b> <a href="tel:${row.Mob}" class="text-blue-600 underline">${row.Mob}</a></div>
+          <div><b>💡 Model:</b> ${row.Spec}</div>
+          <div><b>🔋 Battery:</b> ${row.Battery}</div>
+          <div><b>💰 Price:</b> ₹${row.Price}</div>
+          <div><b>🛠️ Motor No:</b> ${row["Motor No"]}</div>
+          <div><b>🚗 VIN:</b> ${row.VIN}</div>
+          <div><b>🏢 Branch:</b> ${row.Branch}</div>
+          <div><b>🧑‍💼 Salesman:</b> ${row.Salesman}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function downloadExcel() {
+      if (fetchedData.length === 0) return alert("No data to export.");
+      const sheet = XLSX.utils.json_to_sheet(fetchedData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, sheet, "Sales Report");
+      XLSX.writeFile(wb, "sales_report.xlsx");
+    }
+  </script></body>
+</html>
