@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sales Form</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-6 space-y-6">
+    <h2 class="text-2xl font-bold text-center text-blue-600">Sales Entry Form</h2>
+    <form id="salesForm" class="space-y-4">
+      <input class="w-full border p-2 rounded" type="text" id="name" placeholder="Name" required>
+      <input class="w-full border p-2 rounded" type="text" id="address" placeholder="Address" required>
+      <input class="w-full border p-2 rounded" type="text" id="mob" placeholder="Mobile" required>
+      <input class="w-full border p-2 rounded" type="text" id="price" placeholder="Price" required>
+      <input class="w-full border p-2 rounded" type="text" id="vin" placeholder="VIN Number" required>
+      <input class="w-full border p-2 rounded" type="text" id="motor" placeholder="Motor Number" required>
+
+      <select id="branch" class="w-full border p-2 rounded" required>
+        <option value="">Select Branch</option>
+        <option value="ANGADIPPURAM">ANGADIPPURAM</option>
+        <option value="MANJERI">MANJERI</option>
+      </select>
+
+      <select id="salesman" class="w-full border p-2 rounded" required>
+        <option value="">Select Salesman</option>
+        <option value="RANEESH BABU SR">RANEESH BABU SR</option>
+        <option value="ARSAL MT">ARSAL MT</option>
+      </select>
+
+      <select id="battery" class="w-full border p-2 rounded" required>
+        <option value="">Select Battery</option>
+        <option value="GRAPHENE 48V28AH">GRAPHENE 48V28AH </option>
+          <option value="GRAPHENE 60V32AH">GRAPHENE 60V32AH</option>
+  <option value="LITHIUM ION 60V32AH">GRAPHENE 60V32AH</option>
+        <option value="LITHIUM ION 72V32AH">LITHIUM ION 72V32AH</option>
+        <option value="LITHIUM PHOSPHATE 72V32AH">LITHIUM PHOSPHATE 72</option>
+      </select>
+
+      <select id="spec" class="w-full border p-2 rounded" required>
+        <option value="">Select Model</option>
+        <option value="RIDER">RIDER</option>
+        <option value="RIDER PLUS">RIDER PLUS</option>
+        <option value="CUTIE SUPER">CUTIE SUPER</option>
+      </select>
+
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Add Sale</button>
+    </form>
+
+    <div id="summary" class="bg-green-100 text-green-700 p-4 rounded hidden"></div>
+  </div>
+
+  <script>
+    const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+    const TABLE_ID = "615787";
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+
+    async function uploadToBaserow(data) {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Token ${API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Upload failed");
+      }
+
+      return response.json();
+    }
+
+    document.getElementById("salesForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = {
+        Name: document.getElementById("name").value.trim(),
+        Address: document.getElementById("address").value.trim(),
+        Mob: document.getElementById("mob").value.trim(),
+        Price: document.getElementById("price").value.trim(),
+        VIN: document.getElementById("vin").value.trim(),
+        "Motor No": document.getElementById("motor").value.trim(),
+        Branch: document.getElementById("branch").value,
+        Salesman: document.getElementById("salesman").value,
+        Battery: document.getElementById("battery").value,
+        Spec: document.getElementById("spec").value,
+        "Purchase Date": new Date().toISOString().split("T")[0]
+      };
+
+      try {
+        const result = await uploadToBaserow(formData);
+        document.getElementById("summary").innerHTML = `
+          <strong>✅ Sale Added Successfully!</strong><br>
+          <div><b>Name:</b> ${formData.Name}</div>
+          <div><b>Branch:</b> ${formData.Branch}</div>
+          <div><b>Salesman:</b> ${formData.Salesman}</div>
+          <div><b>Battery:</b> ${formData.Battery}</div>
+          <div><b>Model:</b> ${formData.Spec}</div>
+        `;
+        document.getElementById("summary").classList.remove("hidden");
+        document.getElementById("salesForm").reset();
+      } catch (error) {
+        alert("❌ " + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
