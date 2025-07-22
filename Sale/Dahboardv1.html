@@ -1,0 +1,135 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head><body class="bg-gray-50 min-h-screen p-4">
+  <div class="max-w-7xl mx-auto">
+    <div class="bg-white rounded-xl shadow p-6 mb-6">
+      <h2 class="text-3xl font-bold text-center text-blue-600 mb-4">Sales Dashboard</h2><div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <input type="date" id="startDate" class="border p-2 rounded col-span-1" placeholder="Start Date">
+    <input type="date" id="endDate" class="border p-2 rounded col-span-1" placeholder="End Date">
+
+    <select id="filterSpec" class="border p-2 rounded col-span-1">
+      <option value="">All Specs</option>
+      <option value="RIDER">RIDER</option>
+      <option value="RIDER PLUS">RIDER PLUS</option>
+      <option value="CUTIE SUPER">CUTIE SUPER</option>
+    </select>
+
+    <select id="filterSalesman" class="border p-2 rounded col-span-1">
+      <option value="">All Salesman</option>
+      <option value="RANEESH BABU SR">RANEESH BABU SR</option>
+      <option value="ARSAL MT">ARSAL MT</option>
+    </select>
+
+    <select id="filterBranch" class="border p-2 rounded col-span-1">
+      <option value="">All Branches</option>
+      <option value="ANGADIPPURAM">ANGADIPPURAM</option>
+      <option value="MANJERI">MANJERI</option>
+    </select>
+  </div>
+
+  <div class="flex justify-end mt-4">
+    <button onclick="applyFilters()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Filter</button>
+  </div>
+</div>
+
+<div id="stats" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
+
+<div id="salesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+  </div><button onclick="downloadExcel()" class="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-2 rounded-full shadow hover:bg-green-700">Download Excel</button>
+
+  <script>
+    const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+    const TABLE_ID = "615787";
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+
+    let allSales = [];
+
+    async function fetchSales() {
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Token ${API_KEY}` }
+      });
+      const data = await res.json();
+      allSales = data.results;
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const start = new Date(document.getElementById("startDate").value);
+      const end = new Date(document.getElementById("endDate").value);
+      const spec = document.getElementById("filterSpec").value;
+      const salesman = document.getElementById("filterSalesman").value;
+      const branch = document.getElementById("filterBranch").value;
+
+      const filtered = allSales.filter(row => {
+        const saleDate = new Date(row["Purchase Date"]);
+        return (!isNaN(start) ? saleDate >= start : true)
+          && (!isNaN(end) ? saleDate <= end : true)
+          && (!spec || row.Spec === spec)
+          && (!salesman || row.Salesman === salesman)
+          && (!branch || row.Branch === branch);
+      });
+
+      renderCards(filtered);
+      renderStats(filtered);
+    }
+
+    function renderCards(data) {
+      const container = document.getElementById("salesContainer");
+      container.innerHTML = "";
+      data.forEach(row => {
+        const card = document.createElement("div");
+        card.className = "bg-white shadow rounded-lg p-4 space-y-2 border-l-4 border-blue-600";
+        card.innerHTML = `
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-bold text-blue-700">${row.Name}</h3>
+            <a href="tel:${row.Mob}" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Call</a>
+          </div>
+          <div class="text-sm text-gray-600">${row.Address}</div>
+          <div class="text-sm"><strong>📅 Date:</strong> ${row["Purchase Date"]}</div>
+          <div class="text-sm"><strong>📞 Mobile:</strong> ${row.Mob}</div>
+          <div class="text-sm"><strong>🚲 Model:</strong> ${row.Spec}</div>
+          <div class="text-sm"><strong>🔋 Battery:</strong> ${row.Battery}</div>
+          <div class="text-sm"><strong>💸 Price:</strong> ₹${row.Price}</div>
+          <div class="text-sm"><strong>🧑‍💼 Salesman:</strong> ${row.Salesman}</div>
+          <div class="text-sm"><strong>🔧 VIN:</strong> ${row.VIN}</div>
+          <div class="text-sm"><strong>⚙️ Motor No:</strong> ${row["Motor No"]}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderStats(data) {
+      const total = data.length;
+      const totalPrice = data.reduce((sum, item) => sum + parseFloat(item.Price || 0), 0);
+      const models = [...new Set(data.map(item => item.Spec))];
+
+      document.getElementById("stats").innerHTML = `
+        <div class="bg-white p-4 rounded shadow text-center">
+          <div class="text-sm text-gray-500">Total Sales</div>
+          <div class="text-2xl font-bold text-blue-700">${total}</div>
+        </div>
+        <div class="bg-white p-4 rounded shadow text-center">
+          <div class="text-sm text-gray-500">Total Revenue</div>
+          <div class="text-2xl font-bold text-green-700">₹${totalPrice.toLocaleString()}</div>
+        </div>
+        <div class="bg-white p-4 rounded shadow text-center">
+          <div class="text-sm text-gray-500">Unique Models</div>
+          <div class="text-2xl font-bold text-purple-700">${models.length}</div>
+        </div>
+      `;
+    }
+
+    function downloadExcel() {
+      const worksheet = XLSX.utils.json_to_sheet(allSales);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+      XLSX.writeFile(workbook, "Sales_Report.xlsx");
+    }
+
+    fetchSales();
+  </script></body></html>
