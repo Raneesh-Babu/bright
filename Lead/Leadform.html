@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lead Form</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-100 to-white min-h-screen flex items-center justify-center p-6">
+
+  <div class="w-full max-w-xl bg-white shadow-2xl rounded-2xl p-8">
+    <h2 class="text-3xl font-bold text-center text-blue-700 mb-6">Lead Entry Form</h2>
+
+    <form id="leadForm" class="space-y-5">
+      <div>
+        <label class="font-semibold block mb-1">Name</label>
+        <input name="name" type="text" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div>
+        <label class="font-semibold block mb-1">Mobile</label>
+        <input name="mob" type="number" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div>
+        <label class="font-semibold block mb-1">Remark</label>
+        <textarea name="remark" rows="3" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+      </div>
+
+      <div>
+        <label class="font-semibold block mb-1">Branch</label>
+        <select name="branch" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          <option value="">Select Branch</option>
+          <option value="ANGADIPURAM">ANGADIPURAM</option>
+          <option value="MANJERI">MANJERI</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="font-semibold block mb-1">Date</label>
+        <input name="date" type="date" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div>
+        <label class="font-semibold block mb-1">Last Follow-up Date</label>
+        <input name="followup" type="date" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div>
+        <label class="font-semibold block mb-1">Status</label>
+        <select name="status" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          <option value="">Select Status</option>
+          <option value="Interested">Interested</option>
+          <option value="Not Interested">Not Interested</option>
+          <option value="Sale done">Sale done</option>
+        </select>
+      </div>
+
+      <div class="text-center pt-4">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold">
+          Submit
+        </button>
+      </div>
+    </form>
+
+    <div id="successMsg" class="hidden text-green-600 text-center mt-4 font-medium">Lead submitted successfully!</div>
+  </div>
+
+  <script>
+    const form = document.getElementById("leadForm");
+    const successMsg = document.getElementById("successMsg");
+
+    const BASEROW_API_TOKEN = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+    const TABLE_ID = "619130";
+
+    // Replace these with your Baserow field IDs (get from API or GUI)
+    const FIELD_IDS = {
+      name: "field_5033844",
+      mob: "field_5033845",
+      remark: "field_5033846",
+      branch: "field_5033847",
+      date: "field_5033849",
+      followup: "field_5033851",
+      status: "field_5033852"
+    };
+
+    async function createRow() {
+      const res = await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Token ${BASEROW_API_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
+      });
+      const data = await res.json();
+      return data.id;
+    }
+
+    async function updateField(rowId, fieldName, value) {
+      const payload = {};
+      payload[FIELD_IDS[fieldName]] = value;
+
+      await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/${rowId}/?user_field_names=false`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Token ${BASEROW_API_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const rowId = await createRow();
+
+        // Upload each field one-by-one
+        for (const key in data) {
+          if (data[key]) {
+            await updateField(rowId, key, data[key]);
+          }
+        }
+
+        form.reset();
+        successMsg.classList.remove("hidden");
+        setTimeout(() => successMsg.classList.add("hidden"), 4000);
+      } catch (err) {
+        alert("Error uploading to Baserow. Check console for details.");
+        console.error(err);
+      }
+    });
+  </script>
+
+</body>
+</html>
