@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Performance Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2c3e50;
+      --success-color: #28a745;
+      --danger-color: #dc3545;
+      --warning-color: #ffc107;
+      --info-color: #17a2b8;
+      --light-bg: #f8f9fa;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--light-bg);
+    }
+    
+    .dashboard-header {
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      border-left: 4px solid var(--primary-color);
+      transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .recent-followup {
+      border-left: 3px solid var(--primary-color);
+      padding-left: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .badge-status {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .conversion-rate {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--success-color);
+    }
+    
+    .top-performer {
+      background-color: rgba(40, 167, 69, 0.1);
+      border-left-color: var(--success-color);
+    }
+    
+    @media (max-width: 768px) {
+      .stat-value {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-header text-center">
+    <h1><i class="fas fa-chart-line me-2"></i>Sales Performance Dashboard</h1>
+  </div>
+
+  <div class="container">
+    <div class="row">
+      <!-- Date Range Filter -->
+      <div class="col-12 mb-4">
+        <div class="card">
+          <div class="card-body">
+            <div class="row g-3 align-items-center">
+              <div class="col-md-3">
+                <label for="statsFromDate" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="statsFromDate">
+              </div>
+              <div class="col-md-3">
+                <label for="statsToDate" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="statsToDate">
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100" onclick="loadStatistics()">
+                  <i class="fas fa-filter me-2"></i>Apply Filters
+                </button>
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                  <i class="fas fa-sync-alt me-2"></i>Reset
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Key Metrics Row -->
+      <div class="col-md-4">
+        <div class="stat-card">
+          <h5><i class="fas fa-check-circle me-2 text-success"></i>Converted to Sales</h5>
+          <div class="stat-value text-success" id="convertedCount">0</div>
+          <div class="text-muted">Leads converted to customers</div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="stat-card">
+          <h5><i class="fas fa-times-circle me-2 text-danger"></i>Not Interested</h5>
+          <div class="stat-value text-danger" id="notInterestedCount">0</div>
+          <div class="text-muted">Leads marked as not interested</div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="stat-card">
+          <h5><i class="fas fa-percentage me-2 text-primary"></i>Conversion Rate</h5>
+          <div class="conversion-rate" id="conversionRate">0%</div>
+          <div class="text-muted">Ratio of leads to sales</div>
+        </div>
+      </div>
+      
+      <!-- Charts Row -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>Lead Status Distribution</h5>
+            <div class="chart-container">
+              <canvas id="statusChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>Sales by Salesperson</h5>
+            <div class="chart-container">
+              <canvas id="salespersonChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Top Performers and Recent Followups -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-trophy me-2 text-warning"></i>Top Performers</h5>
+            <div id="topPerformers">
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-clock me-2 text-info"></i>Recent Followups</h5>
+            <div id="recentFollowups">
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Lead Source Performance -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-funnel-dollar me-2"></i>Lead Source Performance</h5>
+            <div class="chart-container">
+              <canvas id="sourceChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    const BASEROW_API_TOKEN = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+    const TABLE_ID = "619130";
+    const FIELD_IDS = {
+      name: "field_5033844",
+      mob: "field_5033845",
+      remark: "field_5033846",
+      branch: "field_5033847",
+      date: "field_5033849",
+      followup: "field_5033851",
+      status: "field_5033852",
+      salesman: "field_12345",
+      source: "field_5033853" // Assuming there's a lead source field
+    };
+
+    // Chart instances
+    let statusChart, salespersonChart, sourceChart;
+    let allLeads = [];
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set default date range (last 30 days)
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      document.getElementById('statsFromDate').valueAsDate = thirtyDaysAgo;
+      document.getElementById('statsToDate').valueAsDate = today;
+      
+      // Load initial data
+      loadStatistics();
+    });
+
+    // Load statistics from Baserow
+    async function loadStatistics() {
+      const fromDate = document.getElementById('statsFromDate').value;
+      const toDate = document.getElementById('statsToDate').value;
+      
+      try {
+        showLoadingState();
+        
+        // Fetch data from Baserow
+        const response = await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=false`, {
+          headers: { Authorization: `Token ${BASEROW_API_TOKEN}` }
+        });
+        
+        if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+        
+        const data = await response.json();
+        allLeads = data.results;
+        
+        // Filter leads by date range
+        const filteredLeads = allLeads.filter(lead => {
+          const leadDate = new Date(lead[FIELD_IDS.date]);
+          const from = new Date(fromDate);
+          const to = new Date(toDate + "T23:59:59");
+          return leadDate >= from && leadDate <= to;
+        });
+        
+        // Update statistics
+        updateStatistics(filteredLeads);
+        
+      } catch (error) {
+        console.error('Error loading statistics:', error);
+        alert('Failed to load data. Please check console for details.');
+      }
+    }
+
+    // Update all statistics and charts
+    function updateStatistics(leads) {
+      // Calculate basic metrics
+      const converted = leads.filter(lead => lead[FIELD_IDS.status] === "Sales Done").length;
+      const notInterested = leads.filter(lead => lead[FIELD_IDS.status] === "Not Interested").length;
+      const totalLeads = leads.length;
+      const conversionRate = totalLeads > 0 ? Math.round((converted / totalLeads) * 100) : 0;
+      
+      // Update metric cards
+      document.getElementById('convertedCount').textContent = converted;
+      document.getElementById('notInterestedCount').textContent = notInterested;
+      document.getElementById('conversionRate').textContent = `${conversionRate}%`;
+      
+      // Update charts
+      updateStatusChart(leads);
+      updateSalespersonChart(leads);
+      updateSourceChart(leads);
+      
+      // Update top performers
+      updateTopPerformers(leads);
+      
+      // Update recent followups
+      updateRecentFollowups(leads);
+    }
+
+    // Update status distribution chart
+    function updateStatusChart(leads) {
+      const statusCounts = {
+        'Sales Done': 0,
+        'Interested': 0,
+        'Not Interested': 0,
+        'Followup Pending': 0,
+        'New Lead': 0
+      };
+      
+      leads.forEach(lead => {
+        const status = lead[FIELD_IDS.status] || 'Unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+      
+      const ctx = document.getElementById('statusChart').getContext('2d');
+      
+      // Destroy previous chart if exists
+      if (statusChart) statusChart.destroy();
+      
+      statusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(statusCounts),
+          datasets: [{
+            data: Object.values(statusCounts),
+            backgroundColor: [
+              '#28a745', // Sales Done - green
+              '#17a2b8', // Interested - teal
+              '#dc3545', // Not Interested - red
+              '#ffc107', // Followup Pending - yellow
+              '#6c757d'  // New Lead - gray
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right'
+            }
+          }
+        }
+      });
+    }
+
+    // Update sales by salesperson chart
+    function updateSalespersonChart(leads) {
+      const salesByPerson = {};
+      const salesLeads = leads.filter(lead => lead[FIELD_IDS.status] === "Sales Done");
+      
+      salesLeads.forEach(lead => {
+        const salesperson = lead[FIELD_IDS.salesman] || 'Unknown';
+        salesByPerson[salesperson] = (salesByPerson[salesperson] || 0) + 1;
+      });
+      
+      // Sort by sales count
+      const sortedSales = Object.entries(salesByPerson)
+        .sort((a, b) => b[1] - a[1]);
+      
+      const ctx = document.getElementById('salespersonChart').getContext('2d');
+      
+      if (salespersonChart) salespersonChart.destroy();
+      
+      salespersonChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sortedSales.map(item => item[0]),
+          datasets: [{
+            label: 'Sales Count',
+            data: sortedSales.map(item => item[1]),
+            backgroundColor: '#3498db',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Update lead source performance chart
+    function updateSourceChart(leads) {
+      const sourcePerformance = {};
+      
+      leads.forEach(lead => {
+        const source = lead[FIELD_IDS.source] || 'Unknown';
+        if (!sourcePerformance[source]) {
+          sourcePerformance[source] = {
+            total: 0,
+            converted: 0
+          };
+        }
+        sourcePerformance[source].total++;
+        if (lead[FIELD_IDS.status] === "Sales Done") {
+          sourcePerformance[source].converted++;
+        }
+      });
+      
+      // Calculate conversion rates
+      const sources = Object.keys(sourcePerformance);
+      const conversionRates = sources.map(source => {
+        const rate = sourcePerformance[source].total > 0 
+          ? (sourcePerformance[source].converted / sourcePerformance[source].total) * 100 
+          : 0;
+        return Math.round(rate);
+      });
+      
+      const ctx = document.getElementById('sourceChart').getContext('2d');
+      
+      if (sourceChart) sourceChart.destroy();
+      
+      sourceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sources,
+          datasets: [
+            {
+              label: 'Total Leads',
+              data: sources.map(source => sourcePerformance[source].total),
+              backgroundColor: '#6c757d',
+              borderWidth: 1
+            },
+            {
+              label: 'Conversion Rate (%)',
+              data: conversionRates,
+              backgroundColor: '#28a745',
+              borderWidth: 1,
+              type: 'line',
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Number of Leads'
+              }
+            },
+            y1: {
+              position: 'right',
+              beginAtZero: true,
+              max: 100,
+              title: {
+                display: true,
+                text: 'Conversion Rate %'
+              },
+              grid: {
+                drawOnChartArea: false
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Update top performers list
+    function updateTopPerformers(leads) {
+      const salesByPerson = {};
+      const salesLeads = leads.filter(lead => lead[FIELD_IDS.status] === "Sales Done");
+      
+      salesLeads.forEach(lead => {
+        const salesperson = lead[FIELD_IDS.salesman] || 'Unknown';
+        salesByPerson[salesperson] = (salesByPerson[salesperson] || 0) + 1;
+      });
+      
+      // Sort by sales count and take top 5
+      const topPerformers = Object.entries(salesByPerson)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+      
+      let html = '';
+      if (topPerformers.length === 0) {
+        html = '<div class="alert alert-info">No sales data available for the selected period</div>';
+      } else {
+        topPerformers.forEach(([person, count], index) => {
+          const medal = index < 3 ? ['🥇', '🥈', '🥉'][index] : '🏅';
+          html += `
+            <div class="d-flex justify-content-between align-items-center mb-3 p-2 ${index === 0 ? 'top-performer' : ''}">
+              <div>
+                <span class="me-2">${medal}</span>
+                <strong>${person}</strong>
+              </div>
+              <span class="badge bg-success">${count} sales</span>
+            </div>
+          `;
+        });
+      }
+      
+      document.getElementById('topPerformers').innerHTML = html;
+    }
+
+    // Update recent followups list
+    function updateRecentFollowups(leads) {
+      // Sort by followup date (newest first)
+      const recentFollowups = [...leads]
+        .filter(lead => lead[FIELD_IDS.followup])
+        .sort((a, b) => new Date(b[FIELD_IDS.followup]) - new Date(a[FIELD_IDS.followup]))
+        .slice(0, 5);
+      
+      let html = '';
+      if (recentFollowups.length === 0) {
+        html = '<div class="alert alert-info">No recent followups found</div>';
+      } else {
+        recentFollowups.forEach(lead => {
+          const statusClass = lead[FIELD_IDS.status] ? `status-${lead[FIELD_IDS.status].replace(' ', '-')}` : '';
+          html += `
+            <div class="recent-followup">
+              <div class="d-flex justify-content-between">
+                <strong>${lead[FIELD_IDS.name] || 'No Name'}</strong>
+                <span class="badge-status ${statusClass}">
+                  ${lead[FIELD_IDS.status] || 'No Status'}
+                </span>
+              </div>
+              <div class="text-muted small">
+                <i class="far fa-clock me-1"></i>
+                ${formatDate(lead[FIELD_IDS.followup])}
+              </div>
+              <div class="small">
+                ${lead[FIELD_IDS.remark] || 'No remarks'}
+              </div>
+            </div>
+          `;
+        });
+      }
+      
+      document.getElementById('recentFollowups').innerHTML = html;
+    }
+
+    // Helper function to format date
+    function formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleString("en-US", { 
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    }
+
+    // Show loading state
+    function showLoadingState() {
+      document.getElementById('topPerformers').innerHTML = `
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('recentFollowups').innerHTML = `
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Reset filters to default
+    function resetFilters() {
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      document.getElementById('statsFromDate').valueAsDate = thirtyDaysAgo;
+      document.getElementById('statsToDate').valueAsDate = today;
+      
+      loadStatistics();
+    }
+  </script>
+</body>
+</html>
