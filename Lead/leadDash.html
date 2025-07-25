@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lead Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2c3e50;
+      --success-color: #2ecc71;
+      --danger-color: #e74c3c;
+      --warning-color: #f39c12;
+      --light-bg: #f8f9fa;
+      --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--light-bg);
+      color: #333;
+    }
+    
+    .dashboard-header {
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+      border-radius: 0 0 10px 10px;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .filter-container {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 2rem;
+    }
+    
+    .lead-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 1.5rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border-left: 4px solid var(--primary-color);
+    }
+    
+    .lead-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .whatsapp-btn {
+      background-color: #25D366;
+      color: white;
+    }
+    
+    .call-btn {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .status-badge {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .status-Interested {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .status-Not-Interested {
+      background-color: var(--danger-color);
+      color: white;
+    }
+    
+    .status-Sales-Done {
+      background-color: var(--success-color);
+      color: white;
+    }
+    
+    .lead-info-item {
+      margin-bottom: 0.5rem;
+    }
+    
+    .lead-info-label {
+      font-weight: 600;
+      color: var(--secondary-color);
+    }
+    
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+    
+    .status-select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ced4da;
+      background-color: white;
+    }
+    
+    @media (max-width: 768px) {
+      .lead-card {
+        flex-direction: column;
+      }
+      
+      .action-btns {
+        margin-top: 1rem;
+        justify-content: flex-start !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-header text-center">
+    <h1><i class="fas fa-users me-2"></i>Lead Dashboard</h1>
+  </div>
+
+  <div class="container">
+    <div class="filter-container">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="fromDate" class="form-label">From Date</label>
+          <input type="date" class="form-control" id="fromDate">
+        </div>
+        <div class="col-md-3">
+          <label for="toDate" class="form-label">To Date</label>
+          <input type="date" class="form-control" id="toDate">
+        </div>
+        <div class="col-md-3">
+          <label for="statusFilter" class="form-label">Status</label>
+          <select class="form-select" id="statusFilter">
+            <option value="">All Statuses</option>
+            <option value="Interested">Interested</option>
+            <option value="Not Interested">Not Interested</option>
+            <option value="Sales Done">Sales Done</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-primary w-100" onclick="loadLeads()">
+            <i class="fas fa-filter me-2"></i>Filter
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="leadContainer" class="row"></div>
+    
+    <div class="toast-container">
+      <div class="toast align-items-center text-white bg-success" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+        <div class="d-flex">
+          <div class="toast-body" id="toastMessage">
+            Action completed successfully!
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const BASEROW_API_TOKEN = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+    const TABLE_ID = "619130";
+    const FIELD_IDS = {
+      name: "field_5033844",
+      mob: "field_5033845",
+      remark: "field_5033846",
+      branch: "field_5033847",
+      date: "field_5033849",
+      followup: "field_5033851",
+      status: "field_5033852",
+      salesman: "field_12345"
+    };
+
+    const SALESMEN = ["Rahul", "Meera", "Adil", "Neha"];
+    let successToast = null;
+    let allLeads = []; // Store all leads globally
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set default dates
+      const today = new Date();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      
+      document.getElementById('fromDate').valueAsDate = sevenDaysAgo;
+      document.getElementById('toDate').valueAsDate = today;
+      
+      // Initialize toast
+      successToast = new bootstrap.Toast(document.getElementById('successToast'));
+      
+      // Load initial data
+      loadLeads();
+    });
+
+    function format12Hour(dateString) {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleString("en-US", { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    }
+
+    async function loadLeads() {
+      const from = document.getElementById("fromDate").value;
+      const to = document.getElementById("toDate").value;
+      const status = document.getElementById("statusFilter").value;
+
+      try {
+        // Show loading state
+        document.getElementById("leadContainer").innerHTML = `
+          <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading leads...</p>
+          </div>
+        `;
+
+        const response = await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=false`, {
+          headers: { Authorization: `Token ${BASEROW_API_TOKEN}` }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        
+        const data = await response.json();
+        allLeads = data.results; // Store all leads
+
+        const filtered = allLeads.filter(row => {
+          const rowDate = new Date(row[FIELD_IDS.date]);
+          if (from && rowDate < new Date(from)) return false;
+          if (to && rowDate > new Date(to + "T23:59:59")) return false;
+          if (status && row[FIELD_IDS.status] !== status) return false;
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          document.getElementById("leadContainer").innerHTML = `
+            <div class="col-12 text-center py-5">
+              <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
+              <h4>No leads found</h4>
+              <p class="text-muted">Try adjusting your filters</p>
+            </div>
+          `;
+          return;
+        }
+
+        document.getElementById("leadContainer").innerHTML = filtered.map(row => renderLeadCard(row)).join("");
+      } catch (error) {
+        console.error('Error loading leads:', error);
+        document.getElementById("leadContainer").innerHTML = `
+          <div class="col-12 alert alert-danger">
+            <h4><i class="fas fa-exclamation-triangle me-2"></i>Error loading leads</h4>
+            <p>${error.message}</p>
+            <button class="btn btn-sm btn-outline-danger" onclick="loadLeads()">
+              <i class="fas fa-sync-alt me-1"></i>Retry
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    function renderLeadCard(row) {
+      const statusClass = row[FIELD_IDS.status] ? `status-${row[FIELD_IDS.status].replace(' ', '-')}` : '';
+      
+      return `
+        <div class="col-md-6">
+          <div class="lead-card p-4">
+            <div class="d-flex justify-content-between">
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <h5 class="mb-0">${row[FIELD_IDS.name] || 'No Name'}</h5>
+                  <span class="status-badge ${statusClass}">
+                    ${row[FIELD_IDS.status] || 'No Status'}
+                  </span>
+                </div>
+                
+                <div class="lead-info-item">
+                  <span class="lead-info-label"><i class="fas fa-mobile-alt me-2"></i>Mobile:</span>
+                  ${row[FIELD_IDS.mob] || 'N/A'}
+                </div>
+                
+                <div class="lead-info-item">
+                  <span class="lead-info-label"><i class="fas fa-building me-2"></i>Branch:</span>
+                  ${row[FIELD_IDS.branch] || 'N/A'}
+                </div>
+                
+                <div class="lead-info-item">
+                  <span class="lead-info-label"><i class="fas fa-comment me-2"></i>Remark:</span>
+                  ${row[FIELD_IDS.remark] || 'No remarks'}
+                </div>
+                
+                <div class="lead-info-item">
+                  <span class="lead-info-label"><i class="fas fa-calendar-check me-2"></i>Follow Up:</span>
+                  ${format12Hour(row[FIELD_IDS.followup])}
+                </div>
+                
+                <div class="lead-info-item mb-3">
+                  <span class="lead-info-label"><i class="fas fa-calendar-plus me-2"></i>Created:</span>
+                  ${format12Hour(row[FIELD_IDS.date])}
+                </div>
+                
+                <div class="mb-2">
+                  <label class="form-label lead-info-label"><i class="fas fa-tag me-2"></i>Status:</label>
+                  <select class="status-select form-select" onchange="updateStatus(${row.id}, this.value)">
+                    <option value="Interested" ${row[FIELD_IDS.status] === "Interested" ? "selected" : ""}>Interested</option>
+                    <option value="Not Interested" ${row[FIELD_IDS.status] === "Not Interested" ? "selected" : ""}>Not Interested</option>
+                    <option value="Sales Done" ${row[FIELD_IDS.status] === "Sales Done" ? "selected" : ""}>Sales Done</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="d-flex flex-column action-btns ms-3">
+                <div class="action-btn whatsapp-btn mb-2" onclick="initiateWhatsApp(${row.id})">
+                  <i class="fab fa-whatsapp"></i>
+                </div>
+                <div class="action-btn call-btn" onclick="initiateCall(${row.id})">
+                  <i class="fas fa-phone"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function updateFollowup(id) {
+      const now = new Date().toISOString();
+      await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/${id}/`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Token ${BASEROW_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ [FIELD_IDS.followup]: now })
+      });
+    }
+
+    function initiateCall(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead || !lead[FIELD_IDS.mob]) {
+        showToast("No phone number available for this lead", "danger");
+        return;
+      }
+      
+      const phoneNumber = lead[FIELD_IDS.mob].replace(/\D/g, ''); // Clean the number
+      
+      // Update followup date first
+      updateFollowup(leadId).then(() => {
+        showToast("Call initiated and followup updated", "success");
+        loadLeads();
+        
+        // Open tel: link - will work on mobile devices
+        window.location.href = `tel:${phoneNumber}`;
+        
+        // For desktop, we can show a message
+        if (!/Mobi|Android/i.test(navigator.userAgent)) {
+          alert(`Call would be initiated to: ${phoneNumber}\n(On mobile devices this would directly dial the number)`);
+        }
+      }).catch(error => {
+        console.error("Error updating followup:", error);
+        showToast("Error updating followup", "danger");
+      });
+    }
+
+    function initiateWhatsApp(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead || !lead[FIELD_IDS.mob]) {
+        showToast("No phone number available for this lead", "danger");
+        return;
+      }
+      
+      const phoneNumber = lead[FIELD_IDS.mob].replace(/\D/g, ''); // Clean the number
+      const whatsappUrl = `https://wa.me/${phoneNumber}`;
+      
+      // Update followup date first
+      updateFollowup(leadId).then(() => {
+        showToast("WhatsApp initiated and followup updated", "success");
+        loadLeads();
+        
+        // Open WhatsApp in a new tab
+        window.open(whatsappUrl, '_blank');
+      }).catch(error => {
+        console.error("Error updating followup:", error);
+        showToast("Error updating followup", "danger");
+      });
+    }
+
+    function showToast(message, type = "success") {
+      const toast = document.getElementById('successToast');
+      const toastMessage = document.getElementById('toastMessage');
+      
+      // Change toast color based on type
+      if (type === "danger") {
+        toast.classList.remove('bg-success');
+        toast.classList.add('bg-danger');
+      } else {
+        toast.classList.remove('bg-danger');
+        toast.classList.add('bg-success');
+      }
+      
+      toastMessage.innerHTML = message;
+      successToast.show();
+    }
+
+    async function updateStatus(id, newStatus) {
+      const remark = prompt("Please enter a remark for this status update:");
+      if (remark === null) return; // User cancelled
+      if (!remark.trim()) {
+        showToast("A remark is required for status updates", "danger");
+        return;
+      }
+
+      let data = {
+        [FIELD_IDS.status]: newStatus,
+        [FIELD_IDS.remark]: remark,
+        [FIELD_IDS.followup]: new Date().toISOString()
+      };
+
+      if (newStatus === "Sales Done") {
+        const salesman = prompt(`Please enter the salesman name (Options: ${SALESMEN.join(', ')})`);
+        if (salesman === null) return; // User cancelled
+        if (!SALESMEN.includes(salesman)) {
+          showToast("Please enter a valid salesman name", "danger");
+          return;
+        }
+        data[FIELD_IDS.salesman] = salesman;
+      }
+
+      try {
+        await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/${id}/`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Token ${BASEROW_API_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+
+        showToast(`Status updated to ${newStatus}!`);
+        loadLeads();
+
+        if (newStatus === "Sales Done") {
+          setTimeout(() => {
+            window.location.href = "https://your-sales-form-link.com";
+          }, 1500);
+        }
+      } catch (error) {
+        console.error('Error updating status:', error);
+        showToast("Failed to update status!", "danger");
+      }
+    }
+  </script>
+</body>
+</html>
