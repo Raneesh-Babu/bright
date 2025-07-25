@@ -402,7 +402,7 @@
       }
       
       const phoneNumber = lead[FIELD_IDS.mob].replace(/\D/g, ''); // Clean the number
-      const whatsappUrl = `https://wa.me/${phoneNumber}`;
+      const whatsappUrl = `https://wa.me/+91${phoneNumber}`;
       
       // Update followup date first
       updateFollowup(leadId).then(() => {
