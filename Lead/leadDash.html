@@ -13,6 +13,9 @@
       --success-color: #2ecc71;
       --danger-color: #e74c3c;
       --warning-color: #f39c12;
+      --newlead-color: #6f42c1;
+      --followupdone-color: #20c997;
+      --followuppending-color: #fd7e14;
       --light-bg: #f8f9fa;
       --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
@@ -83,7 +86,19 @@
       font-weight: 600;
       text-transform: uppercase;
     }
-    
+
+    .status-New-Lead {
+      background-color: var(--newlead-color);
+      color: white;
+    }
+    .status-Followup-Pending {
+      background-color: var(--followuppending-color);
+      color: white;
+    }
+    .status-Followup-Done {
+      background-color: var(--followupdone-color);
+      color: white;
+    }
     .status-Interested {
       background-color: var(--primary-color);
       color: white;
@@ -155,6 +170,9 @@
           <label for="statusFilter" class="form-label">Status</label>
           <select class="form-select" id="statusFilter">
             <option value="">All Statuses</option>
+            <option value="New Lead">New Lead</option>
+            <option value="Followup Pending">Followup Pending</option>
+            <option value="Followup done">Followup Done</option>
             <option value="Interested">Interested</option>
             <option value="Not Interested">Not Interested</option>
             <option value="Sales Done">Sales Done</option>
