@@ -352,6 +352,8 @@
                 <div class="mb-2">
                   <label class="form-label lead-info-label"><i class="fas fa-tag me-2"></i>Status:</label>
                   <select class="status-select form-select" onchange="updateStatus(${row.id}, this.value)">
+                    <option value="Followup Done" ${row[FIELD_IDS.status] === "Followup Done" ? "selected" : ""}>Followup Done</option>
+                    <option value="Followup Pending" ${row[FIELD_IDS.status] === "Followup Pending" ? "selected" : ""}>Followup Pending</option>
                     <option value="Interested" ${row[FIELD_IDS.status] === "Interested" ? "selected" : ""}>Interested</option>
                     <option value="Not Interested" ${row[FIELD_IDS.status] === "Not Interested" ? "selected" : ""}>Not Interested</option>
                     <option value="Sales Done" ${row[FIELD_IDS.status] === "Sales Done" ? "selected" : ""}>Sales Done</option>
