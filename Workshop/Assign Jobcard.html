@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Maintenance System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            padding: 2rem;
+        }
+        
+        h1, h2, h3, h4, h5 {
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: var(--primary-color);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--light-color);
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            background-color: white;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .card-text {
+            margin-bottom: 0.5rem;
+        }
+        
+        .card-text strong {
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+        
+        .btn {
+            border-radius: var(--border-radius);
+            padding: 0.5rem 1.25rem;
+            font-weight: 500;
+            transition: var(--transition);
+            border: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #1a252f;
+            transform: translateY(-2px);
+        }
+        
+        .form-select {
+            border-radius: var(--border-radius);
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            transition: var(--transition);
+        }
+        
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .alert {
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin: 2rem 0;
+        }
+        
+        .spinner {
+            width: 3rem;
+            height: 3rem;
+            color: var(--primary-color);
+        }
+        
+        .error-message {
+            color: var(--danger-color);
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: #f8d7da;
+            border-radius: var(--border-radius);
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        #jobDetailView .card {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        #jobDetailView .card-body p {
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        #jobDetailView .card-body p:last-child {
+            border-bottom: none;
+        }
+        
+        .technician-list {
+            display: none;
+            margin-top: 1rem;
+            background-color: white;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+            font-weight: 500;
+        }
+        
+        .back-button:hover {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.35rem 0.65rem;
+            border-radius: 50rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-scheduled {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-open {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="text-center mb-4">Vehicle Maintenance System</h1>
+        
+        <div id="scheduledJobsView">
+            <h2 class="mb-3">Scheduled Services</h2>
+            <div id="loadingIndicator" class="loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Loading scheduled services...</p>
+            </div>
+            <div id="noJobsMessage" class="alert alert-info hidden">
+                No scheduled services found.
+            </div>
+            <div id="errorMessage" class="alert alert-danger hidden">
+                Failed to load scheduled services. Please try again.
+            </div>
+            <div id="jobsContainer" class="row"></div>
+        </div>
+
+        <div id="jobDetailView" class="hidden">
+            <button id="backButton" class="btn btn-secondary mb-3">← Back</button>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Service Details</h5>
+                    <p><strong>VIN:</strong> <span id="detailVin"></span></p>
+                    <p><strong>Service Type:</strong> <span id="detailServiceType"></span></p>
+                    <p><strong>Service Date:</strong> <span id="detailServiceDate"></span></p>
+                    <p><strong>Status:</strong> <span id="detailStatus"></span></p>
+                    <p><strong>Remarks:</strong> <span id="detailRemarks"></span></p>
+                    <p><strong>Service Notes:</strong> <span id="detailServiceNotes"></span></p>
+                    
+                    <div class="mb-3">
+                        <label for="technicianSelect" class="form-label">Select Technician:</label>
+                        <select id="technicianSelect" class="form-select">
+                            <option value="">Select a technician</option>
+                            <option value="John Smith">John Smith</option>
+                            <option value="Sarah Johnson">Sarah Johnson</option>
+                            <option value="Michael Brown">Michael Brown</option>
+                            <option value="Emily Davis">Emily Davis</option>
+                            <option value="Robert Wilson">Robert Wilson</option>
+                        </select>
+                    </div>
+                    
+                    <button id="openJobCardBtn" class="btn btn-primary" disabled>Open Job Card</button>
+                    <div id="updateError" class="error-message hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuration
+        const config = {
+            vehicleTableId: 622473,
+            maintenanceTableId: 622532,
+            apiKey: 'FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f',
+            apiUrl: 'https://api.baserow.io/api/database/rows/table/'
+        };
+
+        // DOM Elements
+        const jobsContainer = document.getElementById('jobsContainer');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const noJobsMessage = document.getElementById('noJobsMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const scheduledJobsView = document.getElementById('scheduledJobsView');
+        const jobDetailView = document.getElementById('jobDetailView');
+        const backButton = document.getElementById('backButton');
+        const openJobCardBtn = document.getElementById('openJobCardBtn');
+        const technicianSelect = document.getElementById('technicianSelect');
+        const updateError = document.getElementById('updateError');
+
+        // State
+        let scheduledJobs = [];
+        let currentJobId = null;
+        let nextJobCardNumber = 'BSJ001';
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchScheduledJobs();
+            setupEventListeners();
+        });
+
+        // Event Listeners
+        function setupEventListeners() {
+            backButton.addEventListener('click', () => {
+                jobDetailView.classList.add('hidden');
+                scheduledJobsView.classList.remove('hidden');
+            });
+
+            technicianSelect.addEventListener('change', (e) => {
+                openJobCardBtn.disabled = !e.target.value;
+            });
+
+            openJobCardBtn.addEventListener('click', async () => {
+                if (!currentJobId || !technicianSelect.value) return;
+                
+                try {
+                    openJobCardBtn.disabled = true;
+                    openJobCardBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                    updateError.classList.add('hidden');
+                    
+                    await updateJobCard(currentJobId, {
+                        'Service Status': 'Job Card Open',
+                        'Technician': technicianSelect.value,
+                        'Job Card Date': new Date().toISOString(),
+                        'Job Card No': nextJobCardNumber
+                    });
+                    
+                    // Increment job card number for next use
+                    const num = parseInt(nextJobCardNumber.replace('BSJ', ''));
+                    nextJobCardNumber = 'BSJ' + String(num + 1).padStart(3, '0');
+                    
+                    // Refresh the list
+                    await fetchScheduledJobs();
+                    jobDetailView.classList.add('hidden');
+                    scheduledJobsView.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error opening job card:', error);
+                    updateError.textContent = 'Failed to open job card. Please try again.';
+                    updateError.classList.remove('hidden');
+                } finally {
+                    openJobCardBtn.disabled = false;
+                    openJobCardBtn.textContent = 'Open Job Card';
+                }
+            });
+        }
+
+        // Fetch scheduled jobs
+        async function fetchScheduledJobs() {
+            try {
+                loadingIndicator.classList.remove('hidden');
+                noJobsMessage.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+                jobsContainer.innerHTML = '';
+                
+                // First, fetch all rows to check the actual field names
+                const testResponse = await fetch(`${config.apiUrl}${config.maintenanceTableId}/?user_field_names=true&size=1`, {
+                    headers: {
+                        'Authorization': `Token ${config.apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!testResponse.ok) throw new Error('Failed to fetch test data');
+                
+                const testData = await testResponse.json();
+                if (testData.results.length === 0) {
+                    noJobsMessage.classList.remove('hidden');
+                    return;
+                }
+                
+                // Get the first result to inspect field names
+                const sampleJob = testData.results[0];
+                const statusFieldName = Object.keys(sampleJob).find(key => 
+                    key.toLowerCase().includes('status') || 
+                    (sampleJob[key] && ['Scheduled', 'Job Card Open'].includes(sampleJob[key]))
+                );
+                
+                if (!statusFieldName) {
+                    throw new Error('Could not determine status field name');
+                }
+                
+                // Now fetch only scheduled jobs using the correct field name
+                const filterQuery = `filter__${statusFieldName}__equal=Scheduled`;
+                const response = await fetch(`${config.apiUrl}${config.maintenanceTableId}/?user_field_names=true&${filterQuery}`, {
+                    headers: {
+                        'Authorization': `Token ${config.apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch scheduled jobs');
+                
+                const data = await response.json();
+                scheduledJobs = data.results;
+                
+                // Determine next job card number
+                await determineNextJobCardNumber();
+                
+                if (scheduledJobs.length === 0) {
+                    noJobsMessage.classList.remove('hidden');
+                } else {
+                    renderScheduledJobs(scheduledJobs);
+                }
+            } catch (error) {
+                console.error('Error fetching scheduled jobs:', error);
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        // Determine the next job card number
+        async function determineNextJobCardNumber() {
+            try {
+                const response = await fetch(`${config.apiUrl}${config.maintenanceTableId}/?user_field_names=true&size=200`, {
+                    headers: {
+                        'Authorization': `Token ${config.apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch job cards');
+                
+                const data = await response.json();
+                const jobCardField = Object.keys(data.results[0] || {}).find(key => 
+                    key.toLowerCase().includes('job card no') ||
+                    (data.results[0][key] && data.results[0][key].toString().startsWith('BSJ'))
+                );
+                
+                if (!jobCardField) {
+                    nextJobCardNumber = 'BSJ001';
+                    return;
+                }
+                
+                const jobCards = data.results.filter(job => job[jobCardField] && job[jobCardField].toString().startsWith('BSJ'));
+                
+                if (jobCards.length > 0) {
+                    const numbers = jobCards.map(job => {
+                        const numStr = job[jobCardField].toString().replace('BSJ', '');
+                        return parseInt(numStr) || 0;
+                    });
+                    
+                    const maxNumber = Math.max(...numbers);
+                    nextJobCardNumber = 'BSJ' + String(maxNumber + 1).padStart(3, '0');
+                } else {
+                    nextJobCardNumber = 'BSJ001';
+                }
+            } catch (error) {
+                console.error('Error determining next job card number:', error);
+                // Fallback to simple increment if API fails
+                nextJobCardNumber = 'BSJ001';
+            }
+        }
+
+        // Render scheduled jobs
+        function renderScheduledJobs(jobs) {
+            jobsContainer.innerHTML = '';
+            
+            jobs.forEach(job => {
+                // Find field names dynamically
+                const vinField = Object.keys(job).find(key => key.toLowerCase().includes('vin'));
+                const serviceTypeField = Object.keys(job).find(key => key.toLowerCase().includes('service type'));
+                const serviceDateField = Object.keys(job).find(key => key.toLowerCase().includes('service date'));
+                const statusField = Object.keys(job).find(key => key.toLowerCase().includes('status'));
+                const remarksField = Object.keys(job).find(key => key.toLowerCase().includes('remarks'));
+                
+                const card = document.createElement('div');
+                card.className = 'col-md-6 col-lg-4';
+                card.innerHTML = `
+                    <div class="card" data-job-id="${job.id}">
+                        <div class="card-body">
+                            <h5 class="card-title">${serviceTypeField ? job[serviceTypeField] : 'Service'}</h5>
+                            <p class="card-text"><strong>VIN:</strong> ${vinField ? job[vinField] : 'N/A'}</p>
+                            <p class="card-text"><strong>Date:</strong> ${serviceDateField ? formatDate(job[serviceDateField]) : 'N/A'}</p>
+                            <p class="card-text"><strong>Status:</strong> <span class="status-badge status-scheduled">${statusField ? job[statusField] : 'N/A'}</span></p>
+                            <p class="card-text"><strong>Remarks:</strong> ${remarksField ? job[remarksField] : 'None'}</p>
+                        </div>
+                    </div>
+                `;
+                
+                card.querySelector('.card').addEventListener('click', () => showJobDetails(job.id));
+                jobsContainer.appendChild(card);
+            });
+        }
+
+        // Show job details
+        function showJobDetails(jobId) {
+            const job = scheduledJobs.find(j => j.id === jobId);
+            if (!job) return;
+            
+            currentJobId = jobId;
+            
+            // Find field names dynamically
+            const vinField = Object.keys(job).find(key => key.toLowerCase().includes('vin'));
+            const serviceTypeField = Object.keys(job).find(key => key.toLowerCase().includes('service type'));
+            const serviceDateField = Object.keys(job).find(key => key.toLowerCase().includes('service date'));
+            const statusField = Object.keys(job).find(key => key.toLowerCase().includes('status'));
+            const remarksField = Object.keys(job).find(key => key.toLowerCase().includes('remarks'));
+            const serviceNotesField = Object.keys(job).find(key => key.toLowerCase().includes('service notes'));
+            
+            document.getElementById('detailVin').textContent = vinField ? job[vinField] : 'N/A';
+            document.getElementById('detailServiceType').textContent = serviceTypeField ? job[serviceTypeField] : 'N/A';
+            document.getElementById('detailServiceDate').textContent = serviceDateField ? formatDate(job[serviceDateField]) : 'N/A';
+            document.getElementById('detailStatus').textContent = statusField ? job[statusField] : 'N/A';
+            document.getElementById('detailRemarks').textContent = remarksField ? job[remarksField] : 'None';
+            document.getElementById('detailServiceNotes').textContent = serviceNotesField ? job[serviceNotesField] : 'None';
+            
+            // Reset technician selection
+            technicianSelect.value = '';
+            openJobCardBtn.disabled = true;
+            updateError.classList.add('hidden');
+            
+            scheduledJobsView.classList.add('hidden');
+            jobDetailView.classList.remove('hidden');
+        }
+
+        // Update job card
+        async function updateJobCard(jobId, updates) {
+            // First get the job to determine field names
+            const getResponse = await fetch(`${config.apiUrl}${config.maintenanceTableId}/${jobId}/?user_field_names=true`, {
+                headers: {
+                    'Authorization': `Token ${config.apiKey}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!getResponse.ok) throw new Error('Failed to get job details');
+            
+            const job = await getResponse.json();
+            
+            // Map our updates to the correct field names
+            const mappedUpdates = {};
+            for (const [key, value] of Object.entries(updates)) {
+                const fieldName = Object.keys(job).find(field => 
+                    field.toLowerCase().includes(key.toLowerCase())
+                );
+                if (fieldName) {
+                    mappedUpdates[fieldName] = value;
+                }
+            }
+            
+            const response = await fetch(`${config.apiUrl}${config.maintenanceTableId}/${jobId}/?user_field_names=true`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Token ${config.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mappedUpdates)
+            });
+            
+            if (!response.ok) throw new Error('Failed to update job card');
+            return await response.json();
+        }
+
+        // Helper function to format date
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            try {
+                const date = new Date(dateString);
+                return isNaN(date.getTime()) ? dateString : date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            } catch (e) {
+                return dateString;
+            }
+        }
+    </script>
+</body>
+</html>
