@@ -159,6 +159,15 @@
             border: 1px solid #f5c6cb;
         }
         
+        .success-message {
+            color: var(--success-color);
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: #d4edda;
+            border-radius: var(--border-radius);
+            border: 1px solid #c3e6cb;
+        }
+        
         .hidden {
             display: none;
         }
@@ -218,6 +227,14 @@
             background-color: #d4edda;
             color: #155724;
         }
+        
+        .job-card-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 1rem 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -267,6 +284,10 @@
                     
                     <button id="openJobCardBtn" class="btn btn-primary" disabled>Open Job Card</button>
                     <div id="updateError" class="error-message hidden"></div>
+                    <div id="successMessage" class="success-message hidden">
+                        Job Card created successfully! Job Card Number: 
+                        <span id="generatedJobCardNumber" class="job-card-number"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -293,6 +314,8 @@
         const openJobCardBtn = document.getElementById('openJobCardBtn');
         const technicianSelect = document.getElementById('technicianSelect');
         const updateError = document.getElementById('updateError');
+        const successMessage = document.getElementById('successMessage');
+        const generatedJobCardNumber = document.getElementById('generatedJobCardNumber');
 
         // State
         let scheduledJobs = [];
@@ -310,6 +333,7 @@
             backButton.addEventListener('click', () => {
                 jobDetailView.classList.add('hidden');
                 scheduledJobsView.classList.remove('hidden');
+                successMessage.classList.add('hidden');
             });
 
             technicianSelect.addEventListener('change', (e) => {
@@ -323,6 +347,7 @@
                     openJobCardBtn.disabled = true;
                     openJobCardBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
                     updateError.classList.add('hidden');
+                    successMessage.classList.add('hidden');
                     
                     await updateJobCard(currentJobId, {
                         'Service Status': 'Job Card Open',
@@ -331,14 +356,20 @@
                         'Job Card No': nextJobCardNumber
                     });
                     
+                    // Show success message with job card number
+                    generatedJobCardNumber.textContent = nextJobCardNumber;
+                    successMessage.classList.remove('hidden');
+                    
                     // Increment job card number for next use
                     const num = parseInt(nextJobCardNumber.replace('BSJ', ''));
                     nextJobCardNumber = 'BSJ' + String(num + 1).padStart(3, '0');
                     
-                    // Refresh the list
-                    await fetchScheduledJobs();
-                    jobDetailView.classList.add('hidden');
-                    scheduledJobsView.classList.remove('hidden');
+                    // Refresh the list after a short delay to let user see the success message
+                    setTimeout(async () => {
+                        await fetchScheduledJobs();
+                        jobDetailView.classList.add('hidden');
+                        scheduledJobsView.classList.remove('hidden');
+                    }, 2000);
                 } catch (error) {
                     console.error('Error opening job card:', error);
                     updateError.textContent = 'Failed to open job card. Please try again.';
@@ -515,6 +546,7 @@
             technicianSelect.value = '';
             openJobCardBtn.disabled = true;
             updateError.classList.add('hidden');
+            successMessage.classList.add('hidden');
             
             scheduledJobsView.classList.add('hidden');
             jobDetailView.classList.remove('hidden');
