@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Scooter Registration</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .vehicle-id-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2ecc71;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .scan-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+        .btn-submit, .btn-clear {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .btn-submit {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .btn-clear {
+            background-color: #e74c3c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EV Scooter Registration</h1>
+        <div id="vehicleIdDisplay" class="vehicle-id-display">
+            Vehicle ID will be generated after validation
+        </div>
+        <form id="registrationForm">
+            <!-- Owner Details -->
+            <div class="form-group">
+                <label for="ownerName">Owner Name*</label>
+                <input type="text" id="ownerName" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="mobile">Mobile Number*</label>
+                <input type="tel" id="mobile" pattern="[0-9]{10}" required>
+            </div>
+            
+            <!-- Vehicle Details -->
+            <div class="form-group">
+                <label for="vin">VIN (17 characters)*</label>
+                <input type="text" id="vin" minlength="10" maxlength="17" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="motorNumber">Motor Number*</label>
+                <input type="text" id="motorNumber" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="makeModel">Make/Model*</label>
+                <select id="makeModel" required>
+                    <option value="">-- Select --</option>
+                    <option value="Ola S1 Pro">Ola S1 Pro</option>
+                    <option value="Ather 450X">Ather 450X</option>
+                    <option value="TVS iQube">TVS iQube</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="purchaseDate">Purchase Date*</label>
+                <input type="date" id="purchaseDate" required>
+            </div>
+            
+            <!-- Optional Fields -->
+            <div class="form-group">
+                <label for="remarks">Remarks</label>
+                <textarea id="remarks" rows="2" placeholder="Any special notes..."></textarea>
+            </div>
+            
+            <!-- Hidden Vehicle ID Field -->
+            <input type="hidden" id="vehicleId">
+            
+            <!-- Buttons -->
+            <button type="submit" class="btn-submit">Register Scooter</button>
+            <button type="reset" class="btn-clear">Clear Form</button>
+        </form>
+    </div>
+
+    <script>
+        const BASEROW_API_URL = "https://api.baserow.io/api/database/rows/table/622473/?user_field_names=true";
+        const BASEROW_TOKEN = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
+        let latestVehicleId = 0;
+
+        // Fetch the latest Vehicle ID when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch(`${BASEROW_API_URL}&order_by=-Vehicle ID`, {
+                    headers: {
+                        "Authorization": `Token ${BASEROW_TOKEN}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.results.length > 0) {
+                        const latestId = data.results[0]["Vehicle ID"] || "BVEH000";
+                        const num = parseInt(latestId.replace("BVEH", ""));
+                        latestVehicleId = isNaN(num) ? 0 : num;
+                        updateVehicleIdDisplay();
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching latest ID:", error);
+            }
+        });
+
+        function generateVehicleId() {
+            latestVehicleId++;
+            return `BVEH${latestVehicleId.toString().padStart(3, '0')}`;
+        }
+
+        function updateVehicleIdDisplay() {
+            const nextId = generateVehicleId();
+            document.getElementById('vehicleIdDisplay').textContent = `Vehicle ID: ${nextId}`;
+            document.getElementById('vehicleId').value = nextId;
+        }
+
+        async function registerScooter(formData) {
+            try {
+                // First verify the VIN doesn't already exist
+                
+                // Add the generated Vehicle ID to the form data
+                formData["Vehicle ID"] = document.getElementById('vehicleId').value;
+                
+                const response = await fetch(BASEROW_API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Token ${BASEROW_TOKEN}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) throw new Error("Registration failed");
+                return await response.json();
+            } catch (error) {
+                console.error("API Error:", error);
+                throw error;
+            }
+        }
+
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                "Owner Name": document.getElementById('ownerName').value,
+                "Mobile": document.getElementById('mobile').value,
+                "VIN": document.getElementById('vin').value,
+                "Motor Number": document.getElementById('motorNumber').value,
+                "Make/Model": document.getElementById('makeModel').value,
+                "Purchase Date": document.getElementById('purchaseDate').value,
+                "Remarks": document.getElementById('remarks').value
+            };
+            
+            try {
+                const result = await registerScooter(formData);
+                alert(`Registration Successful!\nVehicle ID: ${document.getElementById('vehicleId').value}\nVIN: ${formData.VIN}`);
+                this.reset();
+                updateVehicleIdDisplay(); // Generate new ID for next registration
+            } catch (error) {
+                alert(`Registration failed: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>
