@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Service Status SMS Sender</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-blue: #4361ee;
+      --dark-blue: #3a0ca3;
+      --purple: #7209b7;
+      --light-purple: #b5179e;
+      --white: #ffffff;
+      --light-gray: #f8f9fa;
+      --dark-text: #2b2d42;
+      --success-green: #2a9d8f;
+      --whatsapp-green: #25D366;
+      --danger-red: #e63946;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+      min-height: 100vh;
+      color: var(--dark-text);
+      line-height: 1.6;
+    }
+    
+    h2 {
+      color: var(--white);
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    input, button {
+      padding: 14px 18px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: var(--transition);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    input {
+      background-color: var(--white);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: var(--shadow);
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: var(--white);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+    }
+    
+    input::placeholder {
+      color: #adb5bd;
+    }
+    
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    #searchInput {
+      background-color: var(--white);
+    }
+    
+    button[onclick="searchRecord()"] {
+      background-color: var(--white);
+      color: var(--primary-blue);
+      box-shadow: var(--shadow);
+    }
+    
+    button[onclick="searchRecord()"]:hover {
+      background-color: var(--light-gray);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 2.5rem;
+      margin-top: 2rem;
+      box-shadow: var(--shadow);
+      border-radius: 16px;
+      backdrop-filter: blur(8px);
+      transition: var(--transition);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .card p {
+      margin: 1rem 0;
+      font-size: 1.1rem;
+      line-height: 1.7;
+    }
+    
+    .card p strong {
+      font-weight: 600;
+      color: var(--dark-text);
+      min-width: 140px;
+      display: inline-block;
+    }
+    
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .call-btn {
+      background-color: var(--success-green);
+      color: white;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+    
+    .call-btn:hover {
+      background-color: #248277;
+      transform: translateY(-2px);
+    }
+    
+    .whatsapp-btn {
+      background-color: var(--whatsapp-green);
+      color: white;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+    
+    .whatsapp-btn:hover {
+      background-color: #1da851;
+      transform: translateY(-2px);
+    }
+    
+    .status-btns {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 15px;
+      margin: 2rem 0;
+    }
+    
+    .status-btns button {
+      margin: 0;
+      padding: 14px;
+      border-radius: 10px;
+      color: var(--white);
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      font-size: 0.95rem;
+    }
+    
+    .status-btns button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .Scheduled { background: var(--primary-blue); }  
+    .JobCardOpen { background: #5a189a; }  
+    .WorkInProgress { background: #f8961e; }  
+    .ServiceCompleted { background: var(--success-green); }  
+    .ReadyForDelivery { background: #4895ef; }  
+    .DeliveryCompleted { background: #9d4edd; }  
+    
+    .sent-label {
+      margin: 2rem 0 1.5rem;
+      color: var(--success-green);
+      font-weight: 600;
+      font-size: 1.05rem;
+      text-align: center;
+      padding: 1rem;
+      background-color: rgba(42, 157, 143, 0.1);
+      border-radius: 10px;
+      border-left: 4px solid var(--success-green);
+    }
+    
+    .clear-btn {
+      width: 100%;
+      background: var(--danger-red);
+      color: var(--white);
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+    
+    .clear-btn:hover {
+      background: #d62839;
+      transform: translateY(-2px);
+    }
+
+    /* Loader Styles */
+    .loader-container {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(67, 97, 238, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .loader {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid var(--white);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 1.5rem;
+      }
+      
+      .card {
+        padding: 1.8rem;
+      }
+      
+      .status-btns {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 1.2rem;
+      }
+      
+      h2 {
+        font-size: 1.8rem;
+      }
+      
+      .card {
+        padding: 1.5rem;
+      }
+      
+      .status-btns {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Service SMS Sender</h2>
+    <input type="text" id="searchInput" placeholder="Enter VIN, Mobile or Job Card No">
+    <button onclick="searchRecord()">Search</button>
+
+    <!-- Loader Container -->
+    <div class="loader-container" id="loader">
+      <div class="loader"></div>
+    </div>
+
+    <div id="result" class="card" style="display: none;">
+      <p><strong>Owner:</strong> <span id="ownerName"></span></p>
+      <p><strong>Mobile:</strong> <span id="mobile"></span></p>
+      <p><strong>VIN:</strong> <span id="vin"></span></p>
+      <p><strong>Job Card No:</strong> <span id="jobCard"></span></p>
+      <p><strong>Service Status:</strong> <span id="serviceStatus"></span></p>
+
+      <div class="action-buttons">
+        <button class="call-btn" onclick="makeCall()">
+          <i class="fas fa-phone"></i> Call Customer
+        </button>
+        <button class="whatsapp-btn" onclick="openWhatsApp()">
+          <i class="fab fa-whatsapp"></i> WhatsApp
+        </button>
+      </div>
+
+      <div class="status-btns">
+        <button class="Scheduled" onclick="sendSMS('Scheduled')">
+          <i class="fas fa-calendar-check"></i> Scheduled
+        </button>
+        <button class="JobCardOpen" onclick="sendSMS('Job Card Open')">
+          <i class="fas fa-file-alt"></i> Job Card Open
+        </button>
+        <button class="WorkInProgress" onclick="sendSMS('Work in Progress')">
+          <i class="fas fa-tools"></i> Work in Progress
+        </button>
+        <button class="ServiceCompleted" onclick="sendSMS('Service Completed')">
+          <i class="fas fa-check-circle"></i> Service Completed
+        </button>
+        <button class="ReadyForDelivery" onclick="sendSMS('Ready For Delivery')">
+          <i class="fas fa-car"></i> Ready For Delivery
+        </button>
+        <button class="DeliveryCompleted" onclick="sendSMS('Delivery Completed')">
+          <i class="fas fa-truck"></i> Delivery Completed
+        </button>
+      </div>
+
+      <div id="messageLabel" class="sent-label"></div>
+      <button class="clear-btn" onclick="clearRecord()">
+        <i class="fas fa-trash-alt"></i> Clear Record
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const API_KEY = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
+    const TABLE_ID = 622532;
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+
+    let currentRecord = null;
+
+    const messages = {
+      "Scheduled": "Dear [NAME], your vehicle service has been scheduled. We will notify you of updates.",
+      "Job Card Open": "Dear [NAME], your vehicle job card is now open. We have started the inspection process.",
+      "Work in Progress": "Dear [NAME], your vehicle is currently under service. We will keep you updated.",
+      "Service Completed": "Dear [NAME], your vehicle service has been completed.",
+      "Ready For Delivery": "Dear [NAME], your vehicle is ready for delivery. Please visit our service center.",
+      "Delivery Completed": "Dear [NAME], thank you! Your vehicle has been delivered. We appreciate your visit."
+    };
+
+    function showLoader() {
+      document.getElementById('loader').style.display = 'flex';
+    }
+
+    function hideLoader() {
+      document.getElementById('loader').style.display = 'none';
+    }
+
+    function searchRecord() {
+      const searchVal = document.getElementById("searchInput").value.trim().toLowerCase();
+      if (!searchVal) return alert("Please enter VIN, Mobile or Job Card No");
+
+      showLoader();
+      document.getElementById("result").style.display = "none";
+
+      fetch(API_URL, {
+        headers: { Authorization: `Token ${API_KEY}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const record = data.results.find(row =>
+          (row["VIN"] && row["VIN"].toLowerCase() === searchVal) ||
+          (row["Mobile"] && row["Mobile"].toString() === searchVal) ||
+          (row["Job Card No"] && row["Job Card No"].toLowerCase() === searchVal)
+        );
+
+        hideLoader();
+
+        if (!record) {
+          alert("Record not found");
+          return;
+        }
+
+        currentRecord = record;
+        document.getElementById("ownerName").innerText = record["Owner Name"];
+        document.getElementById("mobile").innerText = record["Mobile"];
+        document.getElementById("vin").innerText = record["VIN"];
+        document.getElementById("jobCard").innerText = record["Job Card No"];
+        document.getElementById("serviceStatus").innerText = record["Service Status"];
+
+        const sentStatus = localStorage.getItem(`sms_${record.id}`);
+        if (sentStatus) {
+          document.getElementById("messageLabel").innerText = `${sentStatus} Message Sent for ${record["Owner Name"]}`;
+        } else {
+          document.getElementById("messageLabel").innerText = "";
+        }
+
+        document.getElementById("result").style.display = "block";
+      })
+      .catch(error => {
+        hideLoader();
+        alert("An error occurred while searching. Please try again.");
+        console.error("Search error:", error);
+      });
+    }
+
+    function sendSMS(status) {
+      if (!currentRecord) return;
+
+      const sent = localStorage.getItem(`sms_${currentRecord.id}`);
+      if (sent === status) {
+        alert("This status message is already sent.");
+        return;
+      }
+
+      const msg = messages[status].replace("[NAME]", currentRecord["Owner Name"]);
+      const phone = currentRecord["Mobile"];
+      const smsLink = `sms:${phone}?body=${encodeURIComponent(msg)}`;
+      window.location.href = smsLink;
+
+      localStorage.setItem(`sms_${currentRecord.id}`, status);
+      document.getElementById("messageLabel").innerText = `${status} Message Sent for ${currentRecord["Owner Name"]}`;
+    }
+
+    function makeCall() {
+      if (!currentRecord) return;
+      
+      const phone = currentRecord["Mobile"];
+      if (!phone) {
+        alert("No phone number available for this record");
+        return;
+      }
+      
+      window.location.href = `tel:${phone}`;
+    }
+
+    function openWhatsApp() {
+      if (!currentRecord) return;
+      
+      const phone = currentRecord["Mobile"];
+      if (!phone) {
+        alert("No phone number available for this record");
+        return;
+      }
+      
+      // Remove any non-digit characters from phone number
+      const cleanedPhone = phone.replace(/\D/g, '');
+      const whatsappUrl = `https://wa.me/+91${cleanedPhone}`;
+      window.open(whatsappUrl, '_blank');
+    }
+
+    function clearRecord() {
+      if (!currentRecord) return;
+      localStorage.removeItem(`sms_${currentRecord.id}`);
+      document.getElementById("messageLabel").innerText = "";
+    }
+  </script>
+</body>
+</html>
