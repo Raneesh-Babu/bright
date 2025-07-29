@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ready for Delivery - Job Cards</title>
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #3f37c9;
+      --success: #4cc9f0;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --light-gray: #e9ecef;
+      --border-radius: 12px;
+      --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f7ff;
+      margin: 0;
+      padding: 2rem;
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .header h1::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 2px;
+    }
+
+    .header p {
+      color: var(--gray);
+      font-size: 1.1rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    #cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.5rem;
+      margin: 0 auto;
+      max-width: 1400px;
+    }
+
+    .card {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      overflow: hidden;
+      transition: var(--transition);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .card > div:first-child {
+      padding: 1.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+    }
+
+    .card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .card small {
+      font-size: 0.85rem;
+      opacity: 0.9;
+      display: inline-block;
+      margin-right: 1rem;
+    }
+
+    .toggle {
+      display: inline-block;
+      margin-top: 1rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: var(--transition);
+      padding: 0.5rem 0;
+    }
+
+    .toggle:hover {
+      opacity: 0.8;
+    }
+
+    .details {
+      display: none;
+      padding: 1.5rem;
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .box, .numbered-box {
+      background: var(--light);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-left: 4px solid var(--primary);
+      transition: var(--transition);
+    }
+
+    .box:hover, .numbered-box:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .box strong, .numbered-box strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--dark);
+    }
+
+    ul, ol {
+      padding-left: 1.5rem;
+      margin: 0.75rem 0;
+    }
+
+    ul li, ol li {
+      margin-bottom: 0.25rem;
+    }
+
+    button.delivery-btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      width: 100%;
+      transition: var(--transition);
+      margin-top: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button.delivery-btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.25);
+    }
+
+    .rating-stars {
+      display: inline-block;
+      margin-left: 0.5rem;
+    }
+
+    .rating-stars span {
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #ccc;
+      transition: var(--transition);
+    }
+
+    .rating-stars span:hover,
+    .rating-stars span.checked {
+      color: gold;
+      transform: scale(1.1);
+    }
+
+    .rating-stars span:hover ~ span {
+      color: #ccc !important;
+      transform: none;
+    }
+
+    /* Success message styles */
+    .success-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #4cc9f0, #4895ef);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transform: translateX(120%);
+      transition: transform 0.3s ease-out;
+    }
+
+    .success-message.show {
+      transform: translateX(0);
+    }
+
+    .success-message::before {
+      content: '✓';
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .header p {
+        font-size: 1rem;
+      }
+
+      #cards {
+        grid-template-columns: 1fr;
+      }
+
+      .success-message {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        transform: translateY(-150%);
+      }
+      
+      .success-message.show {
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Ready For Delivery Vehicles</h1>
+    <p>Review and mark vehicles as delivered after completing all service procedures</p>
+  </div>
+  
+  <div id="cards"></div>
+  
+  <div class="success-message" id="successMessage">
+    Vehicle marked as delivered successfully!
+  </div>
+  
+  <script>
+    const API_KEY = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
+    const TABLE_ID = 622532;
+
+    function formatDateTime(isoString) {
+      if (!isoString) return "-";
+      const date = new Date(isoString);
+      return date.toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      });
+    }
+
+    async function fetchJobCards() {
+      const res = await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`, {
+        headers: {
+          Authorization: `Token ${API_KEY}`
+        }
+      });
+      const data = await res.json();
+      return data.results.filter(card => card["Service Status"] === "Ready For Delivery");
+    }
+
+    function showSuccessMessage() {
+      const message = document.getElementById('successMessage');
+      message.classList.add('show');
+      setTimeout(() => {
+        message.classList.remove('show');
+      }, 3000);
+    }
+
+    function createCard(card) {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <div>
+          <h3>Job Card No: ${card["Job Card No"] || "-"}</h3>
+          <small>Job Card Date: ${formatDateTime(card["Job Card Date"])}</small>
+          <small>Service Status: ${card["Service Status"]}</small>
+          <small>Job Card Closed Date: ${formatDateTime(card["Job Card Closed Date"])}</small>
+          <div class="toggle">View Details ▼</div>
+        </div>
+        <div class="details">
+          <p><strong>Owner Name:</strong> ${card["Owner Name"]}</p>
+          <p><strong>Mobile:</strong> ${card["Mobile"]}</p>
+          <p><strong>VIN:</strong> ${card["VIN"]}</p>
+          <div class="box"><strong>Service Type:</strong> ${card["Service Type"]}</div>
+          <div class="box"><strong>Remarks:</strong><br>${card["Remarks"]}</div>
+          <div class="box"><strong>Service Notes:</strong><br>${card["Service Notes"]}</div>
+          <p><strong>Technician For Inspection:</strong> ${card["Technician For Inspection"]}</p>
+          <p><strong>Inspection Details:</strong><ul>${(card["Inspection Details"] || "").split("\n").map(item => `<li>${item}</li>`).join("")}</ul></p>
+          <p><strong>Service Technician:</strong> ${card["Service Technician"]}</p>
+          <div class="numbered-box"><strong>Parts Used:</strong><ol>${(card["Parts Used"] || "").split("\n").map(item => `<li>${item}</li>`).join("")}</ol></div>
+          <p><strong>Labour Hour:</strong> ${card["Labour Hour"]}</p>
+          <p><strong>Maintenance Performed:</strong><ul>${(card["Maintenance Performed"] || "").split("\n").map(item => `<li>${item}</li>`).join("")}</ul></p>
+          <p><strong>Parts Verification:</strong> ${card["Parts Verification"]}</p>
+          <p><strong>Invoice Generation:</strong> ${card["Invoice Generation"]}</p>
+          <p><strong>Final Service Amount:</strong> ${card["Final Service Amount"]}</p>
+          <p><strong>Service Rating:</strong> <span class="rating-stars">
+            ${[1,2,3,4,5].map(n => `<span data-rate="${n}">&#9733;</span>`).join("")}</span></p>
+          <button class="delivery-btn">Delivery Completed</button>
+        </div>
+      `;
+
+      // Expand toggle
+      div.querySelector(".toggle").onclick = () => {
+        const details = div.querySelector(".details");
+        details.style.display = details.style.display === "block" ? "none" : "block";
+        div.querySelector(".toggle").textContent = details.style.display === "block" ? "Hide Details ▲" : "View Details ▼";
+      };
+
+      // Handle star rating
+      const stars = div.querySelectorAll(".rating-stars span");
+      let rating = 0;
+      stars.forEach(star => {
+        star.onclick = () => {
+          rating = +star.dataset.rate;
+          stars.forEach(s => s.classList.remove("checked"));
+          for (let i = 0; i < rating; i++) stars[i].classList.add("checked");
+        };
+      });
+
+      // Handle Delivery Completed
+      div.querySelector(".delivery-btn").onclick = async () => {
+        const now = new Date().toISOString();
+        try {
+          const updateRes = await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/${card.id}/?user_field_names=true`, {
+            method: "PATCH",
+            headers: {
+              Authorization: `Token ${API_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              "Service Status": "Delivery Completed",
+              "Vehicle Delivery Date": now,
+              "Service Rating": rating
+            })
+          });
+          
+          if (updateRes.ok) {
+            showSuccessMessage();
+            setTimeout(() => {
+              loadCards();
+            }, 1000);
+          } else {
+            alert("Update failed. Please try again.");
+          }
+        } catch (error) {
+          alert("An error occurred. Please check your connection and try again.");
+        }
+      };
+
+      return div;
+    }
+
+    async function loadCards() {
+      const container = document.getElementById("cards");
+      container.innerHTML = "<div style='text-align:center;padding:2rem;color:var(--gray)'>Loading job cards...</div>";
+      const cards = await fetchJobCards();
+      container.innerHTML = "";
+      if (cards.length === 0) {
+        container.innerHTML = "<div style='text-align:center;padding:2rem;color:var(--gray)'>No vehicles ready for delivery</div>";
+      } else {
+        cards.forEach(card => container.appendChild(createCard(card)));
+      }
+    }
+
+    loadCards();
+  </script>
+</body>
+</html>
