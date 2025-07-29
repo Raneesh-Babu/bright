@@ -194,6 +194,12 @@
             border-left: 4px solid var(--danger);
         }
 
+        .alert-success {
+            background-color: rgba(74, 222, 128, 0.15);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+
         .btn {
             border-radius: 50px;
             padding: 0.7rem 2rem;
@@ -287,6 +293,65 @@
             margin-bottom: 0.8rem;
         }
 
+        /* Notification styles */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+        }
+
+        .notification {
+            padding: 1.2rem 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            transform: translateX(120%);
+            transition: transform 0.3s ease-out;
+            background: white;
+            border-left: 5px solid var(--success);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-icon {
+            margin-right: 1rem;
+            font-size: 1.5rem;
+            color: var(--success);
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            color: var(--dark);
+        }
+
+        .notification-message {
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .notification-close {
+            margin-left: 1rem;
+            cursor: pointer;
+            color: var(--dark);
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .notification-close:hover {
+            opacity: 1;
+        }
+
         /* Animated background elements */
         body::before {
             content: '';
@@ -346,6 +411,12 @@
             .btn {
                 padding: 0.6rem 1.5rem;
             }
+
+            .notification-container {
+                max-width: 280px;
+                right: 10px;
+                top: 10px;
+            }
         }
 
         @media (max-width: 576px) {
@@ -388,8 +459,10 @@
     </style>
 </head>
 <body>
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
     <div class="container py-4">
-        
         <div id="scheduledJobsView">
             <div id="loadingIndicator" class="loading">
                 <div class="spinner-border text-primary" role="status">
@@ -458,6 +531,7 @@
         const openJobCardBtn = document.getElementById('openJobCardBtn');
         const technicianSelect = document.getElementById('technicianSelect');
         const updateError = document.getElementById('updateError');
+        const notificationContainer = document.getElementById('notificationContainer');
 
         // State
         let scheduledJobs = [];
@@ -496,6 +570,13 @@
                         'Job Card No': nextJobCardNumber
                     });
                     
+                    // Show success notification
+                    showNotification(
+                        'Job Card Created',
+                        `Job card ${nextJobCardNumber} has been successfully opened and assigned to ${technicianSelect.value}.`,
+                        'success'
+                    );
+                    
                     // Increment job card number for next use
                     const num = parseInt(nextJobCardNumber.replace('BSJ', ''));
                     nextJobCardNumber = 'BSJ' + String(num + 1).padStart(3, '0');
@@ -512,6 +593,48 @@
                     openJobCardBtn.disabled = false;
                     openJobCardBtn.textContent = 'Open Job Card';
                 }
+            });
+        }
+
+        // Show notification function
+        function showNotification(title, message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <div class="notification-close">&times;</div>
+            `;
+            
+            notificationContainer.appendChild(notification);
+            
+            // Trigger the show animation
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 5000);
+            
+            // Close button functionality
+            notification.querySelector('.notification-close').addEventListener('click', () => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
             });
         }
 
