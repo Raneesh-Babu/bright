@@ -9,36 +9,40 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
-      --primary-blue: #4361ee;
-      --dark-blue: #3a0ca3;
-      --purple: #7209b7;
-      --light-purple: #b5179e;
+      --primary-blue: #2563eb;
+      --dark-blue: #1e40af;
+      --light-blue: #93c5fd;
+      --purple-accent: #7c3aed;
       --white: #ffffff;
-      --light-gray: #f8f9fa;
-      --dark-text: #2b2d42;
-      --success-green: #2a9d8f;
+      --off-white: #f8fafc;
+      --light-gray: #e2e8f0;
+      --dark-text: #1e293b;
+      --success-green: #10b981;
       --whatsapp-green: #25D366;
-      --danger-red: #e63946;
-      --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --danger-red: #ef4444;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     
     body {
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       padding: 2rem;
-      background: linear-gradient(135deg, var(--primary-blue), var(--purple));
+      background: linear-gradient(135deg, var(--off-white), var(--white));
       min-height: 100vh;
       color: var(--dark-text);
       line-height: 1.6;
     }
     
     h2 {
-      color: var(--white);
+      color: var(--dark-blue);
       text-align: center;
       margin-bottom: 2rem;
       font-size: 2.2rem;
       font-weight: 700;
       letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--primary-blue), var(--purple-accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     
     .container {
@@ -59,18 +63,18 @@
     
     input {
       background-color: var(--white);
-      border: 2px solid rgba(255, 255, 255, 0.3);
+      border: 2px solid var(--light-gray);
       box-shadow: var(--shadow);
     }
     
     input:focus {
       outline: none;
-      border-color: var(--white);
-      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
     }
     
     input::placeholder {
-      color: #adb5bd;
+      color: #94a3b8;
     }
     
     button {
@@ -89,26 +93,29 @@
     }
     
     button[onclick="searchRecord()"] {
-      background-color: var(--white);
-      color: var(--primary-blue);
+      background: linear-gradient(135deg, var(--primary-blue), var(--purple-accent));
+      color: var(--white);
       box-shadow: var(--shadow);
     }
     
     button[onclick="searchRecord()"]:hover {
-      background-color: var(--light-gray);
+      opacity: 0.9;
       transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 6px 15px rgba(37, 99, 235, 0.15);
     }
     
     .card {
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--white);
       padding: 2.5rem;
       margin-top: 2rem;
       box-shadow: var(--shadow);
       border-radius: 16px;
-      backdrop-filter: blur(8px);
+      border: 1px solid var(--light-gray);
       transition: var(--transition);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .card:hover {
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     }
     
     .card p {
@@ -132,7 +139,7 @@
     }
     
     .call-btn {
-      background-color: var(--success-green);
+      background-color: var(--primary-blue);
       color: white;
       padding: 14px;
       border-radius: 10px;
@@ -142,7 +149,7 @@
     }
     
     .call-btn:hover {
-      background-color: #248277;
+      background-color: var(--dark-blue);
       transform: translateY(-2px);
     }
     
@@ -181,15 +188,15 @@
     
     .status-btns button:hover {
       transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     }
     
     .Scheduled { background: var(--primary-blue); }  
-    .JobCardOpen { background: #5a189a; }  
-    .WorkInProgress { background: #f8961e; }  
+    .JobCardOpen { background: var(--purple-accent); }  
+    .WorkInProgress { background: #f59e0b; }  
     .ServiceCompleted { background: var(--success-green); }  
-    .ReadyForDelivery { background: #4895ef; }  
-    .DeliveryCompleted { background: #9d4edd; }  
+    .ReadyForDelivery { background: #3b82f6; }  
+    .DeliveryCompleted { background: #8b5cf6; }  
     
     .sent-label {
       margin: 2rem 0 1.5rem;
@@ -198,7 +205,7 @@
       font-size: 1.05rem;
       text-align: center;
       padding: 1rem;
-      background-color: rgba(42, 157, 143, 0.1);
+      background-color: rgba(16, 185, 129, 0.1);
       border-radius: 10px;
       border-left: 4px solid var(--success-green);
     }
@@ -215,7 +222,7 @@
     }
     
     .clear-btn:hover {
-      background: #d62839;
+      background: #dc2626;
       transform: translateY(-2px);
     }
 
@@ -227,18 +234,17 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(67, 97, 238, 0.8);
+      background-color: rgba(255, 255, 255, 0.9);
       z-index: 1000;
       justify-content: center;
       align-items: center;
-      backdrop-filter: blur(4px);
     }
 
     .loader {
       width: 50px;
       height: 50px;
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid var(--white);
+      border: 4px solid rgba(37, 99, 235, 0.2);
+      border-top: 4px solid var(--primary-blue);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -287,7 +293,6 @@
 </head>
 <body>
   <div class="container">
-    <h2>Service SMS Sender</h2>
     <input type="text" id="searchInput" placeholder="Enter VIN, Mobile or Job Card No">
     <button onclick="searchRecord()">Search</button>
 
