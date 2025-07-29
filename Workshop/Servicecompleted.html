@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Completed Job Cards</title>
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #3f37c9;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --light-gray: #e9ecef;
+      --success: #4cc9f0;
+      --border-radius: 12px;
+      --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: #f5f7ff;
+      padding: 2rem;
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    h2 {
+      color: var(--primary);
+      margin-bottom: 2rem;
+      font-weight: 600;
+      text-align: center;
+      font-size: 2rem;
+      letter-spacing: -0.5px;
+    }
+
+    #jobCards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.5rem;
+      margin: 0 auto;
+      max-width: 1400px;
+    }
+
+    .card {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      overflow: hidden;
+      transition: var(--transition);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      transition: var(--transition);
+    }
+
+    .card-header:hover {
+      background: linear-gradient(135deg, var(--primary-dark), var(--secondary));
+    }
+
+    .card-header h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-header p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .card-header > div:last-child {
+      text-align: right;
+    }
+
+    .card-body {
+      display: none;
+      padding: 1.5rem;
+      background: white;
+    }
+
+    .card-body p {
+      margin-bottom: 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .card-body p strong {
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .box, textarea, input[type="text"], input[type="number"], select {
+      width: 100%;
+      background: var(--light);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      border: none;
+      resize: none;
+      font-size: 0.95rem;
+      transition: var(--transition);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .box {
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+
+    .box:hover, textarea:hover, input:hover, select:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .box:focus, textarea:focus, input:focus, select:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+      border-color: var(--primary);
+    }
+
+    ul, ol {
+      padding-left: 1.5rem;
+      margin: 0.75rem 0;
+    }
+
+    ul li, ol li {
+      margin-bottom: 0.25rem;
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      width: 100%;
+      transition: var(--transition);
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.25);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      #jobCards {
+        grid-template-columns: 1fr;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .card-header > div:last-child {
+        text-align: left;
+      }
+    }
+
+    /* Animation for card expansion */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-body[style*="block"] {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.2);
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h2>Service Completed Job Cards</h2>
+  <div id="jobCards"></div>
+  
+  <script>
+    const apiKey = 'FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f';
+    const tableId = 622532;
+    const baseUrl = `https://api.baserow.io/api/database/rows/table/${tableId}/`;
+
+    async function fetchJobCards() {
+      const res = await fetch(baseUrl + `?user_field_names=true`, {
+        headers: { Authorization: `Token ${apiKey}` },
+      });
+      const data = await res.json();
+      const cards = data.results.filter(job => job['Service Status'] === 'Service Completed');
+      renderCards(cards);
+    }
+
+    function renderCards(cards) {
+      const container = document.getElementById('jobCards');
+      container.innerHTML = '';
+      cards.reverse().forEach(job => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+            <div>
+              <h3>${job['Job Card No']} <span class="status-badge">${job['Service Status']}</span></h3>
+              <p>${formatDate(job['Job Card Date'])}</p>
+            </div>
+            <div>
+              <p>Technician: ${job['Service Technician'] || 'N/A'}</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <p><strong>Owner:</strong> ${job['Owner Name']} | <strong>Mobile:</strong> ${job['Mobile']}</p>
+            <p><strong>VIN:</strong> ${job['VIN']}</p>
+            <div class="box"><strong>Service Type:</strong><br>${job['Service Type']}</div>
+            <div class="box"><strong>Remarks:</strong><br>${job['Remarks']}</div>
+            <div class="box"><strong>Service Notes:</strong><br>${job['Service Notes']}</div>
+            <div><strong>Inspection Details:</strong><ul>${(job['Inspection Details'] || '').split('\n').map(item => `<li>${item}</li>`).join('')}</ul></div>
+            <div class="box"><strong>Parts Used:</strong><br><ol>${(job['Parts Used'] || '').split('\n').map(p => `<li>${p}</li>`).join('')}</ol></div>
+            <p><strong>Labour Hour:</strong> ${job['Labour Hour']}</p>
+            <div><strong>Maintenance Performed:</strong><ul>${(job['Maintenance Performed'] || '').split('\n').map(item => `<li>${item}</li>`).join('')}</ul></div>
+            <p><strong>Quoted Cost:</strong> ₹${job['Quoted Cost']}</p>
+            <label><strong>Parts Verification:</strong>
+              <select class="box" id="verify-${job.id}"><option value="Yes">Yes</option><option value="No">No</option></select>
+            </label>
+            <input class="box" type="text" id="invoice-${job.id}" placeholder="Invoice Number and Final Price">
+            <input class="box" type="number" id="amount-${job.id}" placeholder="Final Service Amount">
+            <button onclick="markReady(${job.id})">Ready For Delivery</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function markReady(id) {
+      const verification = document.getElementById(`verify-${id}`).value;
+      const invoice = document.getElementById(`invoice-${id}`).value;
+      const amount = document.getElementById(`amount-${id}`).value;
+      const currentDateTime = new Date().toISOString();
+
+      const payload = {
+        'Service Status': 'Ready For Delivery',
+        'Parts Verification': verification,
+        'Invoice Generation': invoice,
+        'Final Service Amount': amount,
+        'Job Card Closed Date': currentDateTime
+      };
+
+      await fetch(baseUrl + `${id}/?user_field_names=true`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Token ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      fetchJobCards();
+    }
+
+    function formatDate(dateString) {
+      const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+      return new Date(dateString).toLocaleString(undefined, options);
+    }
+
+    fetchJobCards();
+  </script>
+</body>
+</html>
