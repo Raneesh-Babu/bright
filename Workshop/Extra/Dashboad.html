@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Service Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --secondary: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #1f2937;
+      --light: #f9fafb;
+      --gray: #6b7280;
+      --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: #f3f4f6;
+      margin: 0;
+      padding: 20px;
+      color: var(--dark);
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 0 0 20px 0;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: var(--card-shadow);
+      text-align: center;
+      border-top: 3px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0 0 8px 0;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card p {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin: 0;
+    }
+
+    .total {
+      background-color: var(--primary);
+    }
+
+    .total h2, .total p {
+      color: white;
+    }
+
+    .scheduled {
+      background-color: var(--warning);
+    }
+
+    .scheduled h2, .scheduled p {
+      color: white;
+    }
+
+    .card:nth-child(3) { border-top-color: #8b5cf6; } /* Job Card Open */
+    .card:nth-child(4) { border-top-color: var(--warning); } /* Work in Progress */
+    .card:nth-child(5) { border-top-color: var(--success); } /* Service Completed */
+    .card:nth-child(6) { border-top-color: #60a5fa; } /* Ready For Delivery */
+    .card:nth-child(7) { border-top-color: var(--primary); } /* Delivery Completed */
+
+    /* Notification styles */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateX(120%);
+      transition: transform 0.3s ease-out;
+      z-index: 1000;
+      border-left: 4px solid var(--success);
+      display: flex;
+      align-items: center;
+      max-width: 300px;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification-icon {
+      margin-right: 12px;
+      color: var(--success);
+      font-size: 1.2rem;
+    }
+
+    .notification-content {
+      flex: 1;
+    }
+
+    .notification-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .notification-message {
+      font-size: 0.85rem;
+      color: var(--gray);
+    }
+
+    .notification-close {
+      margin-left: 10px;
+      cursor: pointer;
+      color: var(--gray);
+      font-size: 0.9rem;
+    }
+
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    @media (max-width: 600px) {
+      .dashboard {
+        grid-template-columns: 1fr 1fr;
+      }
+      .notification {
+        max-width: calc(100% - 40px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <div class="dashboard" id="dashboard">
+      <!-- Cards will be injected here -->
+    </div>
+  </div>
+
+  <!-- Notification Template -->
+  <div id="notification" class="notification">
+    <div class="notification-icon">✓</div>
+    <div class="notification-content">
+      <div class="notification-title">New Job Card</div>
+      <div class="notification-message" id="notification-message"></div>
+    </div>
+    <div class="notification-close">&times;</div>
+  </div>
+
+  <script>
+    const apiKey = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
+    const tableId = 622532;
+    const baseUrl = `https://api.baserow.io/api/database/rows/table/${tableId}/?user_field_names=true`;
+
+    const statuses = [
+      "Job Card Open",
+      "Work in Progress",
+      "Service Completed",
+      "Ready For Delivery",
+      "Delivery Completed"
+    ];
+    const scheduledStatus = "Scheduled";
+
+    let previousJobCards = [];
+    let currentJobCards = [];
+    let refreshInterval;
+
+    // Notification functions
+    function showNotification(message) {
+      const notification = document.getElementById('notification');
+      const notificationMessage = document.getElementById('notification-message');
+      
+      notificationMessage.textContent = message;
+      notification.classList.add('show');
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 5000);
+      
+      // Close button functionality
+      notification.querySelector('.notification-close').addEventListener('click', () => {
+        notification.classList.remove('show');
+      });
+    }
+
+    // Check for new job cards
+    function checkForNewJobs(newData) {
+      const newJobCards = newData
+        .filter(row => row["Job Card No"]?.trim())
+        .map(row => row["Job Card No"]);
+      
+      if (previousJobCards.length > 0) {
+        newJobCards.forEach(jobCard => {
+          if (!previousJobCards.includes(jobCard)) {
+            const job = newData.find(row => row["Job Card No"] === jobCard);
+            const message = `Job Card #${jobCard} - ${job["Owner Name"] || 'New job'}`;
+            showNotification(message);
+            
+            // Add pulse effect to the relevant card
+            highlightRelevantCard(job["Service Status"]);
+          }
+        });
+      }
+      
+      previousJobCards = [...newJobCards];
+    }
+
+    function highlightRelevantCard(status) {
+      const cards = document.querySelectorAll('.card');
+      let cardIndex = -1;
+      
+      if (status === scheduledStatus) {
+        cardIndex = 0;
+      } else if (status === "Total Jobs") {
+        cardIndex = 1;
+      } else {
+        cardIndex = statuses.indexOf(status) + 2;
+      }
+      
+      if (cardIndex >= 0 && cardIndex < cards.length) {
+        const card = cards[cardIndex];
+        card.classList.add('pulse');
+        
+        setTimeout(() => {
+          card.classList.remove('pulse');
+        }, 3000);
+      }
+    }
+
+    async function fetchAllData(url, rows = []) {
+      const res = await fetch(url, {
+        headers: { Authorization: `Token ${apiKey}` }
+      });
+      const data = await res.json();
+      rows.push(...data.results);
+      if (data.next) return fetchAllData(data.next, rows);
+      return rows;
+    }
+
+    async function buildDashboard() {
+      try {
+        const rows = await fetchAllData(baseUrl);
+        checkForNewJobs(rows);
+        
+        const statusCounts = {};
+        let totalJobs = 0;
+        let scheduledCount = 0;
+
+        for (const status of statuses) {
+          statusCounts[status] = 0;
+        }
+
+        for (const row of rows) {
+          const status = row["Service Status"];
+          const jobCardNo = row["Job Card No"];
+          if (status === scheduledStatus) {
+            scheduledCount++;
+          } else if (statuses.includes(status) && jobCardNo?.trim()) {
+            statusCounts[status]++;
+            totalJobs++;
+          }
+        }
+
+        const dashboard = document.getElementById("dashboard");
+        dashboard.innerHTML = '';
+
+        // Scheduled card
+        dashboard.innerHTML += `
+          <div class="card scheduled">
+            <h2>Scheduled</h2>
+            <p>${scheduledCount}</p>
+          </div>
+        `;
+
+        // Total Jobs card
+        dashboard.innerHTML += `
+          <div class="card total">
+            <h2>Total Jobs</h2>
+            <p>${totalJobs}</p>
+          </div>
+        `;
+
+        // Status cards
+        for (const status of statuses) {
+          dashboard.innerHTML += `
+            <div class="card">
+              <h2>${status}</h2>
+              <p>${statusCounts[status]}</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+
+    // Initialize and set up auto-refresh
+    function initDashboard() {
+      buildDashboard();
+      refreshInterval = setInterval(buildDashboard, 5000); // Refresh every 5 seconds
+    }
+
+    // Start the dashboard
+    document.addEventListener('DOMContentLoaded', initDashboard);
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+      clearInterval(refreshInterval);
+    });
+  </script>
+</body>
+</html
