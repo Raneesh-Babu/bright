@@ -55,7 +55,8 @@
       box-shadow: var(--shadow-md);
       overflow: hidden;
       transition: var(--transition);
-      cursor: pointer;
+      display: flex;
+      flex-direction: column;
     }
 
     .card:hover {
@@ -66,138 +67,130 @@
     .card-header {
       background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       color: var(--white);
-      padding: 1.25rem;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-weight: 600;
       transition: var(--transition);
+      flex-shrink: 0;
     }
 
     .card-header:hover {
       background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
     }
 
-    .card-header span {
-      font-size: 0.85rem;
-      font-weight: 400;
-      opacity: 0.9;
+    .card-header > div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
     }
 
-    /* Modal Styles */
-    .modal {
+    .card-header span {
+      font-size: 0.8rem;
+      font-weight: 400;
+      opacity: 0.9;
+      display: inline-block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px;
+    }
+
+    .card-header div:last-child {
+      font-size: 0.85rem;
+      text-align: right;
+      white-space: nowrap;
+      margin-left: 0.5rem;
+    }
+
+    .card-content {
       display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      overflow-y: auto;
-      padding: 2rem;
+      padding: 1.25rem;
+      animation: fadeIn 0.3s ease-in-out;
+      background: var(--white);
+      border-top: 1px solid rgba(0,0,0,0.05);
+      flex-grow: 1;
       box-sizing: border-box;
     }
 
-    .modal-content {
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 2rem;
-      position: relative;
-      animation: modalFadeIn 0.3s ease-out;
-    }
-
-    .close-modal {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--gray);
-      background: none;
-      border: none;
-      padding: 0.5rem;
-    }
-
-    .close-modal:hover {
-      color: var(--danger);
-    }
-
-    .modal-card-content {
-      padding: 1rem 0;
-    }
-
-    .modal-card-content p {
-      margin: 0.75rem 0;
+    .card-content p {
+      margin: 0.5rem 0;
       padding: 0.5rem 0;
       border-bottom: 1px solid rgba(0,0,0,0.05);
+      font-size: 0.9rem;
+      word-break: break-word;
     }
 
-    .modal-card-content p:last-child {
+    .card-content p:last-child {
       border-bottom: none;
     }
 
-    .modal-card-content strong {
+    .card-content strong {
       color: var(--primary);
       font-weight: 600;
+      display: inline-block;
+      min-width: 120px;
     }
 
-    .modal-card-content label {
+    .card-content label {
       display: block;
-      margin: 1rem 0 0.5rem;
+      margin: 0.75rem 0 0.25rem;
       font-weight: 600;
       color: var(--primary);
+      font-size: 0.9rem;
     }
 
-    .modal-card-content textarea,
-    .modal-card-content select {
-      width: 100%;
-      padding: 0.75rem;
+    .card-content textarea,
+    .card-content select {
+      width: calc(100% - 1.5rem);
+      padding: 0.6rem 0.75rem;
       border-radius: var(--radius-sm);
       border: 1px solid rgba(0,0,0,0.1);
       font-family: inherit;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       transition: var(--transition);
       background: var(--light);
+      box-sizing: border-box;
     }
 
-    .modal-card-content textarea {
-      min-height: 150px;
+    .card-content textarea {
+      min-height: 80px;
       resize: vertical;
     }
 
-    .modal-card-content textarea:focus,
-    .modal-card-content select:focus {
+    .card-content textarea:focus,
+    .card-content select:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
     }
 
-    .modal-start-btn {
+    .start-btn {
       background: linear-gradient(135deg, var(--success) 0%, var(--info) 100%);
       color: var(--white);
-      padding: 0.75rem;
+      padding: 0.7rem;
       border: none;
       border-radius: var(--radius-sm);
       cursor: pointer;
       width: 100%;
       font-weight: 600;
-      margin-top: 1.5rem;
+      margin-top: 1rem;
       transition: var(--transition);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      box-sizing: border-box;
     }
 
-    .modal-start-btn:hover {
+    .start-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(76, 201, 240, 0.4);
     }
 
-    @keyframes modalFadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -211,79 +204,34 @@
         grid-template-columns: 1fr;
       }
 
-      .modal {
-        padding: 1rem;
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
       }
 
-      .modal-content {
-        padding: 1.5rem;
+      .card-header div:last-child {
+        text-align: left;
+        margin-left: 0;
       }
-    }
 
-    @media (max-width: 480px) {
-      .modal-content {
-        padding: 1rem;
+      .card-header span {
+        max-width: 100%;
       }
     }
   </style>
 </head>
 <body>
-  <h2>🛠️ Job Cards - Open</h2>
   <div id="jobCardsContainer"></div>
-
-  <!-- Modal -->
-  <div id="jobCardModal" class="modal">
-    <div class="modal-content">
-      <button class="close-modal" onclick="closeModal()">&times;</button>
-      <div id="modalContent" class="modal-card-content"></div>
-    </div>
-  </div>
 
   <script>
     const apiKey = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
     const tableId = 622532;
     const technicians = ["Technician A", "Technician B", "Technician C"];
-    let currentRowId = null;
 
     function formatDate(dateStr) {
       const date = new Date(dateStr);
       return date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
-    }
-
-    function openModal(row) {
-      currentRowId = row.id;
-      const modal = document.getElementById("jobCardModal");
-      const modalContent = document.getElementById("modalContent");
-
-      modalContent.innerHTML = `
-        <h3>${row["Job Card No"]} <span> | ${row["Service Type"]}</span></h3>
-        <p><strong>Date:</strong> ${formatDate(row["Job Card Date"])}</p>
-        <p><strong>Owner:</strong> ${row["Owner Name"]}</p>
-        <p><strong>Mobile:</strong> ${row["Mobile"]}</p>
-        <p><strong>VIN:</strong> ${row["VIN"]}</p>
-        <p><strong>Remarks:</strong> ${row["Remarks"] || "N/A"}</p>
-        <p><strong>Service Notes:</strong> ${row["Service Notes"] || "N/A"}</p>
-        <p><strong>Technician For Inspection:</strong> ${row["Technician For Inspection"] || "N/A"}</p>
-        <label><strong>Inspection Details:</strong></label>
-        <textarea placeholder="Enter inspection bullet points..."></textarea>
-
-        <label><strong>Select Service Technician:</strong></label>
-        <select>
-          <option value="">-- Select Technician --</option>
-          ${technicians.map(tech => `<option value="${tech}">${tech}</option>`).join("")}
-        </select>
-
-        <button class="modal-start-btn" onclick="startMaintenance(currentRowId, this)">Start Maintenance</button>
-      `;
-
-      modal.style.display = "block";
-      document.body.style.overflow = "hidden";
-    }
-
-    function closeModal() {
-      const modal = document.getElementById("jobCardModal");
-      modal.style.display = "none";
-      document.body.style.overflow = "auto";
     }
 
     async function loadJobCards() {
@@ -304,9 +252,27 @@
         card.className = "card";
 
         card.innerHTML = `
-          <div class="card-header" onclick="openModal(${JSON.stringify(row).replace(/"/g, '&quot;')})">
+          <div class="card-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
             <div>${row["Job Card No"]} <span> | ${row["Service Type"]}</span></div>
             <div>${formatDate(row["Job Card Date"])}</div>
+          </div>
+          <div class="card-content">
+            <p><strong>Owner:</strong> ${row["Owner Name"]}</p>
+            <p><strong>Mobile:</strong> ${row["Mobile"]}</p>
+            <p><strong>VIN:</strong> ${row["VIN"]}</p>
+            <p><strong>Remarks:</strong> ${row["Remarks"] || ""}</p>
+            <p><strong>Service Notes:</strong> ${row["Service Notes"] || ""}</p>
+            <p><strong>Technician For Inspection:</strong> ${row["Technician For Inspection"] || "N/A"}</p>
+            <label><strong>Inspection Details:</strong></label>
+            <textarea placeholder="Enter inspection bullet points..."></textarea>
+
+            <label><strong>Select Service Technician:</strong></label>
+            <select>
+              <option value="">-- Select Technician --</option>
+              ${technicians.map(tech => `<option value="${tech}">${tech}</option>`).join("")}
+            </select>
+
+            <button class="start-btn" onclick="startMaintenance(${row.id}, this)">Start Maintenance</button>
           </div>
         `;
 
@@ -315,7 +281,7 @@
     }
 
     async function startMaintenance(rowId, button) {
-      const content = button.closest(".modal-card-content");
+      const content = button.closest(".card-content");
       const details = content.querySelector("textarea").value.trim();
       const technician = content.querySelector("select").value;
 
@@ -341,16 +307,7 @@
       });
 
       alert("Maintenance started and updated successfully.");
-      closeModal();
       loadJobCards();
-    }
-
-    // Close modal when clicking outside content
-    window.onclick = function(event) {
-      const modal = document.getElementById("jobCardModal");
-      if (event.target == modal) {
-        closeModal();
-      }
     }
 
     loadJobCards();
