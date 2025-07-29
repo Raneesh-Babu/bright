@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Cards - Work in Progress</title>
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --secondary: #3f37c9;
+      --success: #4cc9f0;
+      --success-dark: #38b6db;
+      --warning: #f8961e;
+      --danger: #f72585;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --light-gray: #e9ecef;
+      --white: #ffffff;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.08);
+      --radius-sm: 0.25rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 1rem;
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      background-color: #f5f7fb;
+      color: var(--dark);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: var(--secondary);
+      font-weight: 700;
+      font-size: 2rem;
+      position: relative;
+      padding-bottom: 0.5rem;
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--success));
+      border-radius: 2px;
+    }
+
+    .filters {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 250px;
+    }
+
+    .filter-group label {
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--secondary);
+      font-size: 0.9rem;
+    }
+
+    select {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--light-gray);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background-color: var(--white);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    #jobCards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .job-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      overflow: hidden;
+      border: 1px solid var(--light-gray);
+    }
+
+    .job-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 1.5rem;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: var(--white);
+    }
+
+    .card-header > div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-header strong {
+      font-weight: 600;
+    }
+
+    .card-details {
+      display: none;
+      padding: 1.5rem;
+      background-color: var(--white);
+    }
+
+    .label {
+      font-weight: 600;
+      color: var(--secondary);
+      margin-top: 1rem;
+      display: block;
+      font-size: 0.9rem;
+    }
+
+    .box {
+      background: var(--light);
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      margin: 0.5rem 0 1rem;
+      border-left: 3px solid var(--primary);
+      font-size: 0.95rem;
+    }
+
+    ul {
+      margin: 0.5rem 0 1rem;
+      padding-left: 1.5rem;
+      list-style-type: none;
+    }
+
+    ul li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    ul li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0 1rem;
+      border: 1px solid var(--light-gray);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    button {
+      background-color: var(--success);
+      color: var(--white);
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: var(--transition);
+      width: 100%;
+      margin-top: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button:hover {
+      background-color: var(--success-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-wip {
+      background-color: rgba(248, 150, 30, 0.2);
+      color: var(--warning);
+    }
+
+    @media (max-width: 768px) {
+      #jobCards {
+        grid-template-columns: 1fr;
+      }
+      
+      .card-header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .filters {
+        flex-direction: column;
+      }
+    }
+
+    /* Animation for card details */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-details[style*="block"] {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Work In Progress Job Cards</h1>
+    
+    <div class="filters">
+      <div class="filter-group">
+        <label for="technicianFilter">Filter by Technician:</label>
+        <select id="technicianFilter" onchange="filterJobs()">
+          <option value="all">All Technicians</option>
+          <option value="Technician A">Technician A</option>
+          <option value="Technician B">Technician B</option>
+          <option value="Technician C">Technician C</option>
+          <option value="DIVYA">DIVYA</option>
+        </select>
+      </div>
+    </div>
+    
+    <div id="jobCards"></div>
+  </div>
+
+  <script>
+    const API_KEY = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
+    const TABLE_ID = 622532;
+    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+
+    let allJobCards = [];
+
+    async function fetchJobCards() {
+      const response = await fetch(API_URL, {
+        headers: { Authorization: `Token ${API_KEY}` },
+      });
+      const data = await response.json();
+      allJobCards = data.results
+        .filter(row => row["Service Status"] === "Work in Progress")
+        .sort((a, b) => new Date(b["Inspection Done Date"]) - new Date(a["Inspection Done Date"]));
+
+      filterJobs(); // Apply any existing filter
+    }
+
+    function filterJobs() {
+      const technicianFilter = document.getElementById('technicianFilter').value;
+      
+      let filteredCards = allJobCards;
+      if (technicianFilter !== 'all') {
+        filteredCards = allJobCards.filter(card => card["Service Technician"] === technicianFilter);
+      }
+
+      renderJobCards(filteredCards);
+    }
+
+    function renderJobCards(cards) {
+      document.getElementById("jobCards").innerHTML = cards
+        .map((row, index) => {
+          const doneDate = new Date(row["Job Card Date"]).toLocaleString();
+          return `
+          <div class="job-card">
+            <div class="card-header" onclick="toggleCard(${index})">
+              <div>
+                <div><strong>Job Card No:</strong> ${row["Job Card No"]}</div>
+                <div><strong>Date:</strong> ${doneDate}</div>
+              </div>
+              <div>
+                <div><strong>Service Type:</strong> ${row["Service Type"]}</div>
+                <div><strong>Technician:</strong> ${row["Service Technician"]}</div>
+                <div><strong>Status:</strong> <span class="status-badge status-wip">${row["Service Status"]}</span></div>
+              </div>
+            </div>
+            <div class="card-details" id="details-${index}">
+              <div class="label">Owner Name:</div> ${row["Owner Name"]}<br/>
+              <div class="label">Mobile:</div> ${row["Mobile"]}<br/>
+              <div class="label">VIN:</div> ${row["VIN"]}<br/>
+              <div class="label">Remarks:</div><div class="box">${row["Remarks"] || ""}</div>
+              <div class="label">Service Notes:</div><div class="box">${row["Service Notes"] || ""}</div>
+              <div class="label">Inspection Details:</div>
+              <ul>${(row["Inspection Details"] || "").split("\n").map(x => `<li>${x}</li>`).join("")}</ul>
+
+              <div class="label">Parts Used:</div>
+              <textarea placeholder="Enter parts used (one per line)" id="parts-${row.id}">${row["Parts Used"] || ""}</textarea>
+              
+              <div class="label">Labour Hour:</div>
+              <textarea placeholder="Enter labour hours" id="labour-${row.id}">${row["Labour Hour"] || ""}</textarea>
+              
+              <div class="label">Maintenance Performed:</div>
+              <textarea placeholder="Enter maintenance performed (one per line)" id="maintenance-${row.id}">${row["Maintenance Performed"] || ""}</textarea>
+              
+              <div class="label">Quoted Cost:</div>
+              <input type="text" placeholder="Enter quoted cost" id="cost-${row.id}" value="${row["Quoted Cost"] || ""}" />
+              
+              <button onclick="markCompleted(${row.id})">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Mark as Completed
+              </button>
+            </div>
+          </div>
+        `;
+        })
+        .join("");
+    }
+
+    function toggleCard(index) {
+      const details = document.getElementById(`details-${index}`);
+      details.style.display = details.style.display === "none" ? "block" : "none";
+    }
+
+    async function markCompleted(id) {
+      const parts = document.getElementById(`parts-${id}`).value;
+      const labour = document.getElementById(`labour-${id}`).value;
+      const maintenance = document.getElementById(`maintenance-${id}`).value;
+      const cost = document.getElementById(`cost-${id}`).value;
+
+      const now = new Date().toISOString();
+
+      await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/${id}/?user_field_names=true`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Token ${API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          "Service Status": "Service Completed",
+          "Service Done Date": now,
+          "Parts Used": parts,
+          "Labour Hour": labour,
+          "Maintenance Performed": maintenance,
+          "Quoted Cost": cost
+        }),
+      });
+
+      fetchJobCards();
+    }
+
+    fetchJobCards();
+  </script>
+</body>
+</html>
