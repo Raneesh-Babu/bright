@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Workshop Bright Technician</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6a1b9a;
+            --primary-light: #9c4dcc;
+            --primary-dark: #38006b;
+            --secondary-color: #f3e5f5;
+            --text-light: #f5f5f5;
+            --text-dark: #333333;
+            --success-color: #4caf50;
+            --error-color: #f44336;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #fafafa;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            background-color: var(--secondary-color);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            color: var(--text-light);
+            padding: 18px 15px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background-color: white;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 8px 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .tab {
+            padding: 10px 8px;
+            color: var(--primary-dark);
+            text-align: center;
+            white-space: nowrap;
+            font-size: 0.75rem;
+            border-radius: 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin: 0 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 70px;
+            transition: all 0.3s ease;
+            background-color: transparent;
+        }
+        
+        .tab i {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(106, 27, 154, 0.3);
+        }
+        
+        .tab.active i {
+            color: white;
+        }
+        
+        .content-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: white;
+            border-radius: 16px 16px 0 0;
+            margin: 8px 8px 0 8px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .iframe-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            border-radius: 16px 16px 0 0;
+            overflow: hidden;
+        }
+        
+        .iframe-container.active {
+            display: block;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: white;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-btn i {
+            margin-right: 5px;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* PIN Entry Modal */
+        .pin-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .pin-container {
+            background: linear-gradient(145deg, #ffffff, #f3e5f5);
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(106, 27, 154, 0.3);
+        }
+        
+        .pin-container h2 {
+            margin-bottom: 25px;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        
+        .pin-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.3rem;
+            text-align: center;
+            border: 2px solid #e1bee7;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            letter-spacing: 5px;
+            font-weight: 500;
+            color: var(--primary-dark);
+            transition: all 0.3s ease;
+        }
+        
+        .pin-input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(156, 77, 204, 0.2);
+        }
+        
+        .pin-submit {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(106, 27, 154, 0.3);
+        }
+        
+        .pin-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(106, 27, 154, 0.4);
+        }
+        
+        .pin-error {
+            color: var(--error-color);
+            margin-top: 15px;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+        
+        .app-icon {
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+            
+            .tab {
+                min-width: 65px;
+                padding: 8px 5px;
+                font-size: 0.7rem;
+            }
+            
+            .tab i {
+                font-size: 1.1rem;
+            }
+            
+            .pin-container {
+                padding: 25px 20px;
+            }
+        }
+        
+        /* Security overlay */
+        .security-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+            padding: 20px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .security-overlay h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .security-overlay p {
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- PIN Entry Modal -->
+    <div class="pin-modal" id="pinModal">
+        <div class="pin-container">
+            <div class="app-icon">
+                <i class="fas fa-car-alt"></i>
+            </div>
+            <h2>Technician Access</h2>
+            <input type="password" class="pin-input" id="pinInput" placeholder="Enter PIN" maxlength="4" inputmode="numeric" pattern="\d*">
+            <button class="pin-submit" id="pinSubmit">
+                <i class="fas fa-lock-open"></i> Unlock App
+            </button>
+            <div class="pin-error" id="pinError"></div>
+        </div>
+    </div>
+
+    <div class="security-overlay" id="securityOverlay">
+        <div>
+            <div class="app-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2>Access Restricted</h2>
+            <p>This application is designed for mobile use only.</p>
+            <p>Please access from a smartphone.</p>
+        </div>
+    </div>
+
+    <div class="app-container" id="appContainer" style="display:none;">
+        <div class="header">
+            <h1><i class="fas fa-car-side"></i> Workshop Bright</h1>
+            <button class="logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+        
+        <div class="nav-tabs">
+            <div class="tab active" data-tab="addvehicle">
+                <i class="fas fa-car"></i>
+                <span>Add Vehicle</span>
+            </div>
+            <div class="tab" data-tab="schedulemaintanance">
+                <i class="fas fa-calendar-check"></i>
+                <span>Maintenance</span>
+            </div>
+            <div class="tab" data-tab="assignjobcard">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Scheduled</span>
+            </div>
+            <div class="tab" data-tab="openjob">
+                <i class="fas fa-tools"></i>
+                <span>Open Jobs</span>
+            </div>
+            <div class="tab" data-tab="workingprogress">
+                <i class="fas fa-spinner"></i>
+                <span>In Progress</span>
+            </div>
+            <div class="tab" data-tab="servicecompleted">
+                <i class="fas fa-check-circle"></i>
+                <span>Completed</span>
+            </div>
+            <div class="tab" data-tab="readyfordelivery">
+                <i class="fas fa-thumbs-up"></i>
+                <span>Ready</span>
+            </div>
+            <div class="tab" data-tab="searchjobcard">
+                <i class="fas fa-truck"></i>
+                <span>Delivered</span>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            <div class="iframe-container active" id="addvehicle">
+                <iframe src="https://workshopbright.netlify.app/workshop/addvehicle" loading="lazy"></iframe>
+            </div>
+            <div class="iframe-container" id="schedulemaintanance">
+                <iframe src="https://workshopbright.netlify.app/workshop/schedulemaintanance" loading="lazy"></iframe>
+            </div>
+            <div class="iframe-container" id="assignjobcard">
+                <iframe src="https://workshopbright.netlify.app/workshop/assign%20jobcard" loading="lazy"></iframe>
+            </div>
+            <div class="iframe-container" id="openjob">
+                <iframe src="https://workshopbright.netlify.app/workshop/openjob" loading="lazy"></iframe>
+            </div>
+            <div class="iframe-container" id="workingprogress">
+                <iframe src="https://workshopbright.netlify.app/workshop/workingprogress" loading="lazy"></iframe>
+            </div>
+            <div class="iframe-container" id="servicecompleted">
+                <iframe src="https://workshopbright.netlify.app/workshop/servicecompleted" loading="lazy"></iframe>
+            </div>
+            <div class="iframe-container" id="readyfordelivery">
+                <iframe src="https://workshopbright.netlify.app/workshop/readyfordelivery" loading="lazy"></iframe>
+            </div>
+            <div class="iframe-container" id="searchjobcard">
+                <iframe src="https://workshopbright.netlify.app/workshop/searchjobcard" loading="lazy"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if on mobile device
+            function isMobile() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            }
+            
+            // PIN verification
+            const CORRECT_PIN = "8089"; // Set your PIN here
+            const pinModal = document.getElementById('pinModal');
+            const pinInput = document.getElementById('pinInput');
+            const pinSubmit = document.getElementById('pinSubmit');
+            const pinError = document.getElementById('pinError');
+            const appContainer = document.getElementById('appContainer');
+            const securityOverlay = document.getElementById('securityOverlay');
+            
+            // Check if PIN is already stored (for session)
+            const storedPin = sessionStorage.getItem('technicianPinVerified');
+            
+            if (storedPin === 'true') {
+                pinModal.style.display = 'none';
+            } else {
+                pinModal.style.display = 'flex';
+            }
+            
+            // PIN submission handler
+            pinSubmit.addEventListener('click', function() {
+                if (pinInput.value === CORRECT_PIN) {
+                    sessionStorage.setItem('technicianPinVerified', 'true');
+                    pinModal.style.display = 'none';
+                    pinError.textContent = '';
+                    
+                    // Continue with mobile check
+                    if (!isMobile()) {
+                        securityOverlay.style.display = 'flex';
+                    } else {
+                        securityOverlay.style.display = 'none';
+                        appContainer.style.display = 'flex';
+                    }
+                } else {
+                    pinError.textContent = 'Incorrect PIN. Please try again.';
+                    pinInput.value = '';
+                    pinInput.focus();
+                }
+            });
+            
+            // Also allow Enter key to submit PIN
+            pinInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    pinSubmit.click();
+                }
+            });
+            
+            // Focus PIN input when modal shows
+            if (pinModal.style.display === 'flex') {
+                pinInput.focus();
+            }
+            
+            // Prevent right click
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+            
+            // Prevent keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+                if (e.key === 'F12' || 
+                    (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                    (e.ctrlKey && e.shiftKey && e.key === 'J') || 
+                    (e.ctrlKey && e.key === 'U')) {
+                    e.preventDefault();
+                }
+            });
+            
+            // Tab switching functionality
+            const tabs = document.querySelectorAll('.tab');
+            const iframeContainers = document.querySelectorAll('.iframe-container');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Hide all iframes
+                    iframeContainers.forEach(container => {
+                        container.classList.remove('active');
+                    });
+                    
+                    // Show selected iframe
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Logout button
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to logout?')) {
+                    // Clear session data
+                    sessionStorage.removeItem('technicianPinVerified');
+                    
+                    // Reload to show PIN entry again
+                    window.location.reload();
+                }
+            });
+            
+            // Prevent iframe content from being dragged
+            document.addEventListener('dragstart', function(e) {
+                if (e.target.tagName === 'IFRAME') {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
