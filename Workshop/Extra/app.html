@@ -196,12 +196,6 @@
         
         .refresh-btn i {
             font-size: 1.2rem;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
         
         /* PIN Entry Modal */
@@ -545,7 +539,7 @@
                 sessionStorage.setItem('activeTab', tabId);
             }
             
-            // Refresh button functionality
+            // Refresh button functionality (manual refresh only)
             refreshBtn.addEventListener('click', function() {
                 const activeIframeContainer = document.querySelector('.iframe-container.active');
                 if (activeIframeContainer) {
@@ -565,26 +559,6 @@
                     }
                 }
             });
-            
-            // Auto-refresh functionality for active tab
-            let refreshInterval;
-            function startAutoRefresh() {
-                // Clear any existing interval
-                if (refreshInterval) {
-                    clearInterval(refreshInterval);
-                }
-                
-                // Set new interval (every 3 seconds)
-                refreshInterval = setInterval(() => {
-                    const activeIframeContainer = document.querySelector('.iframe-container.active');
-                    if (activeIframeContainer) {
-                        const iframe = activeIframeContainer.querySelector('iframe');
-                        if (iframe) {
-                            iframe.src = iframe.src;
-                        }
-                    }
-                }, 3000);
-            }
             
             // Prevent right click
             document.addEventListener('contextmenu', function(e) {
@@ -609,7 +583,6 @@
                 tab.addEventListener('click', function() {
                     const tabId = this.getAttribute('data-tab');
                     activateTab(tabId);
-                    startAutoRefresh();
                 });
             });
             
@@ -626,11 +599,6 @@
                     sessionStorage.removeItem('technicianPinVerified');
                     sessionStorage.removeItem('activeTab');
                     
-                    // Clear refresh interval
-                    if (refreshInterval) {
-                        clearInterval(refreshInterval);
-                    }
-                    
                     // Reload to show PIN entry again
                     window.location.reload();
                 }
@@ -642,9 +610,6 @@
                     e.preventDefault();
                 }
             });
-            
-            // Start auto-refresh when page loads
-            startAutoRefresh();
         });
     </script>
 </body>
