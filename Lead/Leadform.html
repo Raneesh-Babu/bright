@@ -5,51 +5,138 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lead Form</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+    }
+    
+    .form-container {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      transition: all 0.3s ease;
+    }
+    
+    .form-container:hover {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+    
+    input, textarea, select {
+      transition: all 0.3s ease;
+      border-color: #bfdbfe;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      border-color: #3b82f6;
+    }
+    
+    .submit-btn {
+      transition: all 0.3s ease;
+      background-image: linear-gradient(to right, #2563eb, #3b82f6);
+      box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+    }
+    
+    .submit-btn:hover:enabled {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(59, 130, 246, 0.4);
+    }
+    
+    .submit-btn:disabled {
+      background-image: linear-gradient(to right, #9ca3af, #d1d5db);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    
+    .success-message {
+      animation: fadeInOut 4s ease-in-out;
+    }
+    
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(10px); }
+      20% { opacity: 1; transform: translateY(0); }
+      80% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(10px); }
+    }
+    
+    .floating-label {
+      position: relative;
+    }
+    
+    .floating-label label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      color: #6b7280;
+      transition: all 0.2s ease;
+      pointer-events: none;
+      background: white;
+      padding: 0 4px;
+    }
+    
+    .floating-label input:focus + label,
+    .floating-label input:not(:placeholder-shown) + label,
+    .floating-label textarea:focus + label,
+    .floating-label textarea:not(:placeholder-shown) + label,
+    .floating-label select:focus + label,
+    .floating-label select:not([value=""]) + label {
+      top: -8px;
+      left: 10px;
+      font-size: 0.75rem;
+      color: #3b82f6;
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-blue-100 to-white min-h-screen flex items-center justify-center p-6">
+<body class="min-h-screen flex items-center justify-center p-4 md:p-6">
 
-  <div class="w-full max-w-xl bg-white shadow-2xl rounded-2xl p-8">
-    <h2 class="text-3xl font-bold text-center text-blue-700 mb-6">Lead Entry Form</h2>
+  <div class="form-container w-full max-w-2xl bg-white rounded-xl p-6 md:p-10">
+    <h2 class="text-3xl font-bold text-center text-blue-700 mb-2">Lead Entry Form</h2>
+    <p class="text-center text-gray-500 mb-8">Please fill in the details below</p>
 
-    <form id="leadForm" class="space-y-5">
-      <div>
-        <label class="font-semibold block mb-1">Name</label>
-        <input name="name" type="text" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+    <form id="leadForm" class="space-y-6">
+      <div class="floating-label">
+        <input name="name" type="text" required placeholder=" " 
+               class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500">
+        <label>Name</label>
       </div>
 
-      <div>
-        <label class="font-semibold block mb-1">Mobile</label>
-        <input name="mob" type="number" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+      <div class="floating-label">
+        <input name="mob" type="number" required placeholder=" "
+               class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500">
+        <label>Mobile</label>
       </div>
 
-      <div>
-        <label class="font-semibold block mb-1">Remark</label>
-        <textarea name="remark" rows="3" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+      <div class="floating-label">
+        <textarea name="remark" rows="3" placeholder=" "
+                  class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+        <label>Remark</label>
       </div>
 
-      <div>
-        <label class="font-semibold block mb-1">Branch</label>
-        <select name="branch" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-          <option value="">Select Branch</option>
+      <div class="floating-label">
+        <select name="branch" required class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500">
+          <option value=""></option>
           <option value="ANGADIPURAM">ANGADIPURAM</option>
           <option value="MANJERI">MANJERI</option>
         </select>
+        <label>Branch</label>
       </div>
 
-      <div>
-        <label class="font-semibold block mb-1">Date</label>
-        <input name="date" type="date" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+      <div class="floating-label">
+        <input name="date" type="date" required 
+               class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500">
+        <label>Date</label>
       </div>
 
-      <div>
-        <label class="font-semibold block mb-1">Last Follow-up Date</label>
-        <input name="followup" type="date" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+      <div class="floating-label">
+        <input name="followup" type="date" 
+               class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500">
+        <label>Last Follow-up Date</label>
       </div>
 
-      <div>
-        <label class="font-semibold block mb-1">Status</label>
-        <select name="status" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-          <option value="">Select Status</option>
+      <div class="floating-label">
+        <select name="status" required class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500">
+          <option value=""></option>
           <option value="New Lead">New Lead</option>
           <option value="Followup Pending">Followup Pending</option>
           <option value="Followup done">Followup Done</option>
@@ -57,21 +144,29 @@
           <option value="Not Interested">Not Interested</option>
           <option value="Sale done">Sale done</option>
         </select>
+        <label>Status</label>
       </div>
 
-      <div class="text-center pt-4">
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold">
+      <div class="text-center pt-6">
+        <button id="submitBtn" type="submit" 
+                class="submit-btn text-white px-8 py-3 rounded-lg font-semibold text-lg w-full md:w-auto">
           Submit
         </button>
       </div>
     </form>
 
-    <div id="successMsg" class="hidden text-green-600 text-center mt-4 font-medium">Lead submitted successfully!</div>
+    <div id="successMsg" class="success-message hidden text-green-600 text-center mt-6 font-medium text-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+      Lead submitted successfully!
+    </div>
   </div>
 
   <script>
     const form = document.getElementById("leadForm");
     const successMsg = document.getElementById("successMsg");
+    const submitBtn = document.getElementById("submitBtn");
 
     const BASEROW_API_TOKEN = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
     const TABLE_ID = "619130";
@@ -116,6 +211,10 @@
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      
+      // Disable the button
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Processing...';
 
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
@@ -132,10 +231,18 @@
 
         form.reset();
         successMsg.classList.remove("hidden");
-        setTimeout(() => successMsg.classList.add("hidden"), 4000);
+        
+        // Hide success message after 4 seconds
+        setTimeout(() => {
+          successMsg.classList.add("hidden");
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Submit';
+        }, 4000);
       } catch (err) {
-        alert("Error uploading to Baserow. Check console for details.");
+        alert("Error uploading to Baserow. Please try again.");
         console.error(err);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit';
       }
     });
   </script>
