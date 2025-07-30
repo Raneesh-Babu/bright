@@ -196,6 +196,12 @@
         
         .refresh-btn i {
             font-size: 1.2rem;
+            animation: spin 2s linear infinite; /* Continuous rotation */
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         /* PIN Entry Modal */
@@ -449,7 +455,7 @@
             </div>
         </div>
         
-        <!-- Refresh Button -->
+        <!-- Refresh Button (now with continuous rotation) -->
         <div class="refresh-btn" id="refreshBtn">
             <i class="fas fa-sync-alt"></i>
         </div>
@@ -545,17 +551,8 @@
                 if (activeIframeContainer) {
                     const iframe = activeIframeContainer.querySelector('iframe');
                     if (iframe) {
-                        // Add spinning animation
-                        const icon = refreshBtn.querySelector('i');
-                        icon.style.animation = 'spin 0.5s linear';
-                        
                         // Reload iframe
                         iframe.src = iframe.src;
-                        
-                        // Remove animation after 0.5s
-                        setTimeout(() => {
-                            icon.style.animation = '';
-                        }, 500);
                     }
                 }
             });
