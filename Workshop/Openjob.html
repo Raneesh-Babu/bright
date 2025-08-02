@@ -294,11 +294,10 @@
       <label for="technicianFilter">Filter by Inspection Technician</label>
       <select id="technicianFilter" onchange="filterJobCards()">
         <option value="">All Technicians</option>
-        <option value="John Smith">John Smith</option>
-        <option value="Sarah Johnson">Sarah Johnson</option>
-        <option value="Michael Brown">Michael Brown</option>
-        <option value="Emily Davis">Emily Davis</option>
-        <option value="Robert Wilson">Robert Wilson</option>
+        <option value="ARSAL M T (AGM)">ARSAL M T (AGM)</option>
+        <option value="ANFAZ (AGM)">ANFAZ (AGM)</option>
+        <option value="SAFEER (NLR)">SAFEER (NLR)</option>
+        <option value="ABINU T P (MJR)">ABINU T P (MJR)</option>
       </select>
     </div>
   </div>
@@ -308,7 +307,7 @@
   <script>
     const apiKey = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
     const tableId = 622532;
-    const technicians = ["Technician A", "Technician B", "Technician C"];
+    const technicians = ["ARSAL M T (AGM)", "ANFAZ (AGM)", "SAFEER (NLR)","ABINU T P (MJR)"];
     let allJobCards = [];
 
     function formatDate(dateStr) {
