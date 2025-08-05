@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Manager Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6a11cb;
+      --secondary: #2575fc;
+      --text-dark: #2d3748;
+      --text-light: #4a5568;
+      --bg-light: #f8fafc;
+      --white: #ffffff;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --danger: #e53e3e;
+      --warning: #dd6b20;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--bg-light) 0%, #e2e8f0 100%);
+      min-height: 100vh;
+      color: var(--text-dark);
+      transition: all 0.3s ease;
+      margin: 0;
+    }
+    
+    body.dark-mode {
+      background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+      color: #f7fafc;
+    }
+    
+    body.dark-mode .container {
+      background: #2d3748;
+      border: 1px solid #4a5568;
+    }
+    
+    body.dark-mode input,
+    body.dark-mode select,
+    body.dark-mode .invoice {
+      background: #4a5568;
+      color: #f7fafc;
+      border-color: #718096;
+    }
+    
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+      background: var(--white);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+    }
+    
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    h2 {
+      color: var(--primary);
+      margin: 0;
+      font-weight: 600;
+      font-size: 1.5rem;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    input, select {
+      padding: 12px 15px;
+      margin: 8px 0;
+      width: 100%;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px rgba(37, 117, 252, 0.1);
+    }
+    
+    button {
+      padding: 12px 20px;
+      margin: 8px 0;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    #items {
+      margin-top: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .item-row {
+      padding: 12px 15px;
+      background: var(--white);
+      border-bottom: 1px solid #edf2f7;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+      position: relative;
+    }
+    
+    .remove-item {
+      background: #f8d7da;
+      color: var(--danger);
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: absolute;
+      right: 5px;
+      top: 5px;
+      font-size: 12px;
+    }
+    
+    .low-stock {
+      background: #fffaf0;
+      border-left: 4px solid var(--warning);
+      color: var(--warning);
+    }
+    
+    .critical-stock {
+      background: #fff5f5;
+      border-left: 4px solid var(--danger);
+      color: var(--danger);
+    }
+    
+    .invoice {
+      white-space: pre-line;
+      background: var(--white);
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      border: 1px solid #e2e8f0;
+      font-size: 15px;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+    
+    .btn {
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    
+    .button-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      left: 20px;
+      background: #4CAF50;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      max-width: 400px;
+      margin-left: auto;
+    }
+    
+    .notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .notification.error {
+      background: #f44336;
+    }
+    
+    #themeToggle {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      margin: 0;
+      width: auto;
+    }
+    
+    /* Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      z-index: 900;
+      transition: all 0.3s ease;
+    }
+    
+    .fab:hover {
+      transform: scale(1.1);
+    }
+    
+    /* Invoice History Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background: white;
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      border-radius: 12px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    body.dark-mode .modal-content {
+      background: #2d3748;
+    }
+    
+    .invoice-history {
+      margin-top: 15px;
+    }
+    
+    .history-item {
+      padding: 15px;
+      border-bottom: 1px solid #e2e8f0;
+      cursor: pointer;
+    }
+    
+    body.dark-mode .history-item {
+      border-color: #4a5568;
+    }
+    
+    .history-item:hover {
+      background: #f7fafc;
+    }
+    
+    body.dark-mode .history-item:hover {
+      background: #4a5568;
+    }
+    
+    .close-modal {
+      float: right;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    
+    @media (min-width: 768px) {
+      .container {
+        padding: 30px;
+        max-width: 800px;
+      }
+      
+      .notification {
+        left: auto;
+        right: 20px;
+        width: auto;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .item-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+        padding-top: 30px;
+      }
+      
+      .button-group {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="header-top">
+      <h2>Inventory Billing Pro</h2>
+      <button id="themeToggle">🌓</button>
+    </div>
+  </div>
+
+  <select id="transactionType">
+    <option value="sale">Sale</option>
+    <option value="purchase">Purchase</option>
+  </select>
+
+  <input type="text" id="itemSearch" placeholder="Enter item name or code" autocomplete="off" />
+  <div id="suggestions"></div>
+
+  <input type="number" id="itemQuantity" placeholder="Enter quantity" />
+  <button onclick="addItem()" style="background: linear-gradient(to right, #4f46e5, #7c3aed);">Add Item</button>
+
+  <div id="items"></div>
+
+  <div class="button-group">
+    <button class="btn" onclick="generateInvoice()">Generate Invoice</button>
+    <button class="btn" onclick="copyToClipboard()">Copy Invoice</button>
+    <button class="btn" onclick="loadLastInvoice()">Load Last Invoice</button>
+  </div>
+
+  <div class="invoice" id="invoiceOutput"></div>
+</div>
+
+<!-- Floating Action Button -->
+<div class="fab" onclick="showInvoiceHistory()">📋</div>
+
+<!-- Invoice History Modal -->
+<div id="historyModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <h3>Invoice History</h3>
+    <div id="invoiceHistory" class="invoice-history"></div>
+  </div>
+</div>
+
+<!-- Notification Toast -->
+<div id="notificationToast" class="notification"></div>
+
+<script>
+const apiKey = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+const tableId = '633174';
+const baseUrl = `https://api.baserow.io/api/database/rows/table/${tableId}/?user_field_names=true`;
+
+let selectedItems = [];
+let allItems = [];
+
+// ======================
+// CORE FUNCTIONS
+// ======================
+async function fetchItems() {
+  try {
+    const res = await fetch(baseUrl, {
+      headers: { Authorization: `Token ${apiKey}` }
+    });
+    if (!res.ok) throw new Error("Failed to fetch items");
+    const data = await res.json();
+    allItems = data.results;
+  } catch (error) {
+    showNotification("Error loading items: " + error.message, "error");
+  }
+}
+
+function selectItem(id) {
+  const item = allItems.find(i => i.id == id);
+  if (!item) return;
+  
+  document.getElementById('itemSearch').value = `${item['Item name']} (${item['Item code']})`;
+  document.getElementById('itemSearch').dataset.selectedId = item.id;
+  document.getElementById('suggestions').innerHTML = '';
+}
+
+function addItem() {
+  try {
+    const id = document.getElementById('itemSearch').dataset.selectedId;
+    const qty = parseInt(document.getElementById('itemQuantity').value);
+    
+    if (!id) throw new Error("Please select an item first");
+    if (!qty || qty <= 0) throw new Error("Please enter a valid quantity");
+
+    const item = allItems.find(i => i.id == id);
+    if (!item) throw new Error("Item not found");
+    
+    // Check stock for sales
+    if (document.getElementById('transactionType').value === 'sale' && item['Item count'] < qty) {
+      throw new Error(`Only ${item['Item count']} units available!`);
+    }
+    
+    selectedItems.push({ ...item, qty });
+    updateItemList();
+    saveDraft();
+    showNotification(`${item['Item name']} added to cart`);
+    
+    document.getElementById('itemSearch').value = '';
+    document.getElementById('itemQuantity').value = '';
+  } catch (error) {
+    showNotification(error.message, "error");
+  }
+}
+
+function removeItem(index) {
+  if (index >= 0 && index < selectedItems.length) {
+    const itemName = selectedItems[index]['Item name'];
+    selectedItems.splice(index, 1);
+    updateItemList();
+    saveDraft();
+    showNotification(`${itemName} removed from cart`);
+  }
+}
+
+function updateItemList() {
+  document.getElementById('items').innerHTML = selectedItems.map((i, index) => `
+    <div class="item-row ${i['Item count'] <= 3 ? 'critical-stock' : i['Item count'] <= 10 ? 'low-stock' : ''}">
+      <span>${i['Item name']}</span>
+      <span>Qty: ${i.qty}</span>
+      <span>Price: ₹${i['Item MRP']}</span>
+      ${i['Item count'] <= 10 ? `<span>(Only ${i['Item count']} left)</span>` : ''}
+      <div class="remove-item" onclick="removeItem(${index})">×</div>
+    </div>
+  `).join('');
+}
+
+// ======================
+// INVOICE FUNCTIONS
+// ======================
+async function generateInvoice() {
+  try {
+    if (selectedItems.length === 0) {
+      throw new Error("Cannot generate invoice - no items selected");
+    }
+
+    let total = 0;
+    const isSale = document.getElementById('transactionType').value === 'sale';
+    let lines = [`🧾 *Invoice* - ${getFormattedDate()}\nTransaction: ${isSale ? 'Sale' : 'Purchase'}\n`];
+
+    for (let i of selectedItems) {
+      const amount = i.qty * i['Item MRP'];
+      total += amount;
+      lines.push(`${i['Item name']} (${i['Item code']}): ${i.qty} × ₹${i['Item MRP']} = ₹${amount}`);
+
+      const qtyChange = isSale ? -i.qty : i.qty;
+      await updateStock(i, qtyChange);
+    }
+
+    lines.push(`\n*Total: ₹${total}*`);
+    const invoiceText = lines.join('\n');
+    document.getElementById('invoiceOutput').textContent = invoiceText;
+    
+    saveInvoiceToHistory(invoiceText);
+    showNotification("Invoice generated and saved!");
+    
+    selectedItems = [];
+    updateItemList();
+    fetchItems();
+  } catch (error) {
+    showNotification(error.message, "error");
+  }
+}
+
+function saveInvoiceToHistory(invoiceText) {
+  try {
+    const invoices = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    invoices.push({
+      date: new Date().toISOString(),
+      content: invoiceText
+    });
+    localStorage.setItem('invoiceHistory', JSON.stringify(invoices));
+    localStorage.setItem('lastInvoice', invoiceText);
+  } catch (error) {
+    console.error("Error saving invoice:", error);
+  }
+}
+
+function loadLastInvoice() {
+  try {
+    const lastInvoice = localStorage.getItem('lastInvoice');
+    if (lastInvoice) {
+      document.getElementById('invoiceOutput').textContent = lastInvoice;
+      showNotification("Last invoice loaded");
+    } else {
+      showNotification("No previous invoice found", "error");
+    }
+  } catch (error) {
+    showNotification("Error loading invoice: " + error.message, "error");
+  }
+}
+
+// ======================
+// COPY FUNCTION (FIXED)
+// ======================
+function copyToClipboard() {
+  try {
+    const invoiceOutput = document.getElementById('invoiceOutput');
+    if (!invoiceOutput || !invoiceOutput.textContent.trim()) {
+      showNotification("No invoice content to copy", "error");
+      return;
+    }
+
+    // Create a temporary textarea element
+    const textarea = document.createElement('textarea');
+    textarea.value = invoiceOutput.textContent;
+    textarea.style.position = 'fixed';  // Prevent scrolling to bottom
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    // Execute the copy command
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    
+    if (successful) {
+      showNotification("Invoice copied to clipboard!");
+    } else {
+      throw new Error("Copy command failed");
+    }
+  } catch (error) {
+    showNotification("Failed to copy: " + error.message, "error");
+  }
+}
+
+// ======================
+// INVOICE HISTORY FUNCTIONS
+// ======================
+function showInvoiceHistory() {
+  try {
+    const modal = document.getElementById('historyModal');
+    const historyContainer = document.getElementById('invoiceHistory');
+    
+    const invoices = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    
+    if (invoices.length === 0) {
+      historyContainer.innerHTML = "<p>No invoice history found</p>";
+    } else {
+      historyContainer.innerHTML = invoices.map((invoice, index) => `
+        <div class="history-item" onclick="loadInvoiceFromHistory(${index})">
+          <strong>Invoice ${invoices.length - index}</strong>
+          <div>${new Date(invoice.date).toLocaleString()}</div>
+          <div style="margin-top: 5px; font-size: 0.9em; color: var(--text-light);">
+            ${invoice.content.split('\n')[0]}
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    modal.style.display = 'flex';
+  } catch (error) {
+    showNotification("Error loading history: " + error.message, "error");
+  }
+}
+
+function closeModal() {
+  document.getElementById('historyModal').style.display = 'none';
+}
+
+function loadInvoiceFromHistory(index) {
+  try {
+    const invoices = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    if (invoices[index]) {
+      document.getElementById('invoiceOutput').textContent = invoices[index].content;
+      closeModal();
+      showNotification("Invoice loaded from history");
+    }
+  } catch (error) {
+    showNotification("Error loading invoice: " + error.message, "error");
+  }
+}
+
+// ======================
+// STORAGE FUNCTIONS
+// ======================
+function saveDraft() {
+  try {
+    const draft = {
+      items: selectedItems,
+      transactionType: document.getElementById('transactionType').value
+    };
+    localStorage.setItem('draftInvoice', JSON.stringify(draft));
+  } catch (error) {
+    console.error("Error saving draft:", error);
+  }
+}
+
+function loadDraft() {
+  try {
+    const draft = localStorage.getItem('draftInvoice');
+    if (draft) {
+      const parsed = JSON.parse(draft);
+      selectedItems = parsed.items || [];
+      document.getElementById('transactionType').value = parsed.transactionType || 'sale';
+      updateItemList();
+    }
+  } catch (error) {
+    console.error("Error loading draft:", error);
+  }
+}
+
+// ======================
+// UTILITY FUNCTIONS
+// ======================
+function getFormattedDate() {
+  const d = new Date();
+  return d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString();
+}
+
+async function updateStock(item, qtyChange) {
+  try {
+    const newQty = parseInt(item['Item count']) + qtyChange;
+    await fetch(`https://api.baserow.io/api/database/rows/table/${tableId}/${item.id}/?user_field_names=true`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Token ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 'Item count': newQty })
+    });
+  } catch (error) {
+    console.error("Error updating stock:", error);
+    throw error;
+  }
+}
+
+function showNotification(message, type = "success") {
+  const toast = document.getElementById('notificationToast');
+  toast.textContent = message;
+  toast.className = `notification show ${type}`;
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+// ======================
+// EVENT LISTENERS
+// ======================
+document.getElementById('itemSearch').addEventListener('input', function() {
+  const val = this.value.toLowerCase();
+  const suggestions = allItems.filter(item =>
+    item['Item name'].toLowerCase().includes(val) || item['Item code'].toLowerCase().includes(val)
+  );
+  document.getElementById('suggestions').innerHTML = suggestions.map(s => `
+    <div onclick="selectItem('${s.id}')">${s['Item name']} (${s['Item code']})</div>
+  `).join('');
+});
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+});
+
+window.addEventListener('click', (event) => {
+  const modal = document.getElementById('historyModal');
+  if (event.target === modal) {
+    closeModal();
+  }
+  
+  if (!event.target.closest('#itemSearch') && !event.target.closest('#suggestions')) {
+    document.getElementById('suggestions').innerHTML = '';
+  }
+});
+
+// ======================
+// INITIALIZATION
+// ======================
+window.addEventListener('load', () => {
+  // Load theme preference
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+  }
+  
+  // Initialize systems
+  fetchItems();
+  loadDraft();
+});
+</script>
+</body>
+  </html>
