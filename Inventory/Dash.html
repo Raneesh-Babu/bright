@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-blue: #4361ee;
+      --primary-purple: #7209b7;
+      --light-bg: #f8f9fa;
+      --white: #ffffff;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --radius: 8px;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--light-bg);
+      color: #2b2d42;
+      line-height: 1.6;
+      padding: 15px;
+      min-height: 100vh;
+    }
+    
+    h1 {
+      text-align: center;
+      margin: 15px 0 25px;
+      color: #2b2d42;
+      font-weight: 600;
+      font-size: 1.6rem;
+      background: linear-gradient(90deg, var(--primary-blue), var(--primary-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      padding: 15px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: white;
+    }
+    
+    .stat-card.total-products {
+      background: linear-gradient(135deg, var(--primary-blue), #4895ef);
+    }
+    
+    .stat-card.low-stock-count {
+      background: linear-gradient(135deg, #f72585, #b5179e);
+    }
+    
+    .stat-card.total-value {
+      background: linear-gradient(135deg, #4cc9f0, #3a0ca3);
+    }
+    
+    .stat-card h2 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .stat-card p {
+      font-size: 0.8rem;
+      opacity: 0.9;
+    }
+    
+    .low-stock {
+      background: var(--white);
+      padding: 15px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+    
+    .low-stock h3 {
+      color: #f72585;
+      margin-bottom: 12px;
+      font-size: 1rem;
+    }
+    
+    .low-stock ul {
+      list-style: none;
+    }
+    
+    .low-stock li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+    
+    .low-stock li:last-child {
+      border-bottom: none;
+    }
+    
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+    
+    button {
+      padding: 10px;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow);
+    }
+    
+    .add-btn {
+      background: linear-gradient(135deg, var(--primary-blue), #4cc9f0);
+      color: white;
+    }
+    
+    .add-btn:hover {
+      opacity: 0.9;
+    }
+    
+    .update-btn {
+      background: linear-gradient(135deg, #7209b7, #b5179e);
+      color: white;
+    }
+    
+    .update-btn:hover {
+      opacity: 0.9;
+    }
+    
+    input, select {
+      padding: 10px;
+      margin: 8px 0;
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: var(--radius);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-card {
+      max-width: 100%;
+      margin: 15px 0;
+      padding: 15px;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    
+    .form-card h3 {
+      margin-bottom: 15px;
+      color: var(--primary-purple);
+      text-align: center;
+      font-size: 1.1rem;
+    }
+    
+    @media (min-width: 600px) {
+      .dashboard {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      
+      .stat-card {
+        min-height: 120px;
+      }
+      
+      .stat-card h2 {
+        font-size: 1.8rem;
+      }
+      
+      .stat-card p {
+        font-size: 0.9rem;
+      }
+      
+      .actions {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 400px;
+        margin: 20px auto;
+      }
+      
+      .form-card {
+        max-width: 450px;
+        margin: 20px auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Inventory Dashboard</h1>
+
+  <div class="dashboard">
+    <div class="stat-card total-products">
+      <h2 id="totalProducts">0</h2>
+      <p>Total Products</p>
+    </div>
+    <div class="stat-card low-stock-count">
+      <h2 id="lowStockCount">0</h2>
+      <p>Low Stock Items</p>
+    </div>
+    <div class="stat-card total-value">
+      <h2 id="totalValue">₹0</h2>
+      <p>Total Value</p>
+    </div>
+  </div>
+
+  <div class="low-stock">
+    <h3>Low Stock Items (&lt; 3 units)</h3>
+    <ul id="lowStockList"></ul>
+  </div>
+
+  <div class="actions">
+    <button class="add-btn" onclick="openAddForm()">Add New Item</button>
+    <button class="update-btn" onclick="openUpdateForm()">Update Item</button>
+  </div>
+
+  <div class="form-card" id="addItemForm" style="display:none;">
+    <h3>Add New Item</h3>
+    <div class="form-group">
+      <input type="text" id="newName" placeholder="Item Name">
+      <input type="text" id="newCode" placeholder="Item Code">
+      <input type="number" id="newCount" placeholder="Count">
+      <input type="number" id="newMRP" placeholder="MRP">
+    </div>
+    <button class="add-btn" onclick="addItem()">Add Item</button>
+  </div>
+
+  <div class="form-card" id="updateItemForm" style="display:none;">
+    <h3>Update Item</h3>
+    <input list="itemSuggestions" id="updateSearch" placeholder="Search by Name or Code" oninput="autoFillItem()">
+    <datalist id="itemSuggestions"></datalist>
+    <input type="number" id="updateCount" placeholder="New Count">
+    <input type="number" id="updateMRP" placeholder="New MRP">
+    <button class="update-btn" onclick="updateItem()">Update Item</button>
+  </div>
+
+  <script>
+    let items = [];
+
+    async function fetchItems() {
+      const res = await fetch('https://api.baserow.io/api/database/rows/table/633174/?user_field_names=true', {
+        headers: {
+          Authorization: 'Token jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw'
+        }
+      });
+      const data = await res.json();
+      items = data.results;
+      updateDashboard();
+    }
+
+    function updateDashboard() {
+      let totalProducts = items.length;
+      let lowStock = items.filter(i => i["Item count"] < 3);
+      let totalValue = items.reduce((sum, item) => sum + item["Item count"] * item["Item MRP"], 0);
+
+      document.getElementById('totalProducts').innerText = totalProducts;
+      document.getElementById('lowStockCount').innerText = lowStock.length;
+      document.getElementById('totalValue').innerText = "₹" + totalValue.toLocaleString();
+
+      let list = document.getElementById("lowStockList");
+      list.innerHTML = '';
+      lowStock.forEach(i => {
+        let li = document.createElement("li");
+        li.innerText = `${i["Item name"]} (${i["Item code"]}) - ${i["Item count"]} units`;
+        list.appendChild(li);
+      });
+
+      let suggestions = document.getElementById("itemSuggestions");
+      suggestions.innerHTML = '';
+      items.forEach(i => {
+        let option = document.createElement("option");
+        option.value = `${i["Item name"]} (${i["Item code"]})`;
+        suggestions.appendChild(option);
+      });
+    }
+
+    async function addItem() {
+      const name = document.getElementById('newName').value;
+      const code = document.getElementById('newCode').value;
+      const count = parseInt(document.getElementById('newCount').value);
+      const mrp = parseFloat(document.getElementById('newMRP').value);
+
+      if (!name || !code || isNaN(count) || isNaN(mrp)) {
+        alert("Please fill all fields with valid values");
+        return;
+      }
+
+      await fetch('https://api.baserow.io/api/database/rows/table/633174/?user_field_names=true', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Token jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          "Item name": name,
+          "Item code": code,
+          "Item count": count,
+          "Item MRP": mrp
+        })
+      });
+      
+      document.getElementById('newName').value = '';
+      document.getElementById('newCode').value = '';
+      document.getElementById('newCount').value = '';
+      document.getElementById('newMRP').value = '';
+      
+      document.getElementById('addItemForm').style.display = 'none';
+      fetchItems();
+    }
+
+    function openAddForm() {
+      document.getElementById('addItemForm').style.display = 'block';
+      document.getElementById('updateItemForm').style.display = 'none';
+    }
+
+    function openUpdateForm() {
+      document.getElementById('updateItemForm').style.display = 'block';
+      document.getElementById('addItemForm').style.display = 'none';
+    }
+
+    function autoFillItem() {
+      const input = document.getElementById("updateSearch").value;
+      const item = items.find(i => input.includes(i["Item name"]) || input.includes(i["Item code"]));
+      if (item) {
+        document.getElementById("updateCount").value = item["Item count"];
+        document.getElementById("updateMRP").value = item["Item MRP"];
+      }
+    }
+
+    async function updateItem() {
+      const input = document.getElementById("updateSearch").value;
+      const item = items.find(i => input.includes(i["Item name"]) || input.includes(i["Item code"]));
+      if (!item) return alert("Item not found!");
+
+      const newCount = parseInt(document.getElementById("updateCount").value);
+      const newMRP = parseFloat(document.getElementById("updateMRP").value);
+
+      if (isNaN(newCount) || isNaN(newMRP)) {
+        alert("Please enter valid numbers for count and MRP");
+        return;
+      }
+
+      await fetch(`https://api.baserow.io/api/database/rows/table/633174/${item.id}/?user_field_names=true`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': 'Token jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          "Item count": newCount,
+          "Item MRP": newMRP
+        })
+      });
+
+      document.getElementById('updateSearch').value = '';
+      document.getElementById('updateCount').value = '';
+      document.getElementById('updateMRP').value = '';
+      
+      document.getElementById('updateItemForm').style.display = 'none';
+      fetchItems();
+    }
+
+    fetchItems();
+  </script>
+</body>
+</html>
