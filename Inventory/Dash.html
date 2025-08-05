@@ -13,6 +13,9 @@
       --white: #ffffff;
       --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       --radius: 8px;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
     }
     
     * {
@@ -185,6 +188,59 @@
       font-size: 1.1rem;
     }
     
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: var(--radius);
+      color: white;
+      font-weight: 500;
+      box-shadow: var(--shadow);
+      transform: translateX(150%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      max-width: 300px;
+    }
+    
+    .notification.show {
+      transform: translateX(0);
+    }
+    
+    .notification.success {
+      background-color: var(--success);
+    }
+    
+    .notification.warning {
+      background-color: var(--warning);
+      color: #212529;
+    }
+    
+    .notification.error {
+      background-color: var(--danger);
+    }
+    
+    .refresh-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .refresh-btn {
+      background: var(--white);
+      color: var(--primary-blue);
+      border: 1px solid var(--primary-blue);
+      padding: 5px 10px;
+      font-size: 0.8rem;
+    }
+    
+    .refresh-status {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+    
     @media (min-width: 600px) {
       .dashboard {
         grid-template-columns: repeat(4, 1fr);
@@ -218,6 +274,11 @@
 <body>
 
   <h1>Inventory Dashboard</h1>
+
+  <div class="refresh-controls">
+    <button class="refresh-btn" onclick="manualRefresh()">Refresh Now</button>
+    <span class="refresh-status" id="refreshStatus">Last updated: Just now</span>
+  </div>
 
   <div class="dashboard">
     <div class="stat-card total-products">
@@ -264,18 +325,70 @@
     <button class="update-btn" onclick="updateItem()">Update Item</button>
   </div>
 
+  <div class="notification" id="notification"></div>
+
   <script>
     let items = [];
+    let refreshInterval = 30000; // 30 seconds
+    let refreshTimer;
+    let lastRefreshTime = new Date();
+
+    // Initialize the dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchItems();
+      startAutoRefresh();
+    });
+
+    function showNotification(message, type = 'success') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type} show`;
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+
+    function updateRefreshStatus() {
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - lastRefreshTime) / 1000);
+      const statusElement = document.getElementById('refreshStatus');
+      
+      if (diffInSeconds < 60) {
+        statusElement.textContent = `Last updated: ${diffInSeconds} seconds ago`;
+      } else {
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        statusElement.textContent = `Last updated: ${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
+      }
+    }
+
+    function startAutoRefresh() {
+      clearInterval(refreshTimer);
+      refreshTimer = setInterval(fetchItems, refreshInterval);
+      updateRefreshStatus();
+    }
+
+    function manualRefresh() {
+      fetchItems();
+      showNotification('Data refreshed successfully');
+    }
 
     async function fetchItems() {
-      const res = await fetch('https://api.baserow.io/api/database/rows/table/633174/?user_field_names=true', {
-        headers: {
-          Authorization: 'Token jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw'
-        }
-      });
-      const data = await res.json();
-      items = data.results;
-      updateDashboard();
+      try {
+        const res = await fetch('https://api.baserow.io/api/database/rows/table/633174/?user_field_names=true', {
+          headers: {
+            Authorization: 'Token jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw'
+          }
+        });
+        const data = await res.json();
+        items = data.results;
+        lastRefreshTime = new Date();
+        updateDashboard();
+        updateRefreshStatus();
+      } catch (error) {
+        showNotification('Failed to refresh data', 'error');
+        console.error('Error fetching items:', error);
+      }
     }
 
     function updateDashboard() {
@@ -311,31 +424,37 @@
       const mrp = parseFloat(document.getElementById('newMRP').value);
 
       if (!name || !code || isNaN(count) || isNaN(mrp)) {
-        alert("Please fill all fields with valid values");
+        showNotification('Please fill all fields with valid values', 'error');
         return;
       }
 
-      await fetch('https://api.baserow.io/api/database/rows/table/633174/?user_field_names=true', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Token jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          "Item name": name,
-          "Item code": code,
-          "Item count": count,
-          "Item MRP": mrp
-        })
-      });
-      
-      document.getElementById('newName').value = '';
-      document.getElementById('newCode').value = '';
-      document.getElementById('newCount').value = '';
-      document.getElementById('newMRP').value = '';
-      
-      document.getElementById('addItemForm').style.display = 'none';
-      fetchItems();
+      try {
+        await fetch('https://api.baserow.io/api/database/rows/table/633174/?user_field_names=true', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Token jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            "Item name": name,
+            "Item code": code,
+            "Item count": count,
+            "Item MRP": mrp
+          })
+        });
+        
+        document.getElementById('newName').value = '';
+        document.getElementById('newCode').value = '';
+        document.getElementById('newCount').value = '';
+        document.getElementById('newMRP').value = '';
+        
+        document.getElementById('addItemForm').style.display = 'none';
+        showNotification('Item added successfully');
+        fetchItems();
+      } catch (error) {
+        showNotification('Failed to add item', 'error');
+        console.error('Error adding item:', error);
+      }
     }
 
     function openAddForm() {
@@ -360,37 +479,44 @@
     async function updateItem() {
       const input = document.getElementById("updateSearch").value;
       const item = items.find(i => input.includes(i["Item name"]) || input.includes(i["Item code"]));
-      if (!item) return alert("Item not found!");
+      if (!item) {
+        showNotification('Item not found!', 'error');
+        return;
+      }
 
       const newCount = parseInt(document.getElementById("updateCount").value);
       const newMRP = parseFloat(document.getElementById("updateMRP").value);
 
       if (isNaN(newCount) || isNaN(newMRP)) {
-        alert("Please enter valid numbers for count and MRP");
+        showNotification('Please enter valid numbers for count and MRP', 'error');
         return;
       }
 
-      await fetch(`https://api.baserow.io/api/database/rows/table/633174/${item.id}/?user_field_names=true`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': 'Token jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          "Item count": newCount,
-          "Item MRP": newMRP
-        })
-      });
+      try {
+        await fetch(`https://api.baserow.io/api/database/rows/table/633174/${item.id}/?user_field_names=true`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': 'Token jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            "Item count": newCount,
+            "Item MRP": newMRP
+          })
+        });
 
-      document.getElementById('updateSearch').value = '';
-      document.getElementById('updateCount').value = '';
-      document.getElementById('updateMRP').value = '';
-      
-      document.getElementById('updateItemForm').style.display = 'none';
-      fetchItems();
+        document.getElementById('updateSearch').value = '';
+        document.getElementById('updateCount').value = '';
+        document.getElementById('updateMRP').value = '';
+        
+        document.getElementById('updateItemForm').style.display = 'none';
+        showNotification('Item updated successfully');
+        fetchItems();
+      } catch (error) {
+        showNotification('Failed to update item', 'error');
+        console.error('Error updating item:', error);
+      }
     }
-
-    fetchItems();
   </script>
 </body>
-</html>
+  </html>
