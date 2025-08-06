@@ -16,6 +16,7 @@
       --success: #28a745;
       --warning: #ffc107;
       --danger: #dc3545;
+      --info: #17a2b8;
     }
     
     * {
@@ -124,6 +125,10 @@
       margin-top: 20px;
     }
     
+    .invoice-btn {
+      grid-column: span 2;
+    }
+    
     button {
       padding: 10px;
       font-size: 0.85rem;
@@ -150,6 +155,15 @@
     }
     
     .update-btn:hover {
+      opacity: 0.9;
+    }
+    
+    .invoice-btn {
+      background: linear-gradient(135deg, var(--success), #5cb85c);
+      color: white;
+    }
+    
+    .invoice-btn:hover {
       opacity: 0.9;
     }
     
@@ -259,9 +273,13 @@
       }
       
       .actions {
-        grid-template-columns: repeat(2, 1fr);
-        max-width: 400px;
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 600px;
         margin: 20px auto;
+      }
+      
+      .invoice-btn {
+        grid-column: span 1;
       }
       
       .form-card {
@@ -303,6 +321,7 @@
   <div class="actions">
     <button class="add-btn" onclick="openAddForm()">Add New Item</button>
     <button class="update-btn" onclick="openUpdateForm()">Update Item</button>
+    <button class="invoice-btn" onclick="window.open('https://workshopbright.netlify.app/inventory/mini', '_blank')">Generate Invoice</button>
   </div>
 
   <div class="form-card" id="addItemForm" style="display:none;">
@@ -519,4 +538,4 @@
     }
   </script>
 </body>
-  </html>
+      </html>
