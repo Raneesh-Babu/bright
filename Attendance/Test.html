@@ -2,67 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Leaflet Location Map Modal</title>
+  <title>Fast Location Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- Minimal Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       text-align: center;
-      padding: 40px;
+      padding: 30px;
     }
 
     button {
-      padding: 15px 25px;
-      font-size: 18px;
+      padding: 12px 20px;
+      font-size: 16px;
       cursor: pointer;
     }
 
     #coords {
       margin-top: 20px;
-      font-size: 18px;
+      font-size: 16px;
       color: blue;
       cursor: pointer;
-      text-decoration: underline;
       display: none;
+      text-decoration: underline;
     }
 
-    /* Modal */
+    /* Modal styling */
     .modal {
       display: none;
       position: fixed;
       z-index: 999;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
     }
 
     .modal-content {
-      background-color: #fff;
-      margin: 5% auto;
-      padding: 0;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 600px;
-      height: 500px;
       position: relative;
+      background: #fff;
+      margin: 10% auto;
+      width: 90%;
+      max-width: 500px;
+      height: 400px;
+      border-radius: 8px;
       overflow: hidden;
     }
 
     .close {
       position: absolute;
-      right: 10px;
-      top: 10px;
+      top: 8px;
+      right: 12px;
       font-size: 24px;
-      font-weight: bold;
-      color: #333;
+      color: #444;
       cursor: pointer;
-      z-index: 1001;
+      z-index: 10;
     }
 
     #map {
@@ -73,80 +69,65 @@
 </head>
 <body>
 
-  <h2>Show My Location</h2>
-  <button onclick="getLocation()">Get Current Location</button>
-  <div id="coords" onclick="openModal()"></div>
+  <h3>Find My Location</h3>
+  <button onclick="getLocation()">Get Location</button>
+  <div id="coords" onclick="openMap()">Loading...</div>
 
   <!-- Modal -->
-  <div id="mapModal" class="modal">
+  <div id="modal" class="modal">
     <div class="modal-content">
-      <span class="close" onclick="closeModal()">&times;</span>
+      <span class="close" onclick="closeMap()">&times;</span>
       <div id="map"></div>
     </div>
   </div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Minified Leaflet JS (deferred load) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
   <script>
-    let lat = 0;
-    let lon = 0;
-    let map = null;
-    let marker = null;
+    let lat = 0, lon = 0;
+    let map, marker;
+    let mapLoaded = false;
 
     function getLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition, showError);
-      } else {
-        alert("Geolocation is not supported by this browser.");
+      if (!navigator.geolocation) {
+        alert("Geolocation not supported");
+        return;
       }
+
+      navigator.geolocation.getCurrentPosition(pos => {
+        lat = pos.coords.latitude;
+        lon = pos.coords.longitude;
+        document.getElementById("coords").innerText = `Latitude: ${lat.toFixed(5)}, Longitude: ${lon.toFixed(5)} (Tap to View Map)`;
+        document.getElementById("coords").style.display = "block";
+      }, err => {
+        alert("Failed to get location.");
+      });
     }
 
-    function showPosition(position) {
-      lat = position.coords.latitude;
-      lon = position.coords.longitude;
-      document.getElementById("coords").innerText = `Latitude: ${lat.toFixed(6)}, Longitude: ${lon.toFixed(6)} (Tap to view map)`;
-      document.getElementById("coords").style.display = "block";
-    }
+    function openMap() {
+      document.getElementById("modal").style.display = "block";
 
-    function openModal() {
-      document.getElementById("mapModal").style.display = "block";
-
-      // Delay map creation to allow modal to appear
-      setTimeout(() => {
-        if (!map) {
+      // Load map only once
+      if (!mapLoaded) {
+        setTimeout(() => {
           map = L.map('map').setView([lat, lon], 15);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
           }).addTo(map);
-          marker = L.marker([lat, lon]).addTo(map)
-            .bindPopup("You are here")
-            .openPopup();
-        } else {
-          map.setView([lat, lon], 15);
-          marker.setLatLng([lat, lon]);
-        }
-      }, 100);
-    }
 
-    function closeModal() {
-      document.getElementById("mapModal").style.display = "none";
-    }
-
-    function showError(error) {
-      switch(error.code) {
-        case error.PERMISSION_DENIED:
-          alert("Permission denied for Geolocation.");
-          break;
-        case error.POSITION_UNAVAILABLE:
-          alert("Location unavailable.");
-          break;
-        case error.TIMEOUT:
-          alert("Geolocation timed out.");
-          break;
-        default:
-          alert("An unknown error occurred.");
+          marker = L.marker([lat, lon]).addTo(map).bindPopup("You are here").openPopup();
+          mapLoaded = true;
+        }, 100);
+      } else {
+        map.setView([lat, lon], 15);
+        marker.setLatLng([lat, lon]);
       }
+    }
+
+    function closeMap() {
+      document.getElementById("modal").style.display = "none";
     }
   </script>
 
