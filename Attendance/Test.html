@@ -2,12 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Fast Location Map</title>
+  <title>Fast Get Location</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Minimal Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
   <style>
     body {
       font-family: sans-serif;
@@ -16,7 +13,7 @@
     }
 
     button {
-      padding: 12px 20px;
+      padding: 12px 24px;
       font-size: 16px;
       cursor: pointer;
     }
@@ -30,7 +27,6 @@
       text-decoration: underline;
     }
 
-    /* Modal styling */
     .modal {
       display: none;
       position: fixed;
@@ -65,15 +61,20 @@
       width: 100%;
       height: 100%;
     }
+
+    #status {
+      margin-top: 15px;
+      color: #888;
+    }
   </style>
 </head>
 <body>
 
   <h3>Find My Location</h3>
   <button onclick="getLocation()">Get Location</button>
-  <div id="coords" onclick="openMap()">Loading...</div>
+  <div id="status"></div>
+  <div id="coords" onclick="openMap()"></div>
 
-  <!-- Modal -->
   <div id="modal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeMap()">&times;</span>
@@ -81,49 +82,68 @@
     </div>
   </div>
 
-  <!-- Minified Leaflet JS (deferred load) -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     let lat = 0, lon = 0;
     let map, marker;
     let mapLoaded = false;
+    let locationTimeout;
 
     function getLocation() {
+      const coordsDiv = document.getElementById("coords");
+      const status = document.getElementById("status");
+      coordsDiv.style.display = "none";
+      coordsDiv.innerText = "";
+      status.innerText = "Getting your location...";
+
       if (!navigator.geolocation) {
-        alert("Geolocation not supported");
+        status.innerText = "Geolocation not supported on this device.";
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(pos => {
+      // Set a timeout to handle delay
+      locationTimeout = setTimeout(() => {
+        status.innerText = "Failed to get location. Please ensure GPS is enabled.";
+      }, 8000); // 8 seconds fallback
+
+      navigator.geolocation.getCurrentPosition(success, error, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      });
+
+      function success(pos) {
+        clearTimeout(locationTimeout);
         lat = pos.coords.latitude;
         lon = pos.coords.longitude;
-        document.getElementById("coords").innerText = `Latitude: ${lat.toFixed(5)}, Longitude: ${lon.toFixed(5)} (Tap to View Map)`;
-        document.getElementById("coords").style.display = "block";
-      }, err => {
-        alert("Failed to get location.");
-      });
+        coordsDiv.innerText = `Latitude: ${lat.toFixed(5)}, Longitude: ${lon.toFixed(5)} (Tap to view map)`;
+        coordsDiv.style.display = "block";
+        status.innerText = "";
+      }
+
+      function error(err) {
+        clearTimeout(locationTimeout);
+        status.innerText = "Error getting location: " + err.message;
+      }
     }
 
     function openMap() {
       document.getElementById("modal").style.display = "block";
 
-      // Load map only once
-      if (!mapLoaded) {
-        setTimeout(() => {
+      setTimeout(() => {
+        if (!mapLoaded) {
           map = L.map('map').setView([lat, lon], 15);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 19
           }).addTo(map);
-
           marker = L.marker([lat, lon]).addTo(map).bindPopup("You are here").openPopup();
           mapLoaded = true;
-        }, 100);
-      } else {
-        map.setView([lat, lon], 15);
-        marker.setLatLng([lat, lon]);
-      }
+        } else {
+          map.setView([lat, lon], 15);
+          marker.setLatLng([lat, lon]);
+        }
+      }, 100);
     }
 
     function closeMap() {
