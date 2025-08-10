@@ -1,105 +1,420 @@
-<!DOCTYPE html>
+<!--
+Professional Single-file Attendance App (HTML + CSS + JavaScript)
+Connects to Baserow using user-friendly field names (user_field_names=true)
+
+Instructions:
+1. Replace BASEROW_API_KEY, EMPLOYEE_TABLE_ID, ATTENDANCE_TABLE_ID, LEAVE_TABLE_ID with your values.
+2. This file uses Baserow's REST API with user_field_names so your exact field names (as provided) will be used.
+3. Open this file in a modern browser (preferably served from HTTPS) for geolocation to work.
+4. For production, host on a secure server and enable HTTPS. Use environment secrets for API keys.
+
+Field names used (unchanged):
+Employee table fields:
+- Employee id
+- Employee name
+- Phone number
+- Time shift
+- Late entry limit
+- Post
+- Branch
+- Type of Staff
+- Total Overtime
+- Number of leave
+- Late entry used (NEW)
+- Financial year start (NEW)
+
+Attendance table fields:
+- Employee id
+- Punch in
+- Punch out
+- Location for punch in
+- Location for punch out
+- Activity Done
+- Late minutes (NEW)
+- Overtime minutes (NEW)
+- Date (NEW)
+
+Leave Applications table fields:
+- Employee id
+- Leave date start
+- Leave date end
+- Reason
+- Status
+- Applied date
+
+This file intentionally keeps all logic client-side for a simple self-service setup. For stronger security, move API calls to a server or use a limited proxy that validates the session.
+--><!doctype html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Location Viewer</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 20px;
-    }
-    button {
-        padding: 10px 20px;
-        background: #007bff;
-        color: white;
-        border: none;
-        cursor: pointer;
-        border-radius: 5px;
-    }
-    button:hover {
-        background: #0056b3;
-    }
-    /* Modal styling */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0; top: 0;
-        width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5);
-        justify-content: center;
-        align-items: center;
-    }
-    .modal-content {
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        max-width: 90%;
-        width: 500px;
-    }
-    iframe {
-        width: 100%;
-        height: 400px;
-        border: none;
-    }
-    .close {
-        background: red;
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        cursor: pointer;
-        float: right;
-        border-radius: 5px;
-    }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Attendance App — Professional</title>
+  <style>
+    :root{--accent:#0b74f2;--bg:#f6f8fb;--card:#ffffff;--muted:#6b7280}
+    *{box-sizing:border-box;font-family:Inter,Segoe UI,Roboto,system-ui,Arial}
+    body{margin:0;background:var(--bg);color:#111;display:flex;align-items:flex-start;justify-content:center;padding:28px}
+    .container{width:100%;max-width:980px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{margin:0;font-size:20px}
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(12,20,40,0.06);margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:16px}
+    .field{display:flex;flex-direction:column;margin-bottom:10px}
+    label{font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select,textarea{padding:10px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px}
+    button{background:var(--accent);color:#fff;border:0;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+    .muted{color:var(--muted);font-size:13px}
+    .small{font-size:13px}
+    .actions{display:flex;gap:8px;align-items:center}
+    .log{height:160px;overflow:auto;padding:10px;border-radius:8px;background:#fbfdff;border:1px solid #eef3ff}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #f1f5f9;font-size:13px}
+    .danger{background:#ffefef;color:#9a1b1b}
+    .success{background:#eefdf0;color:#1b7a3a}
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-
-<h2>📍 My Location</h2>
-<p id="coords">Fetching location...</p>
-<button id="viewBtn">View on Map</button>
-
-<!-- Modal -->
-<div class="modal" id="mapModal">
-    <div class="modal-content">
-        <button class="close" id="closeModal">X</button>
-        <iframe id="mapFrame"></iframe>
+  <div class="container">
+    <header>
+      <h1>Attendance App — Professional</h1>
+      <div class="muted">Self-service | Secure fields | Baserow integration</div>
+    </header><div class="grid">
+  <div>
+    <div id="loginCard" class="card">
+      <div class="field">
+        <label>Employee ID (login)</label>
+        <input id="loginEmployeeId" placeholder="Enter employee id" />
+      </div>
+      <div class="actions">
+        <button id="btnLogin">Login</button>
+        <button id="btnLogout" style="display:none;background:#e5e7eb;color:#111">Logout</button>
+        <div class="muted" style="margin-left:auto" id="loginStatus"></div>
+      </div>
     </div>
+
+    <div id="punchCard" class="card" style="display:none">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+        <div>
+          <div class="muted small">Logged in as</div>
+          <div id="empName" style="font-weight:700">—</div>
+          <div id="empShift" class="muted small">Shift: —</div>
+          <div id="lateRemain" class="muted small">Late left: —</div>
+        </div>
+        <div class="actions" style="margin-left:auto">
+          <button id="btnPunchIn">Punch In</button>
+          <button id="btnPunchOut" style="background:#10b981">Punch Out</button>
+        </div>
+      </div>
+      <div class="small muted">Last actions</div>
+      <div id="lastActions" class="log"></div>
+    </div>
+
+    <div id="activityCard" class="card" style="display:none">
+      <h3 style="margin-top:0">Punch Out — Activity</h3>
+      <div class="field">
+        <label>Activity Done Today (required)</label>
+        <textarea id="activityDone" rows="3" placeholder="Describe what you did today"></textarea>
+      </div>
+      <div class="actions">
+        <button id="confirmPunchOut">Confirm Punch Out</button>
+        <div class="muted" style="margin-left:auto">You will be asked this at every punch out</div>
+      </div>
+    </div>
+
+    <div id="leaveCard" class="card" style="display:none">
+      <h3 style="margin-top:0">Apply for Leave</h3>
+      <div class="field"><label>Start date</label><input id="leaveStart" type="date" /></div>
+      <div class="field"><label>End date</label><input id="leaveEnd" type="date" /></div>
+      <div class="field"><label>Reason</label><textarea id="leaveReason" rows="2"></textarea></div>
+      <div class="actions"><button id="btnApplyLeave">Apply</button><div class="muted" style="margin-left:auto">Leave will be submitted as Pending</div></div>
+    </div>
+
+  </div>
+
+  <div>
+    <div id="reportCard" class="card" style="display:none">
+      <h3 style="margin-top:0">My Attendance Report</h3>
+      <div class="field"><label>From</label><input id="repFrom" type="date" /></div>
+      <div class="field"><label>To</label><input id="repTo" type="date" /></div>
+      <div class="actions"><button id="btnLoadReport">Load</button><button id="btnExport" style="background:#111;color:#fff">Export CSV</button></div>
+      <div style="margin-top:10px;overflow:auto;max-height:420px">
+        <table id="reportTable"><thead><tr><th>Date</th><th>Punch in</th><th>Punch out</th><th>Late min</th><th>OT min</th><th>Activity</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div id="summaryCard" class="card" style="display:none">
+      <h3 style="margin-top:0">Summary</h3>
+      <div class="muted small">Totals (visible to you only)</div>
+      <table><tbody>
+        <tr><td>Total late used</td><td id="sumLate">0</td></tr>
+        <tr><td>Total overtime</td><td id="sumOt">0</td></tr>
+        <tr><td>Leaves taken</td><td id="sumLeaves">0</td></tr>
+      </tbody></table>
+    </div>
+
+  </div>
 </div>
 
-<script>
-let latitude, longitude;
+<footer class="muted">Built for secure self-service attendance — Replace API values inside the file before use.</footer>
 
-// Get location
-navigator.geolocation.getCurrentPosition(
-    function(position) {
-        latitude = position.coords.latitude;
-        longitude = position.coords.longitude;
-        document.getElementById("coords").innerText =
-            `Latitude: ${latitude}, Longitude: ${longitude}`;
-    },
-    function(error) {
-        document.getElementById("coords").innerText = "Unable to fetch location.";
-    }
-);
+  </div><script>
+// ========== CONFIG - REPLACE THESE ============
+const BASEROW_API_KEY = 'REPLACE_WITH_YOUR_API_KEY';
+const BASEROW_API_BASE = 'https://api.baserow.io/api';
+const EMPLOYEE_TABLE_ID = 'REPLACE_EMPLOYEE_TABLE_ID';
+const ATTENDANCE_TABLE_ID = 'REPLACE_ATTENDANCE_TABLE_ID';
+const LEAVE_TABLE_ID = 'REPLACE_LEAVE_TABLE_ID';
+// ==============================================
 
-// Show modal with map
-document.getElementById("viewBtn").addEventListener("click", function() {
-    if (latitude && longitude) {
-        let mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${longitude-0.01},${latitude-0.01},${longitude+0.01},${latitude+0.01}&layer=mapnik&marker=${latitude},${longitude}`;
-        document.getElementById("mapFrame").src = mapUrl;
-        document.getElementById("mapModal").style.display = "flex";
-    } else {
-        alert("Location not ready yet. Please try again.");
-    }
+// Helper: fetch with token and user_field_names
+async function baserowFetch(path, method='GET', body=null) {
+  const url = `${BASEROW_API_BASE}${path}`;
+  const opts = {method, headers:{'Authorization':`Token ${BASEROW_API_KEY}`}};
+  if (body) {opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(body)}
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// DOM refs
+const loginEmployeeId = document.getElementById('loginEmployeeId');
+const btnLogin = document.getElementById('btnLogin');
+const btnLogout = document.getElementById('btnLogout');
+const loginStatus = document.getElementById('loginStatus');
+const punchCard = document.getElementById('punchCard');
+const empName = document.getElementById('empName');
+const empShift = document.getElementById('empShift');
+const lateRemain = document.getElementById('lateRemain');
+const btnPunchIn = document.getElementById('btnPunchIn');
+const btnPunchOut = document.getElementById('btnPunchOut');
+const lastActions = document.getElementById('lastActions');
+const activityCard = document.getElementById('activityCard');
+const activityDone = document.getElementById('activityDone');
+const confirmPunchOut = document.getElementById('confirmPunchOut');
+const leaveCard = document.getElementById('leaveCard');
+const btnApplyLeave = document.getElementById('btnApplyLeave');
+const reportCard = document.getElementById('reportCard');
+const repFrom = document.getElementById('repFrom');
+const repTo = document.getElementById('repTo');
+const btnLoadReport = document.getElementById('btnLoadReport');
+const reportTable = document.querySelector('#reportTable tbody');
+const sumLate = document.getElementById('sumLate');
+const sumOt = document.getElementById('sumOt');
+const sumLeaves = document.getElementById('sumLeaves');
+
+let currentEmployee = null; // loaded employee row
+
+// Utility: parse Time shift '06:00-18:00' -> {start: Date, end: Date} for a given date
+function parseShift(shiftStr, refDate=new Date()){
+  const [s,e] = shiftStr.split('-').map(t=>t.trim());
+  const [sh,sm] = s.split(':').map(Number);
+  const [eh,em] = e.split(':').map(Number);
+  const start = new Date(refDate); start.setHours(sh,sm,0,0);
+  let end = new Date(refDate); end.setHours(eh,em,0,0);
+  // if end <= start, assume next day
+  if (end <= start) end.setDate(end.getDate()+1);
+  return {start,end};
+}
+
+function minutesBetween(a,b){return Math.max(0, Math.round((b-a)/60000));}
+
+function fmtDateTime(dt){ if(!dt) return ''; const d=new Date(dt); return d.toLocaleString(); }
+
+function showMessage(msg){
+  const p = document.createElement('div'); p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  lastActions.prepend(p);
+}
+
+// ========== AUTH / SESSION ===========
+function setSession(empId){ localStorage.setItem('att_emp', empId); }
+function clearSession(){ localStorage.removeItem('att_emp'); currentEmployee=null; }
+function getSession(){ return localStorage.getItem('att_emp'); }
+
+// ========== LOAD EMPLOYEE ===========
+async function loadEmployeeById(empId){
+  // Fetch employee row by filter
+  const path = `/database/rows/table/${EMPLOYEE_TABLE_ID}/?user_field_names=true&search=${encodeURIComponent(empId)}`;
+  // Note: Baserow's search is simple - if you prefer exact filter, use ?user_field_names + filter API in a server proxy
+  const data = await baserowFetch(path);
+  // try to find exact match
+  const row = (data.results || data).find(r=>String(r['Employee id'])===String(empId));
+  if (!row) throw new Error('Employee not found');
+  return row;
+}
+
+async function refreshAfterLogin(){
+  const empId = getSession();
+  if (!empId) return;
+  try{
+    currentEmployee = await loadEmployeeById(empId);
+    empName.textContent = currentEmployee['Employee name'] || empId;
+    empShift.textContent = 'Shift: ' + (currentEmployee['Time shift']||'—');
+    document.getElementById('loginCard').style.display='none';
+    punchCard.style.display='block';
+    activityCard.style.display='none';
+    leaveCard.style.display='block';
+    reportCard.style.display='block';
+    document.getElementById('btnLogout').style.display='inline-block';
+    showSummary();
+    // compute late left
+    const used = Number(currentEmployee['Late entry used']||0);
+    const limit = Number(currentEmployee['Late entry limit']||0);
+    lateRemain.textContent = `Late left: ${Math.max(0, limit-used)} min of ${limit} min`;
+    showMessage('Logged in');
+  }catch(e){alert('Login failed: '+e.message); clearSession();}
+}
+
+// ========== LOGIN HANDLERS ===========
+btnLogin.addEventListener('click', async ()=>{
+  const emp = loginEmployeeId.value.trim(); if(!emp){alert('Enter employee id');return}
+  try{ setSession(emp); await refreshAfterLogin(); }
+  catch(e){ alert('Error: '+e.message); clearSession(); }
 });
 
-// Close modal
-document.getElementById("closeModal").addEventListener("click", function() {
-    document.getElementById("mapModal").style.display = "none";
-});
-</script>
+btnLogout.addEventListener('click', ()=>{ clearSession(); location.reload(); });
 
-</body>
-</html>
+// Try restoring session
+if (getSession()) refreshAfterLogin();
+
+// ========== PUNCH IN =============
+btnPunchIn.addEventListener('click', async ()=>{
+  if(!currentEmployee){alert('Login first');return}
+  // get geolocation
+  if (!navigator.geolocation){alert('Geolocation not supported');return}
+  btnPunchIn.disabled=true; btnPunchIn.textContent='Detecting location...';
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    try{
+      const coords = `${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`;
+      const now = new Date();
+      // shift parse
+      const shift = parseShift(currentEmployee['Time shift']||'00:00-23:59', now);
+      const lateMin = Math.max(0, minutesBetween(shift.start, now));
+      // create attendance row with punch in only
+      const row = {
+        'Employee id': currentEmployee['Employee id'],
+        'Punch in': now.toISOString(),
+        'Location for punch in': coords,
+        'Date': now.toISOString().slice(0,10),
+        'Late minutes': lateMin,
+        'Punch out': null,
+        'Location for punch out': null,
+        'Activity Done': null,
+        'Overtime minutes': 0
+      };
+      // POST attendance row
+      await baserowFetch(`/database/rows/table/${ATTENDANCE_TABLE_ID}/?user_field_names=true`, 'POST', row);
+      showMessage(`Punched in at ${fmtDateTime(now)} (late ${lateMin} min)`);
+      // update employee Late entry used
+      const prevUsed = Number(currentEmployee['Late entry used']||0);
+      const newUsed = prevUsed + lateMin;
+      await baserowFetch(`/database/rows/table/${EMPLOYEE_TABLE_ID}/${currentEmployee.id}/?user_field_names=true`, 'PATCH', {'Late entry used': newUsed});
+      // update local copy
+      currentEmployee['Late entry used'] = newUsed;
+      lateRemain.textContent = `Late left: ${Math.max(0, Number(currentEmployee['Late entry limit']||0)-newUsed)} min`;
+      btnPunchIn.disabled=false; btnPunchIn.textContent='Punch In';
+      showSummary();
+    }catch(err){btnPunchIn.disabled=false;btnPunchIn.textContent='Punch In';alert('Punch in failed: '+err.message)}
+  }, err=>{btnPunchIn.disabled=false;btnPunchIn.textContent='Punch In';alert('Location error: '+err.message)},{enableHighAccuracy:true});
+});
+
+// ========== PUNCH OUT (two-step to collect activity) =============
+btnPunchOut.addEventListener('click', async ()=>{
+  if(!currentEmployee){alert('Login first');return}
+  // show activity card
+  activityCard.style.display='block';
+  activityDone.value='';
+});
+
+confirmPunchOut.addEventListener('click', async ()=>{
+  const activity = activityDone.value.trim(); if(!activity){alert('Enter activity');return}
+  activityCard.style.display='none';
+  // find latest attendance row for today with null Punch out
+  try{
+    const empId = currentEmployee['Employee id'];
+    const path = `/database/rows/table/${ATTENDANCE_TABLE_ID}/?user_field_names=true&search=${encodeURIComponent(empId)}`;
+    const data = await baserowFetch(path);
+    // find the latest row for this employee where Punch out is null
+    const rows = data.results || data;
+    const today = new Date().toISOString().slice(0,10);
+    const candidate = rows.filter(r=>String(r['Employee id'])===String(empId) && (!r['Punch out'] || r['Punch out']===null) && (r['Date']===today)).sort((a,b)=> (b.id - a.id))[0];
+    if(!candidate) { alert('No open Punch In found for today.'); return }
+
+    // get location and compute overtime
+    if (!navigator.geolocation){alert('Geolocation not supported');return}
+    confirmPunchOut.disabled=true; confirmPunchOut.textContent='Punching out...';
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      try{
+        const coords = `${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`;
+        const now = new Date();
+        // compute overtime vs shift end
+        const shift = parseShift(currentEmployee['Time shift']||'00:00-23:59', new Date(now));
+        const otMin = Math.max(0, minutesBetween(shift.end, now));
+        // patch attendance row
+        await baserowFetch(`/database/rows/table/${ATTENDANCE_TABLE_ID}/${candidate.id}/?user_field_names=true`, 'PATCH', {
+          'Punch out': now.toISOString(),
+          'Location for punch out': coords,
+          'Activity Done': activity,
+          'Overtime minutes': otMin
+        });
+        showMessage(`Punched out at ${fmtDateTime(now)} (OT ${otMin} min)`);
+        // update employee Total Overtime
+        const prevOt = Number(currentEmployee['Total Overtime']||0);
+        const newOt = prevOt + otMin;
+        await baserowFetch(`/database/rows/table/${EMPLOYEE_TABLE_ID}/${currentEmployee.id}/?user_field_names=true`, 'PATCH', {'Total Overtime': newOt});
+        currentEmployee['Total Overtime'] = newOt;
+        confirmPunchOut.disabled=false; confirmPunchOut.textContent='Confirm Punch Out';
+        showSummary();
+      }catch(err){confirmPunchOut.disabled=false;confirmPunchOut.textContent='Confirm Punch Out';alert('Punch out failed: '+err.message)}
+    }, err=>{confirmPunchOut.disabled=false;confirmPunchOut.textContent='Confirm Punch Out';alert('Location error: '+err.message)},{enableHighAccuracy:true});
+
+  }catch(e){alert('Error fetching attendance rows: '+e.message)}
+});
+
+// ========== LEAVE APPLY =============
+btnApplyLeave.addEventListener('click', async ()=>{
+  const s = document.getElementById('leaveStart').value; const e = document.getElementById('leaveEnd').value; const r = document.getElementById('leaveReason').value.trim();
+  if(!s||!e||!r) {alert('Fill all fields');return}
+  try{
+    await baserowFetch(`/database/rows/table/${LEAVE_TABLE_ID}/?user_field_names=true`, 'POST', {
+      'Employee id': currentEmployee['Employee id'],
+      'Leave date start': s,
+      'Leave date end': e,
+      'Reason': r,
+      'Status': 'Pending',
+      'Applied date': new Date().toISOString()
+    });
+    alert('Leave submitted'); document.getElementById('leaveStart').value='';document.getElementById('leaveEnd').value='';document.getElementById('leaveReason').value='';
+    showMessage('Leave applied');
+    showSummary();
+  }catch(err){alert('Leave submit failed: '+err.message)}
+});
+
+// ========== REPORTS =============
+btnLoadReport.addEventListener('click', async ()=>{
+  if(!currentEmployee) return; reportTable.innerHTML='';
+  const from = repFrom.value || new Date().toISOString().slice(0,10);
+  const to = repTo.value || new Date().toISOString().slice(0,10);
+  // fetch all attendance rows for this employee between dates - Baserow doesn't provide complex filters from client easily, so get search and filter client-side
+  const path = `/database/rows/table/${ATTENDANCE_TABLE_ID}/?user_field_names=true&search=${encodeURIComponent(currentEmployee['Employee id'])}`;
+  try{
+    const data = await baserowFetch(path);
+    const rows = (data.results||data).filter(r=>String(r['Employee id'])===String(currentEmployee['Employee id']));
+    const filtered = rows.filter(r=> r['Date']>=from && r['Date']<=to).sort((a,b)=> (a['Date']>b['Date']?1:-1));
+    let totalLate=0, totalOt=0;
+    for(const r of filtered){
+      const tr=document.createElement('tr');
+      tr.innerHTML = `<td>${r['Date']||''}</td><td>${fmtDateTime(r['Punch in'])}</td><td>${fmtDateTime(r['Punch out'])}</td><td>${r['Late minutes']||0}</td><td>${r['Overtime minutes']||0}</td><td>${(r['Activity Done']||'')}</td>`;
+      reportTable.appendChild(tr);
+      totalLate += Number(r['Late minutes']||0);
+      totalOt += Number(r['Overtime minutes']||0);
+    }
+    sumLate.textContent = totalLate; sumOt.textContent = totalOt;
+  }catch(err){alert('Load report failed: '+err.message)}
+});
+
+// CSV export
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const rows = Array.from(reportTable.querySelectorAll('tr')).map(tr=>Array.from(tr.children).map(td=>td.textContent));
+  const
