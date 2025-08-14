@@ -417,4 +417,49 @@ btnLoadReport.addEventListener('click', async ()=>{
 // CSV export
 document.getElementById('btnExport').addEventListener('click', ()=>{
   const rows = Array.from(reportTable.querySelectorAll('tr')).map(tr=>Array.from(tr.children).map(td=>td.textContent));
-  const
+  const csv = ['Date,Punch in,Punch out,Late min,OT min,Activity', ...rows.map(r=>r.map(c=>`"${c.replace(/"/g,'""')}"`).join(','))].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download = `attendance_${currentEmployee['Employee id'] || 'me'}.csv`; a.click(); URL.revokeObjectURL(url);
+});
+
+// ========== SUMMARY (counts) =============
+async function showSummary(){
+  if(!currentEmployee) return;
+  try{
+    // quick fetch of attendance rows for this employee (limit 1000 assumption)
+    const path = `/database/rows/table/${ATTENDANCE_TABLE_ID}/?user_field_names=true&search=${encodeURIComponent(currentEmployee['Employee id'])}`;
+    const data = await baserowFetch(path); const rows = (data.results||data).filter(r=>String(r['Employee id'])===String(currentEmployee['Employee id']));
+    const totalLate = rows.reduce((s,r)=>s+Number(r['Late minutes']||0),0);
+    const totalOt = rows.reduce((s,r)=>s+Number(r['Overtime minutes']||0),0);
+    // leaves count
+    const leavePath = `/database/rows/table/${LEAVE_TABLE_ID}/?user_field_names=true&search=${encodeURIComponent(currentEmployee['Employee id'])}`;
+    const leavesData = await baserowFetch(leavePath); const leaves = (leavesData.results||leavesData).filter(l=>String(l['Employee id'])===String(currentEmployee['Employee id']));
+    const leavesTaken = leaves.length;
+    sumLate.textContent = totalLate; sumOt.textContent = totalOt; sumLeaves.textContent = leavesTaken;
+  }catch(e){console.warn('Summary failed', e)}
+}
+
+// ========== FINANCIAL YEAR RESET (on login) =============
+// If you store 'Financial year start' in Employee table, ensure it is updated annually. This example will reset Late entry used if the stored FY start is older.
+async function checkFinancialYearReset(){
+  if(!currentEmployee) return;
+  try{
+    const fy = currentEmployee['Financial year start'];
+    const now = new Date();
+    // assume FY start stored as 'YYYY-MM-DD' or ISO string
+    const fyDate = fy ? new Date(fy) : null;
+    const oneYearMs = 365*24*60*60*1000;
+    if(!fyDate || (now - fyDate) > oneYearMs){
+      // reset
+      await baserowFetch(`/database/rows/table/${EMPLOYEE_TABLE_ID}/${currentEmployee.id}/?user_field_names=true`, 'PATCH', {'Late entry used': 0, 'Financial year start': new Date().toISOString().slice(0,10)});
+      currentEmployee['Late entry used'] = 0; currentEmployee['Financial year start'] = new Date().toISOString().slice(0,10);
+    }
+  }catch(e){console.warn('FY reset error', e)}
+}
+
+// Run check after login
+(async ()=>{ if (getSession()){ await checkFinancialYearReset(); } })();
+
+</script>
+</body>
+</html>
