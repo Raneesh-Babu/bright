@@ -129,17 +129,44 @@
     font-size: clamp(1.1rem, 3vw, 1.3rem);
   }
   
+  .url-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  
   .result a {
     color: #4299e1;
     text-decoration: none;
     font-weight: 600;
     word-break: break-all;
-    display: inline-block;
-    margin-top: 8px;
+    flex: 1;
+    min-width: 200px;
   }
   
   .result a:hover {
     text-decoration: underline;
+  }
+  
+  .copy-btn {
+    background: #48bb78;
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+    white-space: nowrap;
+    width: auto;
+    min-width: 80px;
+  }
+  
+  .copy-btn:hover {
+    background: #38a169;
+    transform: translateY(-2px);
+  }
+  
+  .copy-btn.copied {
+    background: #2d3748;
   }
   
   .stats {
@@ -188,6 +215,24 @@
     border-left-color: #f56565;
   }
   
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #48bb78;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateX(150%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .toast.show {
+    transform: translateX(0);
+  }
+  
   /* Small screen adjustments */
   @media (max-width: 400px) {
     body {
@@ -205,6 +250,30 @@
     
     .result {
       padding: 15px;
+    }
+    
+    .url-container {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .result a {
+      min-width: auto;
+    }
+    
+    .copy-btn {
+      width: 100%;
+    }
+    
+    .toast {
+      top: 10px;
+      right: 10px;
+      left: 10px;
+      transform: translateY(-100%);
+    }
+    
+    .toast.show {
+      transform: translateY(0);
     }
   }
   
@@ -230,10 +299,65 @@
   </div>
 </div>
 
+<div id="toast" class="toast">URL copied to clipboard!</div>
+
 <script>
 const TABLE_ID = "728730";
 const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/`;
 const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+
+// === COPY TO CLIPBOARD FUNCTION ===
+function copyToClipboard(text) {
+  // Create a temporary textarea element
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  
+  // Select and copy the text
+  textarea.select();
+  textarea.setSelectionRange(0, 99999); // For mobile devices
+  
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) {
+      showToast('URL copied to clipboard!');
+      return true;
+    }
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+  }
+  
+  // Fallback: Try using the Clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('URL copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+      showToast('Failed to copy URL', true);
+    });
+  } else {
+    showToast('Failed to copy URL', true);
+  }
+  
+  // Clean up
+  document.body.removeChild(textarea);
+  return false;
+}
+
+// === SHOW TOAST NOTIFICATION ===
+function showToast(message, isError = false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.style.background = isError ? '#f56565' : '#48bb78';
+  
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
 
 // === CREATE SHORT URL ===
 async function createShortUrl() {
@@ -267,7 +391,11 @@ async function createShortUrl() {
       document.getElementById("result").innerHTML = `
         <div class="existing-url">
           <h3>✅ This URL already has a short link!</h3>
-          <p><strong>Short URL:</strong> <a href="${shortUrl}" target="_blank">${shortUrl}</a></p>
+          <p><strong>Short URL:</strong></p>
+          <div class="url-container">
+            <a href="${shortUrl}" target="_blank">${shortUrl}</a>
+            <button class="copy-btn" onclick="copyToClipboard('${shortUrl}')">Copy</button>
+          </div>
           <div class="stats">
             <span>Created: ${new Date(existingEntry.Date).toLocaleDateString()}</span>
             <span>Clicks: ${existingEntry.Clicks || 0}</span>
@@ -302,7 +430,11 @@ async function createShortUrl() {
       document.getElementById("result").innerHTML = `
         <div class="new-url">
           <h3>✅ Short URL Created!</h3>
-          <p><strong>Short URL:</strong> <a href="${shortUrl}" target="_blank">${shortUrl}</a></p>
+          <p><strong>Short URL:</strong></p>
+          <div class="url-container">
+            <a href="${shortUrl}" target="_blank">${shortUrl}</a>
+            <button class="copy-btn" onclick="copyToClipboard('${shortUrl}')">Copy</button>
+          </div>
           <div class="stats">
             <span>Created: ${new Date().toLocaleDateString()}</span>
             <span>Clicks: 0</span>
