@@ -55,7 +55,7 @@
     display: flex;
     flex-direction: column;
     gap: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
   }
   
   @media (min-width: 576px) {
@@ -78,6 +78,21 @@
     outline: none;
     border-color: #4299e1;
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+  }
+  
+  input.error {
+    border-color: #f56565;
+    box-shadow: 0 0 0 3px rgba(245, 101, 101, 0.15);
+  }
+  
+  .error-message {
+    color: #f56565;
+    font-size: 14px;
+    text-align: left;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
   
   button { 
@@ -290,10 +305,14 @@
   <div class="container">
     <h1><span>🔗</span> Custom URL Shortener</h1>
     <div class="input-group">
-      <input type="text" id="longUrl" placeholder="Enter your long URL" />
+      <input type="text" id="longUrl" placeholder="Enter your long URL (e.g., https://example.com)" />
       <button id="shortenBtn" onclick="createShortUrl()">
         <span class="btn-text">Shorten</span>
       </button>
+    </div>
+    <div id="errorMessage" class="error-message hidden">
+      <span>⚠️</span>
+      <span id="errorText"></span>
     </div>
     <div id="result" class="result hidden"></div>
   </div>
@@ -305,6 +324,71 @@
 const TABLE_ID = "728730";
 const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/`;
 const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+
+// === URL VALIDATION FUNCTION ===
+function isValidURL(string) {
+  if (!string || string.trim() === '') {
+    return { isValid: false, message: 'Please enter a URL' };
+  }
+
+  // Add protocol if missing
+  let url = string.trim();
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+
+  try {
+    const urlObj = new URL(url);
+    
+    // Check if the URL has a valid hostname
+    if (!urlObj.hostname || urlObj.hostname === '') {
+      return { isValid: false, message: 'Invalid URL - missing domain name' };
+    }
+    
+    // Check for basic TLD (at least 2 characters after last dot)
+    const domainParts = urlObj.hostname.split('.');
+    if (domainParts.length < 2 || domainParts[domainParts.length - 1].length < 2) {
+      return { isValid: false, message: 'Invalid domain name' };
+    }
+    
+    // Check for common invalid patterns
+    if (urlObj.hostname.includes('..')) {
+      return { isValid: false, message: 'Invalid URL format' };
+    }
+    
+    // Check for localhost and local network addresses
+    if (urlObj.hostname === 'localhost' || 
+        urlObj.hostname.startsWith('127.') || 
+        urlObj.hostname.startsWith('192.168.') ||
+        urlObj.hostname.startsWith('10.') ||
+        urlObj.hostname.startsWith('172.')) {
+      return { isValid: false, message: 'Local URLs are not allowed' };
+    }
+    
+    return { isValid: true, url: url };
+  } catch (err) {
+    return { isValid: false, message: 'Invalid URL format. Please include http:// or https://' };
+  }
+}
+
+// === SHOW/HIDE ERROR MESSAGE ===
+function showError(message) {
+  const errorDiv = document.getElementById('errorMessage');
+  const errorText = document.getElementById('errorText');
+  const input = document.getElementById('longUrl');
+  
+  errorText.textContent = message;
+  errorDiv.classList.remove('hidden');
+  input.classList.add('error');
+}
+
+function hideError() {
+  const errorDiv = document.getElementById('errorMessage');
+  const input = document.getElementById('longUrl');
+  
+  errorDiv.classList.add('hidden');
+  input.classList.remove('error');
+}
 
 // === COPY TO CLIPBOARD FUNCTION ===
 function copyToClipboard(text) {
@@ -362,10 +446,18 @@ function showToast(message, isError = false) {
 // === CREATE SHORT URL ===
 async function createShortUrl() {
   const longUrl = document.getElementById("longUrl").value.trim();
-  if (!longUrl) return alert("Please enter a valid URL");
   
-  // Add URL protocol if missing
-  const formattedUrl = longUrl.startsWith('http') ? longUrl : `https://${longUrl}`;
+  // Validate URL first
+  const validation = isValidURL(longUrl);
+  if (!validation.isValid) {
+    showError(validation.message);
+    return;
+  }
+  
+  // Hide any previous errors
+  hideError();
+  
+  const formattedUrl = validation.url;
   
   // Show loading state
   const btn = document.getElementById("shortenBtn");
@@ -462,6 +554,11 @@ async function createShortUrl() {
     if (loader) loader.remove();
   }
 }
+
+// === REAL-TIME VALIDATION ===
+document.getElementById('longUrl').addEventListener('input', function() {
+  hideError();
+});
 
 // === REDIRECT HANDLER ===
 async function checkRedirect() {
