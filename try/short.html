@@ -3,25 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My URL Shortener</title>
+<title>Custom URL Shortener</title>
 <style>
-  body { font-family: Arial, sans-serif; background:#f5f7fb; text-align:center; padding:40px; }
+  body { font-family: Arial, sans-serif; background:#f8fafc; text-align:center; padding:40px; }
   h1 { color:#333; }
-  input, button { padding:10px; font-size:16px; margin:5px; border-radius:8px; border:1px solid #ccc; }
-  button { background:#007bff; color:white; border:none; cursor:pointer; }
+  input { padding:10px; width:60%; border-radius:8px; border:1px solid #ccc; font-size:16px; }
+  button { padding:10px 20px; font-size:16px; border:none; background:#007bff; color:white; border-radius:8px; cursor:pointer; }
   button:hover { background:#0056b3; }
   .result { margin-top:20px; font-size:18px; }
 </style>
 </head>
 <body>
 <h1>🔗 Custom URL Shortener</h1>
-<input type="text" id="longUrl" placeholder="Enter your long URL here" size="50">
+<input type="text" id="longUrl" placeholder="Enter your long URL" />
 <button onclick="createShortUrl()">Shorten</button>
-<div class="result" id="result"></div>
+<div id="result" class="result"></div>
 
 <script>
-const BASEROW_API_URL = "https://api.baserow.io/api/database/rows/table/";  
-const TABLE_ID = "728730";  // Replace with your Baserow table ID
+const TABLE_ID = "728730";
+const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/`;
 const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
 
 // === CREATE SHORT URL ===
@@ -31,25 +31,31 @@ async function createShortUrl() {
 
   const shortCode = Math.random().toString(36).substring(2, 8);
 
-  const res = await fetch(`${BASEROW_API_URL}${TABLE_ID}/`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Token ${API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      field_6125355: longUrl,
-      field_6125356: shortCode,
-      field_6125422: 0
-    })
-  });
+  try {
+    const res = await fetch(BASEROW_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Token ${API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        field_6125355: longUrl,
+        field_6125356: shortCode,
+        field_6125422: 0
+      })
+    });
 
-  if (res.ok) {
-    const shortUrl = `${window.location.origin}/?r=${shortCode}`;
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+
+    const shortUrl = `${window.location.origin}${window.location.pathname}?r=${shortCode}`;
     document.getElementById("result").innerHTML = 
       `✅ Short URL: <a href="${shortUrl}" target="_blank">${shortUrl}</a>`;
-  } else {
-    alert("Error creating short link!");
+  } catch (err) {
+    console.error(err);
+    alert("❌ Failed to create short URL. Check console for details.");
   }
 }
 
@@ -57,30 +63,35 @@ async function createShortUrl() {
 async function checkRedirect() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get("r");
-  if (code) {
-    // Fetch all links from table
-    const res = await fetch(`${BASEROW_API_URL}${TABLE_ID}/?user_field_names=true`, {
+  if (!code) return;
+
+  try {
+    const res = await fetch(`${BASEROW_API_URL}?user_field_names=true`, {
       headers: { "Authorization": `Token ${API_KEY}` }
     });
     const data = await res.json();
-    const match = data.results.find(row => row.ShortCode === code);
-    if (match) {
-      // Update click count
-      await fetch(`${BASEROW_API_URL}${TABLE_ID}/${match.id}/`, {
-        method: "PATCH",
-        headers: {
-          "Authorization": `Token ${API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          field_6125422: (match.Clicks || 0) + 1
-        })
-      });
-      // Redirect
-      window.location.href = match.LongURL;
-    } else {
+
+    const match = data.results.find(r => r.ShortCode === code);
+    if (!match) {
       document.body.innerHTML = "<h2>❌ Link not found</h2>";
+      return;
     }
+
+    // Update click count
+    await fetch(`${BASEROW_API_URL}${match.id}/`, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Token ${API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ field_6125422: (match.Clicks || 0) + 1 })
+    });
+
+    // Redirect
+    window.location.href = match.LongURL;
+  } catch (err) {
+    console.error(err);
+    document.body.innerHTML = "<h2>⚠️ Error fetching data</h2>";
   }
 }
 
