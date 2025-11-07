@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Responsive Barcode Scanner</title>
+  <title>Barcode Scanner with Count</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
@@ -19,7 +19,7 @@
 
     .scanner-container {
       width: 90%;
-      max-width: 400px;
+      max-width: 420px;
       background: white;
       padding: 20px;
       border-radius: 16px;
@@ -34,10 +34,10 @@
 
     #reader {
       width: 100%;
-      margin: auto;
       border-radius: 10px;
       overflow: hidden;
-      display: none; /* hidden until start */
+      margin-bottom: 15px;
+      display: none;
     }
 
     input {
@@ -46,9 +46,9 @@
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 8px;
-      margin-top: 20px;
+      margin-top: 10px;
       outline: none;
-      transition: all 0.3s;
+      text-align: center;
     }
 
     input:focus {
@@ -66,30 +66,36 @@
       transition: background 0.3s;
     }
 
-    #startBtn {
-      background: #007bff;
-      color: white;
-    }
-    #startBtn:hover {
-      background: #0056b3;
+    #startBtn { background: #007bff; color: white; }
+    #startBtn:hover { background: #0056b3; }
+
+    #stopBtn { background: #dc3545; color: white; }
+    #stopBtn:hover { background: #a71d2a; }
+
+    #addBtn { background: #28a745; color: white; display: none; }
+    #addBtn:hover { background: #1c7d31; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
     }
 
-    #stopBtn {
-      background: #dc3545;
-      color: white;
+    th, td {
+      border-bottom: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
     }
-    #stopBtn:hover {
-      background: #a71d2a;
+
+    th {
+      background: #007bff;
+      color: white;
+      border-radius: 4px;
     }
 
     @media (max-width: 600px) {
-      .scanner-container {
-        padding: 15px;
-        max-width: 95%;
-      }
-      input, button {
-        font-size: 14px;
-      }
+      .scanner-container { padding: 15px; }
+      button, input { font-size: 14px; }
     }
   </style>
 </head>
@@ -105,6 +111,17 @@
     </div>
 
     <input type="text" id="barcode" placeholder="Scanned code will appear here" readonly>
+    <button id="addBtn">➕ Add</button>
+
+    <table id="resultTable">
+      <thead>
+        <tr>
+          <th>Barcode</th>
+          <th>Count</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
   <script>
@@ -113,19 +130,24 @@
     const stopBtn = document.getElementById("stopBtn");
     const readerDiv = document.getElementById("reader");
     const barcodeInput = document.getElementById("barcode");
+    const addBtn = document.getElementById("addBtn");
+    const tableBody = document.querySelector("#resultTable tbody");
 
     let isScanning = false;
+    let scannedCode = "";
+    const scannedItems = {}; // Store {code: count}
 
     async function startCamera() {
       if (isScanning) return;
-
       readerDiv.style.display = "block";
       try {
         await html5QrCode.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
+            scannedCode = decodedText;
             barcodeInput.value = decodedText;
+            addBtn.style.display = "inline-block";
             barcodeInput.style.borderColor = "#28a745";
             console.log("Scanned:", decodedText);
           }
@@ -135,13 +157,11 @@
         stopBtn.disabled = false;
       } catch (err) {
         alert("Unable to access camera: " + err);
-        console.error(err);
       }
     }
 
     async function stopCamera() {
       if (!isScanning) return;
-
       await html5QrCode.stop();
       readerDiv.style.display = "none";
       isScanning = false;
@@ -149,8 +169,33 @@
       stopBtn.disabled = true;
     }
 
+    function addBarcode() {
+      if (!scannedCode) return;
+      if (scannedItems[scannedCode]) {
+        scannedItems[scannedCode]++;
+      } else {
+        scannedItems[scannedCode] = 1;
+      }
+      updateTable();
+      barcodeInput.value = "";
+      scannedCode = "";
+      addBtn.style.display = "none";
+    }
+
+    function updateTable() {
+      tableBody.innerHTML = "";
+      for (let code in scannedItems) {
+        const row = `<tr>
+          <td>${code}</td>
+          <td>${scannedItems[code]}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
+      }
+    }
+
     startBtn.addEventListener("click", startCamera);
     stopBtn.addEventListener("click", stopCamera);
+    addBtn.addEventListener("click", addBarcode);
   </script>
 </body>
 </html>
