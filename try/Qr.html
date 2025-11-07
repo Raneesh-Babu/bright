@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Barcode Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: #f5f6fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .scanner-container {
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    #reader {
+      width: 100%;
+      margin: auto;
+      border-radius: 10px;
+      overflow: hidden;
+      display: none; /* hidden until start */
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-top: 20px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0,123,255,0.3);
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      margin: 10px 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #startBtn {
+      background: #007bff;
+      color: white;
+    }
+    #startBtn:hover {
+      background: #0056b3;
+    }
+
+    #stopBtn {
+      background: #dc3545;
+      color: white;
+    }
+    #stopBtn:hover {
+      background: #a71d2a;
+    }
+
+    @media (max-width: 600px) {
+      .scanner-container {
+        padding: 15px;
+        max-width: 95%;
+      }
+      input, button {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scanner-container">
+    <h2>📷 Barcode Scanner</h2>
+
+    <div id="reader"></div>
+
+    <div>
+      <button id="startBtn">Start Camera</button>
+      <button id="stopBtn" disabled>Stop Camera</button>
+    </div>
+
+    <input type="text" id="barcode" placeholder="Scanned code will appear here" readonly>
+  </div>
+
+  <script>
+    const html5QrCode = new Html5Qrcode("reader");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const readerDiv = document.getElementById("reader");
+    const barcodeInput = document.getElementById("barcode");
+
+    let isScanning = false;
+
+    async function startCamera() {
+      if (isScanning) return;
+
+      readerDiv.style.display = "block";
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            barcodeInput.value = decodedText;
+            barcodeInput.style.borderColor = "#28a745";
+            console.log("Scanned:", decodedText);
+          }
+        );
+        isScanning = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+      } catch (err) {
+        alert("Unable to access camera: " + err);
+        console.error(err);
+      }
+    }
+
+    async function stopCamera() {
+      if (!isScanning) return;
+
+      await html5QrCode.stop();
+      readerDiv.style.display = "none";
+      isScanning = false;
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    }
+
+    startBtn.addEventListener("click", startCamera);
+    stopBtn.addEventListener("click", stopCamera);
+  </script>
+</body>
+</html>
