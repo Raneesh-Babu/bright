@@ -159,14 +159,6 @@
   }
   .no-result { color: red; text-align: center; margin-top: 20px; font-weight: 500; }
   .hidden { display: none !important; }
-  .debug-info {
-    background: #f0f0f0;
-    padding: 10px;
-    border-radius: 5px;
-    margin: 10px 0;
-    font-size: 12px;
-    color: #666;
-  }
   @media (max-width: 600px) {
     .invoice-header img { width: 200px; }
     .qr-code canvas { width: 80px; height: 80px; }
@@ -186,20 +178,9 @@
 <div id="resultArea"></div>
 
 <script>
-// ✅ UPDATED: Correct Web Baserow API configuration
-const BASEROW_API_URL = "https://api.baserow.io/api/database/rows/table/781249/?user_field_names=true";
+const TABLE_ID = "781249";  // Web app table ID
 const BASEROW_API_KEY = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
-
-// ✅ UPDATED: Field mappings based on your table configuration
-const FIELD_MAPPINGS = {
-  PRODUCT_NAME: "field_6651957",      // Product Name
-  PRODUCT_CODE: "field_6651958",      // Product Code
-  QUANTITY: "field_6651959",          // Quantity
-  PRICE_PER_UNIT: "field_6651960",    // Price Per Unit
-  TOTAL_PRICE: "field_6651961",       // Total Price
-  DATE_TIME: "field_6651962",         // Date Time
-  INVOICE_NUMBER: "field_6651963"     // Invoice Number
-};
+const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
 
 function extractDateFromInvoice(invoiceNum) {
   const match = invoiceNum.match(/^(\d{2})(\d{2})(\d{4})/);
@@ -220,59 +201,22 @@ async function searchInvoice(invoiceOverride = null) {
   resultArea.innerHTML = "⏳ Searching invoice data...";
 
   try {
-    console.log("Searching for invoice:", invoiceNum);
-    
-    // ✅ FIXED: Make API request
     const response = await fetch(BASEROW_API_URL, {
       headers: { 
         Authorization: `Token ${BASEROW_API_KEY}`,
         "Content-Type": "application/json"
       }
     });
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-    
     const json = await response.json();
-    console.log("API Response:", json);
-    
-    if (!json.results || !Array.isArray(json.results)) {
-      throw new Error("Invalid API response format");
-    }
-    
-    // ✅ FIXED: Better search logic
-    const results = json.results.filter(r => {
-      const invoiceField = r[FIELD_MAPPINGS.INVOICE_NUMBER];
-      if (!invoiceField) return false;
-      
-      // Try multiple search methods
-      const invoiceStr = String(invoiceField).trim();
-      return invoiceStr === invoiceNum || 
-             invoiceStr.includes(invoiceNum) || 
-             invoiceNum.includes(invoiceStr);
-    });
-    
-    console.log("Filtered results:", results);
+    const results = json.results.filter(r => String(r["Invoice Number"]).includes(invoiceNum));
 
     if (results.length === 0) {
-      // Show debug info to help identify the issue
-      const allInvoiceNumbers = json.results.map(r => r[FIELD_MAPPINGS.INVOICE_NUMBER]).filter(Boolean);
-      resultArea.innerHTML = `
-        <div class="no-result">
-          ❌ No invoice found for <b>${invoiceNum}</b>.
-          <div class="debug-info">
-            <p><strong>Available invoices in database:</strong></p>
-            <p>${allInvoiceNumbers.length > 0 ? allInvoiceNumbers.join(', ') : 'No invoices found in database'}</p>
-            <p><em>Note: Make sure you're entering the exact invoice number as stored in Baserow</em></p>
-          </div>
-        </div>
-      `;
+      resultArea.innerHTML = `<p class='no-result'>❌ No invoice found for <b>${invoiceNum}</b>.</p>`;
       return;
     }
 
     const invoiceDate = extractDateFromInvoice(invoiceNum);
-    const totalAmount = results.reduce((a,b) => a + (Number(b[FIELD_MAPPINGS.TOTAL_PRICE]) || 0), 0);
+    const totalAmount = results.reduce((a,b) => a + (Number(b["Total Price"]) || 0), 0);
 
     let html = `
       <div class="fullscreen">
@@ -286,7 +230,6 @@ async function searchInvoice(invoiceOverride = null) {
             <div class="invoice-info">
               <p><b>Invoice No:</b> ${invoiceNum}</p>
               <p><b>Date:</b> ${invoiceDate}</p>
-              <p><b>Items Found:</b> ${results.length}</p>
             </div>
             <div class="qr-code" id="qrButton" title="Click to copy invoice URL">
               <canvas id="qrCode"></canvas>
@@ -307,14 +250,14 @@ async function searchInvoice(invoiceOverride = null) {
     `;
 
     results.forEach(r => {
-      const qty = Number(r[FIELD_MAPPINGS.QUANTITY]) || 0;
-      const total = Number(r[FIELD_MAPPINGS.TOTAL_PRICE]) || 0;
-      const priceUnit = qty ? (total / qty).toFixed(2) : "0.00";
+      const qty = Number(r["Quantity"]) || 0;
+      const total = Number(r["Total Price"]) || 0;
+      const priceUnit = qty ? (total / qty).toFixed(2) : 0;
 
       html += `
         <tr>
-          <td>${r[FIELD_MAPPINGS.PRODUCT_NAME] || "-"}</td>
-          <td>${r[FIELD_MAPPINGS.PRODUCT_CODE] || "-"}</td>
+          <td>${r["Product Name"] || "-"}</td>
+          <td>${r["Product Code"] || "-"}</td>
           <td>${qty}</td>
           <td>₹${priceUnit}</td>
           <td>₹${total.toLocaleString()}</td>
@@ -383,7 +326,6 @@ async function searchInvoice(invoiceOverride = null) {
 
   } catch (err) {
     resultArea.innerHTML = `<p class='no-result'>❌ Error fetching data: ${err.message}</p>`;
-    console.error("Invoice search error:", err);
   }
 }
 
@@ -393,13 +335,6 @@ window.addEventListener("DOMContentLoaded", () => {
   if (invoiceParam) {
     document.getElementById("invoiceInput").value = invoiceParam;
     searchInvoice(invoiceParam);
-  }
-});
-
-// ✅ ADDED: Keyboard support for Enter key
-document.getElementById("invoiceInput").addEventListener("keypress", function(e) {
-  if (e.key === "Enter") {
-    searchInvoice();
   }
 });
 </script>
