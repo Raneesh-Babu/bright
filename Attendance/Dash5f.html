@@ -502,8 +502,11 @@ document.addEventListener('DOMContentLoaded', function() {
 async function fetchData() {
   try {
     showLoadingState();
-    const res = await fetch(BASEROW_API_URL, {
-      headers: { Authorization: `Token ${BASEROW_API_KEY}` }
+    const res = await fetch(BASEROW_API_URL + "?user_field_names=false", {
+      headers: { 
+        Authorization: `Token ${BASEROW_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
     });
     
     if (!res.ok) {
@@ -514,7 +517,7 @@ async function fetchData() {
     return data.results || [];
   } catch(err) {
     console.error("Error fetching data:", err);
-    showErrorState("Failed to load data from Baserow");
+    showErrorState("Failed to load data from Baserow. Check API key and table permissions.");
     return [];
   }
 }
@@ -630,7 +633,7 @@ function renderTable(summary) {
       <td>${name}</td>
       <td>${data.code}</td>
       <td>${data.qty}</td>
-      <td>₹${data.price}</td>
+      <td>₹${data.price.toLocaleString()}</td>
       <td>₹${data.total.toLocaleString()}</td>
     </tr>
   `).join("");
@@ -672,6 +675,13 @@ function renderChart(summary) {
         plugins: {
           legend: {
             position: 'bottom'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.label}: ₹${context.raw.toLocaleString()}`;
+              }
+            }
           }
         }
       }
@@ -706,7 +716,12 @@ function renderChart(summary) {
         responsive: true,
         scales: {
           y: {
-            beginAtZero: true
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value.toLocaleString();
+              }
+            }
           }
         }
       }
@@ -738,7 +753,12 @@ function renderChart(summary) {
         responsive: true,
         scales: {
           y: {
-            beginAtZero: true
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return currentChartType === 'bar' && this.datasetIndex === 0 ? '₹' + value.toLocaleString() : value;
+              }
+            }
           }
         }
       }
@@ -764,7 +784,7 @@ function toggleChartType(type) {
   const summary = {};
   
   filteredData.forEach(r => {
-    const name = r.field_6651957;
+    const name = r.field_6651957 || 'Unknown';
     const quantity = +r.field_6651959 || 0;
     const total = +r.field_6651961 || 0;
     
@@ -781,11 +801,11 @@ function toggleChartType(type) {
 
 function downloadReport() {
   const rows = [["Product", "Code", "Quantity", "Unit Price", "Total Sales (₹)"]];
-  const table = document.querySelectorAll("#tableBody tr");
+  const tableRows = document.querySelectorAll("#tableBody tr");
   
-  table.forEach(tr => {
-    const cells = [...tr.children].map(td => td.innerText);
-    if (cells.length === 5) {
+  tableRows.forEach(tr => {
+    if (tr.cells.length === 5) {
+      const cells = Array.from(tr.cells).map(td => td.innerText);
       rows.push(cells);
     }
   });
@@ -794,11 +814,12 @@ function downloadReport() {
   const blob = new Blob([csvContent], { type: "text/csv" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "Sales_Report.csv";
+  a.download = `Sales_Report_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
 
 function resetFilters() {
+  // Reset to last 7 days
   const today = new Date();
   const oneWeekAgo = new Date(today);
   oneWeekAgo.setDate(today.getDate() - 7);
@@ -811,7 +832,7 @@ function resetFilters() {
 
 function toggleTheme() {
   isDarkMode = !isDarkMode;
-  const icon = document.querySelector('.table-actions .fa-download').parentNode.nextElementSibling.querySelector('i');
+  const icon = document.querySelector('.table-actions .fa-download')?.parentNode?.nextElementSibling?.querySelector('i');
   
   if (isDarkMode) {
     document.documentElement.style.setProperty('--bg', '#1a1a2e');
@@ -843,7 +864,7 @@ function toggleTableView() {
 
 async function updateDashboard() {
   const allData = await fetchData();
-  window.currentData = allData;
+  window.currentData = allData; // Store for later use
   const filteredData = filterData(allData);
   renderDashboard(filteredData);
 }
