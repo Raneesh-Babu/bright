@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Workshop Bright</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1976d2;
+            --primary-light: #63a4ff;
+            --primary-dark: #004ba0;
+            --secondary-color: #e3f2fd;
+            --text-light: #f5f5f5;
+            --text-dark: #333333;
+            --success-color: #4caf50;
+            --error-color: #f44336;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #fafafa;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            background-color: var(--secondary-color);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            color: var(--text-light);
+            padding: 18px 15px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background-color: white;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 8px 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .tab {
+            padding: 10px 8px;
+            color: var(--primary-dark);
+            text-align: center;
+            white-space: nowrap;
+            font-size: 0.75rem;
+            border-radius: 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin: 0 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 70px;
+            transition: all 0.3s ease;
+            background-color: transparent;
+        }
+        
+        .tab i {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
+        }
+        
+        .tab.active i {
+            color: white;
+        }
+        
+        .content-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: white;
+            border-radius: 16px 16px 0 0;
+            margin: 8px 8px 0 8px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .iframe-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            border-radius: 16px 16px 0 0;
+            overflow: hidden;
+        }
+        
+        .iframe-container.active {
+            display: block;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: white;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-btn i {
+            margin-right: 5px;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* Refresh Button */
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+        }
+        
+        .refresh-btn i {
+            font-size: 1.2rem;
+            animation: spin 2s linear infinite; /* Continuous rotation */
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* PIN Entry Modal */
+        .pin-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .pin-container {
+            background: linear-gradient(145deg, #ffffff, #e3f2fd);
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+        }
+        
+        .pin-container h2 {
+            margin-bottom: 25px;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        
+        .pin-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.3rem;
+            text-align: center;
+            border: 2px solid #bbdefb;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            letter-spacing: 5px;
+            font-weight: 500;
+            color: var(--primary-dark);
+            transition: all 0.3s ease;
+        }
+        
+        .pin-input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(99, 164, 255, 0.2);
+        }
+        
+        .pin-submit {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
+        }
+        
+        .pin-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(25, 118, 210, 0.4);
+        }
+        
+        .pin-error {
+            color: var(--error-color);
+            margin-top: 15px;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+        
+        .app-icon {
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        /* Security overlay */
+        .security-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+            padding: 20px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .security-overlay h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .security-overlay p {
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        /* Security warning */
+        .security-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            text-align: center;
+            padding: 20px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .security-warning h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: var(--error-color);
+        }
+        
+        .security-warning p {
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .warning-icon {
+            font-size: 3rem;
+            color: var(--error-color);
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+            
+            .tab {
+                min-width: 65px;
+                padding: 8px 5px;
+                font-size: 0.7rem;
+            }
+            
+            .tab i {
+                font-size: 1.1rem;
+            }
+            
+            .pin-container {
+                padding: 25px 20px;
+            }
+            
+            .refresh-btn {
+                width: 45px;
+                height: 45px;
+                bottom: 15px;
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- PIN Entry Modal -->
+    <div class="pin-modal" id="pinModal">
+        <div class="pin-container">
+            <div class="app-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <h2>Office Access</h2>
+            <input type="password" class="pin-input" id="pinInput" placeholder="Enter PIN" maxlength="4" inputmode="numeric" pattern="\d*">
+            <button class="pin-submit" id="pinSubmit">
+                <i class="fas fa-lock-open"></i> Unlock App
+            </button>
+            <div class="pin-error" id="pinError"></div>
+        </div>
+    </div>
+
+    <div class="security-overlay" id="securityOverlay">
+        <div>
+            <div class="app-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2>Access Restricted</h2>
+            <p>This application is designed for mobile use only.</p>
+            <p>Please access from a smartphone.</p>
+        </div>
+    </div>
+
+    <!-- Security warning for iframe navigation attempts -->
+    <div class="security-warning" id="securityWarning">
+        <div>
+            <div class="warning-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h2>Security Violation Detected</h2>
+            <p>External navigation is not permitted in this application.</p>
+            <p>Please use the navigation tabs to access authorized content.</p>
+            <button class="pin-submit" id="warningOk" style="margin-top: 20px;">
+                <i class="fas fa-check"></i> OK
+            </button>
+        </div>
+    </div>
+
+    <div class="app-container" id="appContainer" style="display:none;">
+        <div class="header">
+            <h1>Workshop Bright</h1>
+            <button class="logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+        
+        <div class="nav-tabs">
+            <div class="tab" data-tab="inventory">
+                <i class="fas fa-warehouse"></i>
+                <span>Inventory Management</span>
+            </div>
+            <div class="tab" data-tab="invoicegenerator">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Invoice Generator</span>
+            </div>
+            <div class="tab" data-tab="uploadinvoice">
+                <i class="fas fa-file-upload"></i>
+                <span>Upload Invoice</span>
+            </div>
+            <div class="tab" data-tab="sparedashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Spare Dashboard</span>
+            </div>
+            <div class="tab" data-tab="invoice">
+                <i class="fas fa-file-invoice"></i>
+                <span>Invoice</span>
+            </div>
+            <div class="tab" data-tab="trend">
+                <i class="fas fa-chart-line"></i>
+                <span>Trend</span>
+            </div>
+            <div class="tab" data-tab="saleshistory">
+                <i class="fas fa-history"></i>
+                <span>Sales History</span>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            <div class="iframe-container" id="inventory">
+                <iframe src="https://workshopbright.netlify.app/inventory/dash" loading="lazy" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+            </div>
+            <div class="iframe-container" id="invoicegenerator">
+                <iframe src="https://workshopbright.netlify.app/inventory/mini" loading="lazy" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+            </div>
+            <div class="iframe-container" id="uploadinvoice">
+                <iframe src="http://103.49.131.41:8089/Spare/app/Inv3f.html" loading="lazy" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+            </div>
+            <div class="iframe-container" id="sparedashboard">
+                <iframe src="http://103.49.131.41:8089/Spare/app/Dash5f.html" loading="lazy" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+            </div>
+            <div class="iframe-container" id="invoice">
+                <iframe src="http://103.49.131.41:8089/Spare/Sinf.html" loading="lazy" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+            </div>
+            <div class="iframe-container" id="trend">
+                <iframe src="http://103.49.131.41:8089/Spare/app/Pr.html" loading="lazy" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+            </div>
+            <div class="iframe-container" id="saleshistory">
+                <iframe src="http://103.49.131.41:8089/Spare/app/1.htm" loading="lazy" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+            </div>
+        </div>
+        
+        <!-- Refresh Button -->
+        <div class="refresh-btn" id="refreshBtn">
+            <i class="fas fa-sync-alt"></i>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if on mobile device
+            function isMobile() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            }
+            
+            // PIN verification
+            const CORRECT_PIN = "8089"; // Set your PIN here
+            const pinModal = document.getElementById('pinModal');
+            const pinInput = document.getElementById('pinInput');
+            const pinSubmit = document.getElementById('pinSubmit');
+            const pinError = document.getElementById('pinError');
+            const appContainer = document.getElementById('appContainer');
+            const securityOverlay = document.getElementById('securityOverlay');
+            const securityWarning = document.getElementById('securityWarning');
+            const warningOk = document.getElementById('warningOk');
+            const refreshBtn = document.getElementById('refreshBtn');
+            
+            // Check if PIN is already stored (for session)
+            const storedPin = sessionStorage.getItem('technicianPinVerified');
+            
+            if (storedPin === 'true') {
+                pinModal.style.display = 'none';
+            } else {
+                pinModal.style.display = 'flex';
+            }
+            
+            // PIN submission handler
+            pinSubmit.addEventListener('click', function() {
+                if (pinInput.value === CORRECT_PIN) {
+                    sessionStorage.setItem('technicianPinVerified', 'true');
+                    pinModal.style.display = 'none';
+                    pinError.textContent = '';
+                    
+                    // Continue with mobile check
+                    if (!isMobile()) {
+                        securityOverlay.style.display = 'flex';
+                    } else {
+                        securityOverlay.style.display = 'none';
+                        appContainer.style.display = 'flex';
+                        
+                        // Activate inventory tab by default
+                        activateTab('inventory');
+                    }
+                } else {
+                    pinError.textContent = 'Incorrect PIN. Please try again.';
+                    pinInput.value = '';
+                    pinInput.focus();
+                }
+            });
+            
+            // Also allow Enter key to submit PIN
+            pinInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    pinSubmit.click();
+                }
+            });
+            
+            // Focus PIN input when modal shows
+            if (pinModal.style.display === 'flex') {
+                pinInput.focus();
+            }
+            
+            // Function to activate a tab
+            function activateTab(tabId) {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // Add active class to selected tab
+                document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+                
+                // Hide all iframes
+                document.querySelectorAll('.iframe-container').forEach(container => {
+                    container.classList.remove('active');
+                });
+                
+                // Show selected iframe
+                document.getElementById(tabId).classList.add('active');
+                
+                // Store the active tab in session storage
+                sessionStorage.setItem('activeTab', tabId);
+            }
+            
+            // Refresh button functionality (manual refresh only)
+            refreshBtn.addEventListener('click', function() {
+                const activeIframeContainer = document.querySelector('.iframe-container.active');
+                if (activeIframeContainer) {
+                    const iframe = activeIframeContainer.querySelector('iframe');
+                    if (iframe) {
+                        // Reload iframe
+                        iframe.src = iframe.src;
+                    }
+                }
+            });
+            
+            // Prevent right click
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // Prevent keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+                if (e.key === 'F12' || 
+                    (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                    (e.ctrlKey && e.shiftKey && e.key === 'J') || 
+                    (e.ctrlKey && e.key === 'U') ||
+                    (e.ctrlKey && e.key === 'N') ||
+                    (e.ctrlKey && e.key === 'T') ||
+                    (e.ctrlKey && e.key === 'W')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Tab switching functionality
+            const tabs = document.querySelectorAll('.tab');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    activateTab(tabId);
+                });
+            });
+            
+            // Check for stored active tab
+            const storedActiveTab = sessionStorage.getItem('activeTab');
+            if (storedActiveTab) {
+                activateTab(storedActiveTab);
+            }
+            
+            // Logout button
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to logout?')) {
+                    // Clear session data
+                    sessionStorage.removeItem('technicianPinVerified');
+                    sessionStorage.removeItem('activeTab');
+                    
+                    // Reload to show PIN entry again
+                    window.location.reload();
+                }
+            });
+            
+            // Prevent iframe content from being dragged
+            document.addEventListener('dragstart', function(e) {
+                if (e.target.tagName === 'IFRAME') {
+                    e.preventDefault();
+                }
+            });
+            
+            // Security warning OK button
+            warningOk.addEventListener('click', function() {
+                securityWarning.style.display = 'none';
+            });
+            
+            // Enhanced security: Prevent iframe navigation
+            document.querySelectorAll('iframe').forEach(iframe => {
+                iframe.addEventListener('load', function() {
+                    try {
+                        // Try to remove target attributes from all links in the iframe
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        const links = iframeDoc.querySelectorAll('a');
+                        links.forEach(link => {
+                            if (link.target === '_blank') {
+                                link.target = '_self';
+                            }
+                            // Add click handler to prevent navigation
+                            link.addEventListener('click', function(e) {
+                                // Allow same-origin navigation
+                                const href = this.getAttribute('href');
+                                if (href && href.startsWith('http') && !href.startsWith(iframe.src.split('/').slice(0, 3).join('/'))) {
+                                    e.preventDefault();
+                                    securityWarning.style.display = 'flex';
+                                    return false;
+                                }
+                            });
+                        });
+                        
+                        // Prevent form submissions that navigate away
+                        const forms = iframeDoc.querySelectorAll('form');
+                        forms.forEach(form => {
+                            form.addEventListener('submit', function(e) {
+                                const action = this.getAttribute('action');
+                                if (action && action.startsWith('http') && !action.startsWith(iframe.src.split('/').slice(0, 3).join('/'))) {
+                                    e.preventDefault();
+                                    securityWarning.style.display = 'flex';
+                                    return false;
+                                }
+                            });
+                        });
+                    } catch (e) {
+                        // Cross-origin iframe - can't access its content
+                        console.log('Cross-origin iframe detected, using sandbox restrictions');
+                    }
+                });
+            });
+            
+            // Block window.open calls from iframes
+            const originalWindowOpen = window.open;
+            window.open = function(url, target, features) {
+                // Only allow opening in the same tab/window
+                if (target && target !== '_self') {
+                    securityWarning.style.display = 'flex';
+                    return null;
+                }
+                return originalWindowOpen.call(this, url, target, features);
+            };
+            
+            // Block attempts to change window.location from iframes
+            Object.defineProperty(window, 'location', {
+                set: function(value) {
+                    securityWarning.style.display = 'flex';
+                    return false;
+                },
+                get: function() {
+                    return {
+                        href: window.location.href,
+                        assign: function(url) {
+                            securityWarning.style.display = 'flex';
+                            return false;
+                        },
+                        replace: function(url) {
+                            securityWarning.style.display = 'flex';
+                            return false;
+                        }
+                    };
+                }
+            });
+        });
+    </script>
+</body>
+</html>
