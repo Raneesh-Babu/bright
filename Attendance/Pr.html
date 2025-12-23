@@ -856,8 +856,22 @@
 </div>
 
 <script>
-const BASEROW_API_URL = "http://103.49.131.41:7300/api/database/rows/table/705/";
-const BASEROW_API_KEY = "zOFkhuZBrfnc7LRE71gV7o8Gp01JxYrq";
+// Updated Baserow Credentials for Web App
+const BASEROW_TABLE_ID = "781249";
+const BASEROW_API_KEY = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
+const BASEROW_API_URL = `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/`;
+
+// Field IDs based on your credentials
+const FIELDS = {
+  PRODUCT_NAME: "field_6651957",
+  PRODUCT_CODE: "field_6651958",
+  QUANTITY: "field_6651959",
+  UNIT_PRICE: "field_6651960",
+  TOTAL_PRICE: "field_6651961",
+  DATE_TIME: "field_6651962",
+  INVOICE_NUMBER: "field_6651963"
+};
+
 let chart;
 let currentChartType = 'bar';
 let isDarkMode = false;
@@ -895,18 +909,21 @@ async function fetchData() {
   try {
     showLoadingState();
     const res = await fetch(BASEROW_API_URL, {
-      headers: { Authorization: `Token ${BASEROW_API_KEY}` }
+      headers: { 
+        Authorization: `Token ${BASEROW_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
     });
     
     if (!res.ok) {
-      throw new Error(`API Error: ${res.status}`);
+      throw new Error(`API Error: ${res.status} ${res.statusText}`);
     }
     
     const data = await res.json();
     return data.results || [];
   } catch(err) {
     console.error("Error fetching data:", err);
-    showErrorState("Failed to load data from Baserow");
+    showErrorState("Failed to load data from Baserow. Check API credentials.");
     return [];
   }
 }
@@ -949,9 +966,9 @@ function filterData(data) {
   if (!from && !to) return data;
   
   return data.filter(r => {
-    if (!r.field_6874) return false;
+    if (!r[FIELDS.DATE_TIME]) return false;
     
-    const date = new Date(r.field_6874);
+    const date = new Date(r[FIELDS.DATE_TIME]);
     return (!from || date >= new Date(from)) && (!to || date <= new Date(to));
   });
 }
@@ -969,11 +986,11 @@ function renderDashboard(data) {
   const summary = {};
   
   data.forEach(r => {
-    const name = r.field_6869 || 'Unknown';
-    const code = r.field_6870 || 'N/A';
-    const quantity = +r.field_6871 || 0;
-    const price = +r.field_6872 || 0;
-    const total = +r.field_6873 || 0;
+    const name = r[FIELDS.PRODUCT_NAME] || 'Unknown';
+    const code = r[FIELDS.PRODUCT_CODE] || 'N/A';
+    const quantity = +r[FIELDS.QUANTITY] || 0;
+    const price = +r[FIELDS.UNIT_PRICE] || 0;
+    const total = +r[FIELDS.TOTAL_PRICE] || 0;
     
     totalSales += total;
     
@@ -1156,9 +1173,9 @@ function toggleChartType(type) {
   const summary = {};
   
   filteredData.forEach(r => {
-    const name = r.field_6869;
-    const quantity = +r.field_6871 || 0;
-    const total = +r.field_6873 || 0;
+    const name = r[FIELDS.PRODUCT_NAME];
+    const quantity = +r[FIELDS.QUANTITY] || 0;
+    const total = +r[FIELDS.TOTAL_PRICE] || 0;
     
     if (!summary[name]) {
       summary[name] = { qty: 0, total: 0 };
@@ -1237,7 +1254,7 @@ async function updateDashboard() {
 }
 
 // Invoice Uploader Functions
-function parseInvoices() {
+async function parseInvoices() {
   const text = document.getElementById("invoiceText").value.trim();
   const log = document.getElementById("log");
   
@@ -1312,7 +1329,16 @@ function parseInvoices() {
         `Date: ${invoice.date}\n` +
         `Items: ${invoice.items.length}\n` +
         `Total: ₹${invoice.total.toFixed(2)}\n\n` +
-        `Ready to upload to Baserow.`;
+        `Ready to upload to Baserow. Click 'Upload to Baserow' to save.`;
+        
+      // Add upload button
+      setTimeout(() => {
+        const uploadBtn = document.createElement('button');
+        uploadBtn.className = 'btn';
+        uploadBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload to Baserow';
+        uploadBtn.onclick = () => uploadInvoiceToBaserow(invoice);
+        document.querySelector('.upload-card').appendChild(uploadBtn);
+      }, 500);
     } else {
       log.innerText = "❌ Could not parse a valid invoice. Please check the format.";
     }
@@ -1321,8 +1347,49 @@ function parseInvoices() {
   }
 }
 
+async function uploadInvoiceToBaserow(invoice) {
+  const log = document.getElementById("log");
+  log.innerText = "Uploading to Baserow...";
+  
+  try {
+    // Upload each item as a separate row
+    for (const item of invoice.items) {
+      const rowData = {
+        [FIELDS.PRODUCT_NAME]: item.name,
+        [FIELDS.PRODUCT_CODE]: `INV-${invoice.number}`,
+        [FIELDS.QUANTITY]: item.quantity,
+        [FIELDS.UNIT_PRICE]: item.price,
+        [FIELDS.TOTAL_PRICE]: item.quantity * item.price,
+        [FIELDS.DATE_TIME]: invoice.date || new Date().toISOString(),
+        [FIELDS.INVOICE_NUMBER]: invoice.number
+      };
+      
+      const response = await fetch(BASEROW_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${BASEROW_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(rowData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to upload: ${response.status}`);
+      }
+    }
+    
+    log.innerText = `✅ Invoice ${invoice.number} uploaded successfully!\n${invoice.items.length} items saved to Baserow.`;
+    
+    // Clear textarea
+    document.getElementById("invoiceText").value = "";
+    
+  } catch (error) {
+    log.innerText = `❌ Upload failed: ${error.message}`;
+  }
+}
+
 // Invoice Search Functions
-function searchInvoice() {
+async function searchInvoice() {
   const invoiceNumber = document.getElementById("invoiceInput").value.trim();
   const resultArea = document.getElementById("resultArea");
   
@@ -1331,20 +1398,63 @@ function searchInvoice() {
     return;
   }
   
-  // For demo purposes, we'll create a mock invoice
-  // In a real app, this would fetch from a database
-  const invoice = {
-    number: invoiceNumber,
-    date: new Date().toLocaleDateString('en-IN'),
-    items: [
-      { name: "Wireless Earbuds", quantity: 2, price: 2499 },
-      { name: "Phone Case", quantity: 1, price: 599 },
-      { name: "Screen Protector", quantity: 2, price: 299 }
-    ],
-    total: 6995
-  };
+  resultArea.innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Searching for invoice ${invoiceNumber}...</div>
+    </div>
+  `;
   
-  displayInvoice(invoice);
+  try {
+    // Search in Baserow for invoice
+    const searchUrl = `${BASEROW_API_URL}?search=${encodeURIComponent(invoiceNumber)}`;
+    const response = await fetch(searchUrl, {
+      headers: {
+        'Authorization': `Token ${BASEROW_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Search failed: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const invoiceRows = data.results.filter(row => row[FIELDS.INVOICE_NUMBER] === invoiceNumber);
+    
+    if (invoiceRows.length === 0) {
+      resultArea.innerHTML = `<div class="no-result">No invoice found with number: ${invoiceNumber}</div>`;
+      return;
+    }
+    
+    // Group items by invoice
+    const invoice = {
+      number: invoiceNumber,
+      date: invoiceRows[0][FIELDS.DATE_TIME] || new Date().toLocaleDateString('en-IN'),
+      items: [],
+      total: 0
+    };
+    
+    invoiceRows.forEach(row => {
+      invoice.items.push({
+        name: row[FIELDS.PRODUCT_NAME],
+        quantity: +row[FIELDS.QUANTITY],
+        price: +row[FIELDS.UNIT_PRICE]
+      });
+      invoice.total += +row[FIELDS.TOTAL_PRICE];
+    });
+    
+    displayInvoice(invoice);
+  } catch (error) {
+    resultArea.innerHTML = `
+      <div class="no-result">
+        Error searching invoice: ${error.message}<br>
+        <button class="btn" onclick="searchInvoice()" style="margin-top: 15px;">
+          <i class="fas fa-redo"></i> Try Again
+        </button>
+      </div>
+    `;
+  }
 }
 
 function displayInvoice(invoice) {
