@@ -104,8 +104,8 @@
 <footer>© 2025 Invoice Parser App</footer>
 
 <script>
-  const BASEROW_API_URL = "http://103.49.131.41:7300/api/database/rows/table/705/";
-  const BASEROW_API_KEY = "zOFkhuZBrfnc7LRE71gV7o8Gp01JxYrq";
+  const BASEROW_API_URL = "http://103.49.131.41:7300/api/database/rows/table/781249/";
+  const BASEROW_API_KEY = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f";
 
   let parsedInvoices = [];
 
@@ -174,7 +174,7 @@
         headers: { "Authorization": `Token ${BASEROW_API_KEY}` }
       });
       const existing = await response.json();
-      const existingInvoices = existing.results.map(r => r.field_6875);
+      const existingInvoices = existing.results.map(r => r.field_6651963);
 
       let uploadedCount = 0;
 
@@ -185,13 +185,13 @@
         }
 
         const rowData = {
-          "field_6869": p.product_name,
-          "field_6870": p.product_code,
-          "field_6871": p.quantity,
-          "field_6872": p.price_per_unit,
-          "field_6873": p.total_price,
-          "field_6874": p.date_iso,
-          "field_6875": p.invoice_number
+          "field_6651957": p.product_name,
+          "field_6651958": p.product_code,
+          "field_6651959": p.quantity,
+          "field_6651960": p.price_per_unit,
+          "field_6651961": p.total_price,
+          "field_6651962": p.date_iso,
+          "field_6651963": p.invoice_number
         };
 
         try {
