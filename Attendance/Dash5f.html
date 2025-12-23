@@ -557,9 +557,9 @@ function filterData(data) {
   if (!from && !to) return data;
   
   return data.filter(r => {
-    if (!r.field_6874) return false;
+    if (!r.field_6651962) return false;
     
-    const date = new Date(r.field_6874);
+    const date = new Date(r.field_6651962);
     return (!from || date >= new Date(from)) && (!to || date <= new Date(to));
   });
 }
@@ -764,9 +764,9 @@ function toggleChartType(type) {
   const summary = {};
   
   filteredData.forEach(r => {
-    const name = r.field_6869;
-    const quantity = +r.field_6871 || 0;
-    const total = +r.field_6873 || 0;
+    const name = r.field_6651957;
+    const quantity = +r.field_6651959 || 0;
+    const total = +r.field_6651961 || 0;
     
     if (!summary[name]) {
       summary[name] = { qty: 0, total: 0 };
@@ -785,7 +785,7 @@ function downloadReport() {
   
   table.forEach(tr => {
     const cells = [...tr.children].map(td => td.innerText);
-    if (cells.length === 5) { // Only add if it's a data row (not header or loading)
+    if (cells.length === 5) {
       rows.push(cells);
     }
   });
@@ -799,7 +799,6 @@ function downloadReport() {
 }
 
 function resetFilters() {
-  // Reset to last 7 days
   const today = new Date();
   const oneWeekAgo = new Date(today);
   oneWeekAgo.setDate(today.getDate() - 7);
@@ -807,10 +806,6 @@ function resetFilters() {
   document.getElementById('fromDate').valueAsDate = oneWeekAgo;
   document.getElementById('toDate').valueAsDate = today;
   
-  updateDashboard();
-}
-
-function refreshData() {
   updateDashboard();
 }
 
@@ -848,7 +843,7 @@ function toggleTableView() {
 
 async function updateDashboard() {
   const allData = await fetchData();
-  window.currentData = allData; // Store for later use
+  window.currentData = allData;
   const filteredData = filterData(allData);
   renderDashboard(filteredData);
 }
