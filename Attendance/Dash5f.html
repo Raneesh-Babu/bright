@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Sales Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  :root {
+    --primary: #6a11cb;
+    --primary-light: #7c2ae8;
+    --secondary: #5b5be7;
+    --text: #333;
+    --text-light: #777;
+    --bg: #f5f7ff;
+    --card-bg: #fff;
+    --shadow: 0 4px 15px rgba(0,0,0,0.05);
+    --radius: 16px;
+  }
+  
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    max-width: 100%;
+    overflow-x: hidden;
+    padding: 0;
+  }
+  
+  /* Main Content */
+  .container {
+    width: 100%;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  /* Filters Section */
+  .filters {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  
+  .filter-title {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .filter-group {
+    flex: 1;
+    min-width: 140px;
+  }
+  
+  .filter-group label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 5px;
+    color: var(--text-light);
+  }
+  
+  .filter-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 15px;
+    background: #f9f9f9;
+    transition: all 0.3s;
+  }
+  
+  .filter-input:focus {
+    outline: none;
+    border-color: var(--secondary);
+    background: white;
+  }
+  
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .btn {
+    flex: 1;
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(123, 45, 255, 0.4);
+  }
+  
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--secondary);
+    color: var(--secondary);
+  }
+  
+  /* Summary Cards */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  }
+  
+  .card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(106, 17, 203, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    color: var(--primary);
+    font-size: 20px;
+  }
+  
+  .card h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: var(--text-light);
+  }
+  
+  .card p {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--primary);
+  }
+  
+  /* Charts */
+  .chart-container {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  
+  .chart-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .chart-toggle {
+    background: #f0f0f0;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .chart-toggle.active {
+    background: var(--primary);
+    color: white;
+  }
+  
+  canvas {
+    width: 100% !important;
+    height: 250px !important;
+  }
+  
+  /* Table Section */
+  .table-container {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  
+  .table-header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .table-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .table-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    padding: 15px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+  }
+  
+  th {
+    background: rgba(106, 17, 203, 0.05);
+    color: var(--text);
+    font-weight: 600;
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
+  }
+  
+  /* Loading State */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(106, 17, 203, 0.1);
+    border-left: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .container {
+      padding: 15px;
+    }
+    
+    .summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    th, td {
+      padding: 12px 8px;
+      font-size: 13px;
+    }
+    
+    .filter-row {
+      flex-direction: column;
+    }
+    
+    .filter-group {
+      min-width: 100%;
+    }
+    
+    .btn-group {
+      flex-direction: column;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .summary {
+      grid-template-columns: 1fr;
+    }
+    
+    .chart-actions {
+      flex-direction: column;
+    }
+    
+    .table-header {
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    
+    .table-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Filters Section -->
+  <div class="filters">
+    <div class="filter-title">
+      <i class="fas fa-filter"></i>
+      Filter Data
+    </div>
+    <div class="filter-row">
+      <div class="filter-group">
+        <label for="fromDate">From Date</label>
+        <input type="date" id="fromDate" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label for="toDate">To Date</label>
+        <input type="date" id="toDate" class="filter-input">
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn" onclick="updateDashboard()">
+        <i class="fas fa-search"></i>
+        Apply Filters
+      </button>
+      <button class="btn btn-outline" onclick="resetFilters()">
+        <i class="fas fa-undo"></i>
+        Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary">
+    <div class="card">
+      <div class="card-icon">
+        <i class="fas fa-rupee-sign"></i>
+      </div>
+      <h3>Total Earnings</h3>
+      <p id="totalSales">₹0</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <h3>Top Selling Product</h3>
+      <p id="topSelling">-</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">
+        <i class="fas fa-trophy"></i>
+      </div>
+      <h3>Most Profitable Product</h3>
+      <p id="topProfit">-</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">
+        <i class="fas fa-box"></i>
+      </div>
+      <h3>Total Products</h3>
+      <p id="totalProducts">0</p>
+    </div>
+  </div>
+
+  <!-- Chart Section -->
+  <div class="chart-container">
+    <div class="chart-header">
+      <div class="chart-title">Sales Performance</div>
+      <div class="chart-actions">
+        <button class="chart-toggle active" onclick="toggleChartType('bar')">Bar</button>
+        <button class="chart-toggle" onclick="toggleChartType('line')">Line</button>
+        <button class="chart-toggle" onclick="toggleChartType('pie')">Pie</button>
+      </div>
+    </div>
+    <canvas id="productChart"></canvas>
+  </div>
+
+  <!-- Table Section -->
+  <div class="table-container">
+    <div class="table-header">
+      <div class="table-title">Product Sales Details</div>
+      <div class="table-actions">
+        <button class="icon-btn" onclick="downloadReport()">
+          <i class="fas fa-download"></i>
+        </button>
+        <button class="icon-btn" onclick="toggleTableView()">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Code</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Total Sales (₹)</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="5">
+              <div class="loading">
+                <div class="spinner"></div>
+                <div>Loading data from Baserow...</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASEROW_API_URL = "http://103.49.131.41:7300/api/database/rows/table/705/";
+const BASEROW_API_KEY = "zOFkhuZBrfnc7LRE71gV7o8Gp01JxYrq";
+let chart;
+let currentChartType = 'bar';
+let isDarkMode = false;
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+  // Set default dates to last 7 days
+  const today = new Date();
+  const oneWeekAgo = new Date(today);
+  oneWeekAgo.setDate(today.getDate() - 7);
+  
+  document.getElementById('fromDate').valueAsDate = oneWeekAgo;
+  document.getElementById('toDate').valueAsDate = today;
+  
+  updateDashboard();
+});
+
+async function fetchData() {
+  try {
+    showLoadingState();
+    const res = await fetch(BASEROW_API_URL, {
+      headers: { Authorization: `Token ${BASEROW_API_KEY}` }
+    });
+    
+    if (!res.ok) {
+      throw new Error(`API Error: ${res.status}`);
+    }
+    
+    const data = await res.json();
+    return data.results || [];
+  } catch(err) {
+    console.error("Error fetching data:", err);
+    showErrorState("Failed to load data from Baserow");
+    return [];
+  }
+}
+
+function showLoadingState() {
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5">
+        <div class="loading">
+          <div class="spinner"></div>
+          <div>Loading data from Baserow...</div>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function showErrorState(message) {
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5">
+        <div class="loading">
+          <i class="fas fa-exclamation-triangle" style="font-size: 40px; margin-bottom: 15px; color: #ff6b6b;"></i>
+          <div>${message}</div>
+          <button class="btn" onclick="updateDashboard()" style="margin-top: 15px;">
+            <i class="fas fa-redo"></i> Try Again
+          </button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function filterData(data) {
+  const from = document.getElementById('fromDate').value;
+  const to = document.getElementById('toDate').value;
+  
+  if (!from && !to) return data;
+  
+  return data.filter(r => {
+    if (!r.field_6874) return false;
+    
+    const date = new Date(r.field_6874);
+    return (!from || date >= new Date(from)) && (!to || date <= new Date(to));
+  });
+}
+
+function renderDashboard(data) {
+  const tbody = document.getElementById("tableBody");
+  
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="5">No records found for the selected period</td></tr>`;
+    updateSummaryCards({}, 0);
+    return;
+  }
+  
+  let totalSales = 0;
+  const summary = {};
+  
+  data.forEach(r => {
+    const name = r.field_6869 || 'Unknown';
+    const code = r.field_6870 || 'N/A';
+    const quantity = +r.field_6871 || 0;
+    const price = +r.field_6872 || 0;
+    const total = +r.field_6873 || 0;
+    
+    totalSales += total;
+    
+    if (!summary[name]) {
+      summary[name] = { 
+        qty: 0, 
+        total: 0, 
+        code: code, 
+        price: price 
+      };
+    }
+    
+    summary[name].qty += quantity;
+    summary[name].total += total;
+  });
+  
+  updateSummaryCards(summary, totalSales);
+  renderTable(summary);
+  renderChart(summary);
+}
+
+function updateSummaryCards(summary, totalSales) {
+  document.getElementById("totalSales").innerText = "₹" + totalSales.toLocaleString();
+  document.getElementById("totalProducts").innerText = Object.keys(summary).length;
+  
+  const topSelling = Object.entries(summary).reduce((a, b) => 
+    b[1].qty > (a[1]?.qty || 0) ? b : a, ["-", {qty: 0}]);
+  
+  const topProfit = Object.entries(summary).reduce((a, b) => 
+    b[1].total > (a[1]?.total || 0) ? b : a, ["-", {total: 0}]);
+  
+  document.getElementById("topSelling").innerText = `${topSelling[0]} (${topSelling[1].qty})`;
+  document.getElementById("topProfit").innerText = `${topProfit[0]} (₹${topProfit[1].total.toLocaleString()})`;
+}
+
+function renderTable(summary) {
+  const tbody = document.getElementById("tableBody");
+  
+  if (Object.keys(summary).length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5">No data available</td></tr>`;
+    return;
+  }
+  
+  tbody.innerHTML = Object.entries(summary).map(([name, data]) => `
+    <tr>
+      <td>${name}</td>
+      <td>${data.code}</td>
+      <td>${data.qty}</td>
+      <td>₹${data.price}</td>
+      <td>₹${data.total.toLocaleString()}</td>
+    </tr>
+  `).join("");
+}
+
+function renderChart(summary) {
+  const labels = Object.keys(summary);
+  const totals = labels.map(k => summary[k].total);
+  const qtys = labels.map(k => summary[k].qty);
+  
+  const ctx = document.getElementById('productChart').getContext('2d');
+  
+  if (chart) {
+    chart.destroy();
+  }
+  
+  let chartConfig;
+  
+  if (currentChartType === 'pie') {
+    chartConfig = {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: totals,
+          backgroundColor: [
+            'rgba(106, 17, 203, 0.7)',
+            'rgba(91, 91, 231, 0.7)',
+            'rgba(124, 42, 232, 0.7)',
+            'rgba(75, 0, 130, 0.7)',
+            'rgba(138, 43, 226, 0.7)'
+          ],
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    };
+  } else if (currentChartType === 'line') {
+    chartConfig = {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Total Sales (₹)',
+            data: totals,
+            borderColor: '#6a11cb',
+            backgroundColor: 'rgba(106, 17, 203, 0.1)',
+            borderWidth: 3,
+            tension: 0.3,
+            fill: true
+          },
+          {
+            label: 'Units Sold',
+            data: qtys,
+            borderColor: '#5b5be7',
+            backgroundColor: 'rgba(91, 91, 231, 0.1)',
+            borderWidth: 3,
+            tension: 0.3,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    };
+  } else {
+    // Default to bar chart
+    chartConfig = {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Total Sales (₹)',
+            data: totals,
+            backgroundColor: 'rgba(106, 17, 203, 0.6)',
+            borderColor: '#6a11cb',
+            borderWidth: 2
+          },
+          {
+            label: 'Units Sold',
+            data: qtys,
+            backgroundColor: 'rgba(91, 91, 231, 0.6)',
+            borderColor: '#5b5be7',
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    };
+  }
+  
+  chart = new Chart(ctx, chartConfig);
+}
+
+function toggleChartType(type) {
+  currentChartType = type;
+  
+  // Update active button
+  document.querySelectorAll('.chart-toggle').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  event.target.classList.add('active');
+  
+  // Re-render chart with new type
+  const allData = window.currentData || [];
+  const filteredData = filterData(allData);
+  const summary = {};
+  
+  filteredData.forEach(r => {
+    const name = r.field_6869;
+    const quantity = +r.field_6871 || 0;
+    const total = +r.field_6873 || 0;
+    
+    if (!summary[name]) {
+      summary[name] = { qty: 0, total: 0 };
+    }
+    
+    summary[name].qty += quantity;
+    summary[name].total += total;
+  });
+  
+  renderChart(summary);
+}
+
+function downloadReport() {
+  const rows = [["Product", "Code", "Quantity", "Unit Price", "Total Sales (₹)"]];
+  const table = document.querySelectorAll("#tableBody tr");
+  
+  table.forEach(tr => {
+    const cells = [...tr.children].map(td => td.innerText);
+    if (cells.length === 5) { // Only add if it's a data row (not header or loading)
+      rows.push(cells);
+    }
+  });
+  
+  const csvContent = rows.map(r => r.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Sales_Report.csv";
+  a.click();
+}
+
+function resetFilters() {
+  // Reset to last 7 days
+  const today = new Date();
+  const oneWeekAgo = new Date(today);
+  oneWeekAgo.setDate(today.getDate() - 7);
+  
+  document.getElementById('fromDate').valueAsDate = oneWeekAgo;
+  document.getElementById('toDate').valueAsDate = today;
+  
+  updateDashboard();
+}
+
+function refreshData() {
+  updateDashboard();
+}
+
+function toggleTheme() {
+  isDarkMode = !isDarkMode;
+  const icon = document.querySelector('.table-actions .fa-download').parentNode.nextElementSibling.querySelector('i');
+  
+  if (isDarkMode) {
+    document.documentElement.style.setProperty('--bg', '#1a1a2e');
+    document.documentElement.style.setProperty('--card-bg', '#16213e');
+    document.documentElement.style.setProperty('--text', '#e6e6e6');
+    document.documentElement.style.setProperty('--text-light', '#a0a0a0');
+    document.documentElement.style.setProperty('--shadow', '0 4px 15px rgba(0,0,0,0.2)');
+    if (icon) {
+      icon.classList.remove('fa-moon');
+      icon.classList.add('fa-sun');
+    }
+  } else {
+    document.documentElement.style.setProperty('--bg', '#f5f7ff');
+    document.documentElement.style.setProperty('--card-bg', '#fff');
+    document.documentElement.style.setProperty('--text', '#333');
+    document.documentElement.style.setProperty('--text-light', '#777');
+    document.documentElement.style.setProperty('--shadow', '0 4px 15px rgba(0,0,0,0.05)');
+    if (icon) {
+      icon.classList.remove('fa-sun');
+      icon.classList.add('fa-moon');
+    }
+  }
+}
+
+function toggleTableView() {
+  const tableContainer = document.querySelector('.table-container');
+  tableContainer.classList.toggle('fullscreen');
+}
+
+async function updateDashboard() {
+  const allData = await fetchData();
+  window.currentData = allData; // Store for later use
+  const filteredData = filterData(allData);
+  renderDashboard(filteredData);
+}
+
+// Auto-refresh every 30 seconds
+setInterval(updateDashboard, 30000);
+</script>
+</body>
+</html>

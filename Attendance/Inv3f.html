@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Uploader App</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #fff;
+    color: #333;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f9faff;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    width: 100%;
+    max-width: 650px;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    padding: 25px 20px;
+    text-align: center;
+  }
+  h2 { color: #2d2f91; margin-bottom: 10px; }
+  p { color: #666; font-size: 14px; margin-bottom: 20px; }
+  textarea {
+    width: 100%;
+    height: 220px;
+    border: 2px solid #e4e4e4;
+    border-radius: 14px;
+    padding: 14px;
+    font-family: 'Poppins';
+    font-size: 15px;
+    resize: none;
+    outline: none;
+    transition: all .3s ease;
+  }
+  textarea:focus {
+    border-color: #6a11cb;
+    box-shadow: 0 0 8px rgba(106,17,203,0.2);
+  }
+  button {
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 32px;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+    width: 100%;
+  }
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(106,17,203,0.3);
+  }
+  pre {
+    background: #f4f6ff;
+    color: #333;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-top: 20px;
+    height: 180px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    text-align: left;
+  }
+  footer {
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="card">
+    <h2>Upload Invoices</h2>
+    <p>Paste one or more invoices below. The app will extract and verify before uploading.</p>
+
+    <textarea id="invoiceText" placeholder="Paste your invoice text here..."></textarea>
+    <button onclick="parseInvoices()">Parse Invoice</button>
+    <pre id="log">Awaiting input...</pre>
+  </div>
+</main>
+
+<footer>© 2025 Invoice Parser App</footer>
+
+<script>
+  const BASEROW_API_URL = "http://103.49.131.41:7300/api/database/rows/table/705/";
+  const BASEROW_API_KEY = "zOFkhuZBrfnc7LRE71gV7o8Gp01JxYrq";
+
+  let parsedInvoices = [];
+
+  function parseInvoices() {
+    const rawText = document.getElementById("invoiceText").value.trim();
+    const log = document.getElementById("log");
+    if (!rawText) return alert("Please paste invoice text first!");
+
+    parsedInvoices = [];
+    log.textContent = "📄 Parsing invoice data...\n";
+
+    const invoices = rawText.split(/(?=🧾 \*Invoice\*)/g).map(i => i.trim()).filter(i => i);
+    for (let inv of invoices) {
+      const dateMatch = inv.match(/Invoice\* - ([\d\/: ]+)/);
+      let dateTime = dateMatch ? dateMatch[1].trim() : "";
+
+      const dateOnly = dateTime.split(" ")[0];
+      const [dd, mm, yyyy] = dateOnly.split("/");
+      const isoDate = `${yyyy}-${mm}-${dd}`;
+
+      const invoiceNumber = dateTime.replace(/[\/ :]/g, "");
+
+      const productRegex = /(.*?) - \((.*?)\): (\d+) × ₹(\d+) = ₹(\d+)/g;
+      let match; const products = [];
+
+      while ((match = productRegex.exec(inv)) !== null) {
+        products.push({
+          product_name: match[1].trim(),
+          product_code: match[2].trim(),
+          quantity: parseInt(match[3]),
+          price_per_unit: parseInt(match[4]),
+          total_price: parseInt(match[5]),
+          date_iso: isoDate,
+          invoice_number: invoiceNumber
+        });
+      }
+
+      if (products.length > 0) parsedInvoices.push(...products);
+    }
+
+    if (parsedInvoices.length === 0) {
+      log.textContent = "⚠️ No valid invoices detected.";
+      return;
+    }
+
+    let preview = "🧾 Preview of Parsed Data:\n\n";
+    parsedInvoices.forEach(p => {
+      preview += `Invoice: ${p.invoice_number}\n`;
+      preview += `→ ${p.product_name} (${p.product_code}) | Qty: ${p.quantity} | ₹${p.price_per_unit} | Total: ₹${p.total_price}\n\n`;
+    });
+    preview += "✅ Review above details, then click CONFIRM to upload.\n";
+
+    log.textContent = preview;
+    document.querySelector("button").textContent = "✅ Confirm & Upload";
+    document.querySelector("button").onclick = uploadInvoices;
+  }
+
+  async function uploadInvoices() {
+    const log = document.getElementById("log");
+    if (parsedInvoices.length === 0) return alert("Please parse invoice first!");
+
+    log.textContent = "🔍 Checking for duplicates...\n";
+
+    try {
+      const response = await fetch(BASEROW_API_URL, {
+        headers: { "Authorization": `Token ${BASEROW_API_KEY}` }
+      });
+      const existing = await response.json();
+      const existingInvoices = existing.results.map(r => r.field_6875);
+
+      let uploadedCount = 0;
+
+      for (const p of parsedInvoices) {
+        if (existingInvoices.includes(p.invoice_number)) {
+          log.textContent += `⚠️ Skipped (already uploaded): ${p.invoice_number}\n`;
+          continue;
+        }
+
+        const rowData = {
+          "field_6869": p.product_name,
+          "field_6870": p.product_code,
+          "field_6871": p.quantity,
+          "field_6872": p.price_per_unit,
+          "field_6873": p.total_price,
+          "field_6874": p.date_iso,
+          "field_6875": p.invoice_number
+        };
+
+        try {
+          await fetch(BASEROW_API_URL, {
+            method: "POST",
+            headers: {
+              "Authorization": `Token ${BASEROW_API_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(rowData)
+          });
+          uploadedCount++;
+          log.textContent += `✅ Uploaded: ${p.product_name} (${p.invoice_number})\n`;
+        } catch (err) {
+          log.textContent += `❌ Error uploading ${p.product_name}: ${err.message}\n`;
+        }
+      }
+
+      log.textContent += `\n🎉 Upload complete! ${uploadedCount} new rows added.`;
+      document.querySelector("button").textContent = "Upload Another";
+      document.querySelector("button").onclick = () => location.reload();
+    } catch (err) {
+      log.textContent = `❌ Error checking existing invoices: ${err.message}`;
+    }
+  }
+</script>
+</body>
+</html>
