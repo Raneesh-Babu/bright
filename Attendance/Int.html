@@ -686,8 +686,20 @@
 </div>
 
 <script>
-const BASEROW_API_URL = "http://103.49.131.41:7300/api/database/rows/table/705/";
-const BASEROW_API_KEY = "zOFkhuZBrfnc7LRE71gV7o8Gp01JxYrq";
+// UPDATED BASEROW CREDENTIALS - Using your new credentials
+const BASEROW_API_URL = "http://103.49.131.41:7300/api/database/rows/table/781249/"; // Updated table ID
+const BASEROW_API_KEY = "FoELccYGXhpK4LW4eHEuF2oeRqOnJt0f"; // Updated API key
+
+// UPDATED FIELD MAPPINGS - Using your new field IDs
+const FIELD_MAPPINGS = {
+  product_name: "field_6651957",    // Product Name
+  product_code: "field_6651958",    // Product Code
+  quantity: "field_6651959",        // Quantity
+  price_per_unit: "field_6651960",  // Price Per Unit
+  total_price: "field_6651961",     // Total Price
+  date: "field_6651962",            // Date Time
+  invoice_number: "field_6651963"   // Invoice Number
+};
 
 // Dashboard variables
 let chart;
@@ -796,7 +808,7 @@ async function uploadInvoices() {
       headers: { "Authorization": `Token ${BASEROW_API_KEY}` }
     });
     const existing = await response.json();
-    const existingInvoices = existing.results.map(r => r.field_6875);
+    const existingInvoices = existing.results.map(r => r[FIELD_MAPPINGS.invoice_number]);
 
     let uploadedCount = 0;
 
@@ -806,14 +818,15 @@ async function uploadInvoices() {
         continue;
       }
 
+      // UPDATED: Using new field mappings for row data
       const rowData = {
-        "field_6869": p.product_name,
-        "field_6870": p.product_code,
-        "field_6871": p.quantity,
-        "field_6872": p.price_per_unit,
-        "field_6873": p.total_price,
-        "field_6874": p.date_iso,        // uploads as proper date format YYYY-MM-DD
-        "field_6875": p.invoice_number   // cleaned datetime string 27102025215830
+        [FIELD_MAPPINGS.product_name]: p.product_name,
+        [FIELD_MAPPINGS.product_code]: p.product_code,
+        [FIELD_MAPPINGS.quantity]: p.quantity,
+        [FIELD_MAPPINGS.price_per_unit]: p.price_per_unit,
+        [FIELD_MAPPINGS.total_price]: p.total_price,
+        [FIELD_MAPPINGS.date]: p.date_iso,        // uploads as proper date format YYYY-MM-DD
+        [FIELD_MAPPINGS.invoice_number]: p.invoice_number   // cleaned datetime string
       };
 
       try {
@@ -904,9 +917,10 @@ function filterData(data) {
   if (!from && !to) return data;
   
   return data.filter(r => {
-    if (!r.field_6874) return false;
+    // UPDATED: Using new field mapping for date
+    if (!r[FIELD_MAPPINGS.date]) return false;
     
-    const date = new Date(r.field_6874);
+    const date = new Date(r[FIELD_MAPPINGS.date]);
     return (!from || date >= new Date(from)) && (!to || date <= new Date(to));
   });
 }
@@ -924,11 +938,12 @@ function renderDashboard(data) {
   const summary = {};
   
   data.forEach(r => {
-    const name = r.field_6869 || 'Unknown';
-    const code = r.field_6870 || 'N/A';
-    const quantity = +r.field_6871 || 0;
-    const price = +r.field_6872 || 0;
-    const total = +r.field_6873 || 0;
+    // UPDATED: Using new field mappings
+    const name = r[FIELD_MAPPINGS.product_name] || 'Unknown';
+    const code = r[FIELD_MAPPINGS.product_code] || 'N/A';
+    const quantity = +r[FIELD_MAPPINGS.quantity] || 0;
+    const price = +r[FIELD_MAPPINGS.price_per_unit] || 0;
+    const total = +r[FIELD_MAPPINGS.total_price] || 0;
     
     totalSales += total;
     
@@ -1111,9 +1126,10 @@ function toggleChartType(type) {
   const summary = {};
   
   filteredData.forEach(r => {
-    const name = r.field_6869;
-    const quantity = +r.field_6871 || 0;
-    const total = +r.field_6873 || 0;
+    // UPDATED: Using new field mapping
+    const name = r[FIELD_MAPPINGS.product_name];
+    const quantity = +r[FIELD_MAPPINGS.quantity] || 0;
+    const total = +r[FIELD_MAPPINGS.total_price] || 0;
     
     if (!summary[name]) {
       summary[name] = { qty: 0, total: 0 };
