@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Product Dashboard — Last 30 Days</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+<!-- Chart.js for mini charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root{--brand1:#6a11cb;--brand2:#2575fc;--card:#ffffff;--muted:#667;}
+  *{box-sizing:border-box;font-family:'Poppins',sans-serif}
+  body{margin:0;background:#f5f7ff;color:#1f2937;padding:12px}
+  .wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+  .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 8px 28px rgba(36,50,90,0.06)}
+  .topbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .title{font-weight:800;color:var(--brand1)}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .controls input[type=text]{padding:8px 10px;border-radius:10px;border:1px solid #eaeefb}
+  .controls button{padding:8px 10px;border-radius:10px;border:0;background:linear-gradient(135deg,var(--brand1),var(--brand2));color:white;font-weight:700;cursor:pointer}
+  .summary{display:flex;gap:12px;flex-wrap:wrap}
+  .summary .tile{min-width:180px;background:linear-gradient(180deg,#fff,#fafcff);border-radius:10px;padding:10px;box-shadow:0 6px 18px rgba(40,50,100,0.04)}
+  .table-wrap{overflow:auto;border-radius:10px;margin-top:10px}
+  table{width:100%;border-collapse:collapse;min-width:720px}
+  th,td{padding:10px 12px;text-align:center;border-bottom:1px solid #f1f5ff;font-size:14px}
+  thead th{position:sticky;top:0;background:linear-gradient(135deg,var(--brand1),var(--brand2));color:white;font-weight:700;z-index:2}
+  tr:nth-child(even) td{background:#fbfbff}
+  .small{font-size:13px;color:var(--muted)}
+  .ghost{background:transparent;border:0;color:var(--brand2);text-decoration:underline;cursor:pointer}
+  .secondary{background:#eef2ff;color:var(--brand1);border:0;padding:8px 10px;border-radius:8px}
+  .hidden{display:none!important}
+  .center{text-align:center}
+  .detail-card{display:flex;flex-direction:column;gap:8px}
+  .detail-row{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+  .back-btn{background:transparent;border:0;color:var(--brand2);text-decoration:underline;cursor:pointer}
+  .admin-ind{display:inline-block;background:#fff1c7;color:#8a5a00;padding:6px 8px;border-radius:8px;font-weight:700}
+  @media (max-width:900px){
+    table{min-width:640px}
+    .summary{flex-direction:column}
+  }
+  @media (max-width:520px){
+    table{min-width:540px}
+  }
+  .modal{position:fixed;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.36);z-index:120}
+  .modal .box{background:white;padding:14px;border-radius:10px;width:340px;max-width:92%}
+  .apply-all{font-size:13px;color:var(--muted);display:inline-block;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Top controls -->
+  <div class="card topbar">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div class="title">Product Dashboard — Last 30 days</div>
+      <div class="small">Grouped by Product Name</div>
+    </div>
+
+    <div class="controls">
+      <input id="searchProduct" type="text" placeholder="Search product name..." oninput="renderTable()" />
+      <button onclick="openAdminModal()">Admin</button>
+      <button class="secondary" onclick="reload()">Refresh</button>
+      <div id="adminBadge" class="admin-ind hidden">Admin</div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card summary" id="summaryCard">
+    <div class="tile">
+      <div class="small">Grand Total Sales (₹)</div>
+      <div id="grandSales" style="font-weight:800;font-size:18px">—</div>
+    </div>
+    <div class="tile">
+      <div class="small">Total Quantity Sold</div>
+      <div id="grandQty" style="font-weight:800;font-size:18px">—</div>
+    </div>
+    <div class="tile">
+      <div class="small">Unique Products (30d)</div>
+      <div id="productCount" style="font-weight:800;font-size:18px">—</div>
+    </div>
+  </div>
+
+  <!-- Products table -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="font-weight:700;color:#2d2f91">Products</div>
+      <div class="small">Click a product row to view sales history</div>
+    </div>
+
+    <div id="tableArea" class="table-wrap" style="margin-top:10px">
+      <div class="center small">Loading data…</div>
+    </div>
+  </div>
+
+  <!-- product detail / history area -->
+  <div id="detailArea"></div>
+</div>
+
+<!-- Admin modal -->
+<div id="adminModal" class="modal hidden">
+  <div class="box">
+    <h3 style="margin:0 0 8px 0;color:#2d2f91">Admin Access</h3>
+    <input id="adminPass" type="password" placeholder="Enter admin password" style="width:100%;padding:10px;border-radius:8px;border:1px solid #eee;margin-bottom:8px"/>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="secondary" onclick="closeAdminModal()">Cancel</button>
+      <button onclick="verifyAdmin()">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ------------- CONFIG -------------- */
+const BASEROW_API_BASE = "http://103.49.131.41:7300/api/database/rows/table/705";
+const BASEROW_API_URL = BASEROW_API_BASE + "/?user_field_names=true";
+const BASEROW_API_KEY = "zOFkhuZBrfnc7LRE71gV7o8Gp01JxYrq";
+const ADMIN_PASSWORD = "8089";
+
+/* ------------- STATE -------------- */
+let allRows = [];            // raw rows from Baserow
+let productGroups = {};      // { productName: { name, rows:[], qtyTotal, salesTotal, invoicesSet, dailySeries } }
+let isAdmin = false;
+
+/* ------------- UTIL: parse date from invoice number DDMMYYYY... -> Date object at 00:00:00 local -------------- */
+function parseDateFromInvoice(inv) {
+  if (!inv) return null;
+  const s = String(inv);
+  const m = s.match(/^(\d{2})(\d{2})(\d{4})/);
+  if (!m) return null;
+  const d = Number(m[1]), mo = Number(m[2]) - 1, y = Number(m[3]);
+  return new Date(y, mo, d);
+}
+
+/* ------------- Fetch all rows (pagination) -------------- */
+async function fetchAllRows() {
+  const rows = [];
+  let url = BASEROW_API_URL;
+  try {
+    while (url) {
+      const resp = await fetch(url, { headers: { Authorization: `Token ${BASEROW_API_KEY}` }});
+      if (!resp.ok) throw new Error("Fetch failed " + resp.status);
+      const json = await resp.json();
+      rows.push(...(json.results || []));
+      url = json.next || null;
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error fetching data: " + err.message);
+  }
+  allRows = rows;
+  return rows;
+}
+
+/* ------------- Build groups for last 30 days -------------- */
+function buildProductGroups() {
+  productGroups = {};
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // 00:00 today
+  start.setDate(start.getDate() - 29); // include today => last 30 days (0..29)
+  // create map of dates for the last 30 days for series
+  const dates = [];
+  for (let i=0;i<30;i++){
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    dates.push(d.toISOString().slice(0,10)); // YYYY-MM-DD
+  }
+
+  // filter rows to those with valid invoice date in last 30 days
+  const rows30 = allRows.filter(r => {
+    const inv = r["Invoice Number"] || "";
+    const dt = parseDateFromInvoice(inv);
+    if (!dt) return false;
+    // compare YYYY-MM-DD
+    const iso = dt.toISOString().slice(0,10);
+    return iso >= dates[0] && iso <= dates[dates.length-1];
+  });
+
+  // group by product name (case-sensitive as-is)
+  rows30.forEach(r => {
+    const prod = (r["Product Name"] || "").trim() || "(Unnamed)";
+    if (!productGroups[prod]) {
+      productGroups[prod] = {
+        name: prod,
+        rows: [],
+        qtyTotal: 0,
+        salesTotal: 0,
+        invoicesSet: new Set(),
+        dailyMap: Object.fromEntries(dates.map(d => [d, 0]))
+      };
+    }
+    const pg = productGroups[prod];
+    pg.rows.push(r);
+    const q = Number(r["Quantity"] || 0);
+    const t = Number(r["Total Price"] || 0);
+    pg.qtyTotal += q;
+    pg.salesTotal += t;
+    // unique invoice id by Invoice Number
+    pg.invoicesSet.add(String(r["Invoice Number"] || ""));
+    const dt = parseDateFromInvoice(String(r["Invoice Number"] || ""));
+    if (dt) {
+      const iso = dt.toISOString().slice(0,10);
+      if (pg.dailyMap[iso] !== undefined) pg.dailyMap[iso] += Number(r["Quantity"] || 0);
+    }
+  });
+
+  // convert dailyMap to array series for charts
+  Object.values(productGroups).forEach(pg => {
+    pg.dailySeries = Object.keys(pg.dailyMap).map(k => ({ date:k, qty: pg.dailyMap[k] }));
+  });
+
+  return { productGroups, dates };
+}
+
+/* ------------- Render summary (grand totals) -------------- */
+function renderSummary() {
+  const allProducts = Object.values(productGroups);
+  const grandSales = allProducts.reduce((s,p)=> s + (p.salesTotal || 0), 0);
+  const grandQty = allProducts.reduce((s,p)=> s + (p.qtyTotal || 0), 0);
+  document.getElementById("grandSales").innerText = grandSales ? "₹" + grandSales.toLocaleString() : "₹0";
+  document.getElementById("grandQty").innerText = grandQty ? grandQty.toLocaleString() : "0";
+  document.getElementById("productCount").innerText = allProducts.length;
+}
+
+/* ------------- Render product table with mini charts -------------- */
+function renderTable() {
+  const container = document.getElementById("tableArea");
+  const search = (document.getElementById("searchProduct").value || "").trim().toLowerCase();
+  const arr = Object.values(productGroups)
+    .filter(p => p.name.toLowerCase().includes(search))
+    .sort((a,b) => b.salesTotal - a.salesTotal); // best sellers first
+
+  if (!arr.length) {
+    container.innerHTML = `<div class="center small muted">No products found in last 30 days.</div>`;
+    return;
+  }
+
+  // build HTML table; we will create canvas for each sparkline and then render Chart.js charts
+  let html = `<table><thead><tr>
+    <th>Product</th><th>Qty (30d)</th><th>Sales (₹)</th><th>Invoices</th><th>Trend (30d)</th><th>Action</th>
+  </tr></thead><tbody>`;
+
+  arr.forEach((p, i) => {
+    const idSafe = 'spark_' + i;
+    html += `<tr data-prod="${encodeURIComponent(p.name)}">
+      <td style="text-align:left">${escapeHtml(p.name)}</td>
+      <td>${p.qtyTotal}</td>
+      <td>₹${Number(p.salesTotal || 0).toLocaleString()}</td>
+      <td>${p.invoicesSet.size}</td>
+      <td style="width:180px"><canvas id="${idSafe}" style="width:100%;height:40px"></canvas></td>
+      <td><button class="ghost" onclick="showProductDetail('${encodeURIComponent(p.name)}')">Details</button></td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+
+  // render sparklines with Chart.js
+  arr.forEach((p, i) => {
+    const ctx = document.getElementById('spark_' + i);
+    if (!ctx) return;
+    const labels = p.dailySeries.map(d => d.date.slice(5)); // MM-DD for compact
+    const data = p.dailySeries.map(d => d.qty);
+    // small chart: no axes + tiny line
+    new Chart(ctx.getContext('2d'), {
+      type: 'line',
+      data: { labels, datasets: [{ data, fill:false, tension:0.35, borderWidth:1 }]},
+      options: {
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+        scales:{ x:{ display:false }, y:{ display:false, beginAtZero:true } },
+        elements:{ point:{ radius:0 } }
+      }
+    });
+  });
+}
+
+/* ------------- Product detail / history -------------- */
+function showProductDetail(encodedName) {
+  const name = decodeURIComponent(encodedName);
+  const pg = productGroups[name];
+  if (!pg) return alert("Product not found.");
+
+  // build detail UI
+  const detailArea = document.getElementById("detailArea");
+  let html = `<div class="card detail-card">
+    <div class="detail-row" style="align-items:center">
+      <div style="display:flex;flex-direction:column">
+        <div style="font-weight:800">${escapeHtml(pg.name)}</div>
+        <div class="small">Qty (30d): ${pg.qtyTotal} • Sales: ₹${Number(pg.salesTotal||0).toLocaleString()} • Invoices: ${pg.invoicesSet.size}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="back-btn" onclick="closeDetail()">⬅ Back to Dashboard</button>
+        <button class="secondary" onclick="exportProductCSV('${encodeURIComponent(pg.name)}')">Export CSV</button>
+        <button class="ghost" onclick="openEditProduct('${encodeURIComponent(pg.name)}')">Edit</button>
+      </div>
+    </div>
+
+    <div style="margin-top:8px" id="detailHistoryArea">
+      <div class="small muted">Sales history (last 30 days)</div>
+      <div class="table-wrap" style="margin-top:8px"><table>
+      <thead><tr><th>Date</th><th>Invoice</th><th>Qty</th><th>Total (₹)</th><th>Actions</th></tr></thead><tbody>`;
+
+  // sort rows by date desc
+  const sorted = pg.rows.slice().sort((a,b)=>{
+    const da = parseDateFromInvoice(String(a["Invoice Number"]||""))?.getTime() || 0;
+    const db = parseDateFromInvoice(String(b["Invoice Number"]||""))?.getTime() || 0;
+    return db - da;
+  });
+
+  sorted.forEach(r => {
+    const inv = r["Invoice Number"] || "-";
+    const dt = parseDateFromInvoice(String(inv));
+    const iso = dt ? dt.toISOString().slice(0,10) : "-";
+    const qty = Number(r["Quantity"]||0);
+    const total = Number(r["Total Price"]||0);
+    html += `<tr data-rowid="${r.id}">
+      <td class="small">${iso}</td>
+      <td><button class="ghost" onclick="openInvoice('${escapeHtml(inv)}')">${escapeHtml(inv)}</button></td>
+      <td>${qty}</td>
+      <td>₹${total.toLocaleString()}</td>
+      <td><button class="ghost" onclick="editSingleRow(${r.id})">Edit Row</button></td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div></div></div>`;
+  detailArea.innerHTML = html;
+  detailArea.scrollIntoView({behavior:'smooth'});
+}
+
+/* open invoice in new tab or prompt — here we open invoice dashboard in new tab with ?invoice= */
+function openInvoice(inv) {
+  const url = window.location.origin + window.location.pathname.replace(/product_dashboard\.html$/,'') + 'inv.html';
+  // if existing inv.html not available, just open the invoice page same folder if present; else show alert
+  // We'll open a new window with query param invoice=...
+  window.open(`${window.location.origin}${window.location.pathname.replace(/product_dashboard\.html$/,'')}inv.html?invoice=${encodeURIComponent(inv)}`, '_blank');
+}
+
+/* close detail */
+function closeDetail() {
+  document.getElementById("detailArea").innerHTML = '';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* export product CSV */
+function exportProductCSV(encodedName) {
+  const name = decodeURIComponent(encodedName);
+  const pg = productGroups[name];
+  if (!pg) return;
+  let csv = 'Date,Invoice,Quantity,Total\n';
+  pg.rows.forEach(r=>{
+    const inv = r["Invoice Number"] || '';
+    const dt = parseDateFromInvoice(inv);
+    const iso = dt ? dt.toISOString().slice(0,10) : '';
+    csv += `${iso},${inv},${(Number(r["Quantity"]||0))},${(Number(r["Total Price"]||0))}\n`;
+  });
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${pg.name.replace(/\s+/g,'_')}_sales_30d.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ------------- Admin editing -------------- */
+function openAdminModal() {
+  document.getElementById("adminModal").classList.remove('hidden');
+  document.getElementById("adminPass").value = '';
+  document.getElementById("adminPass").focus();
+}
+function closeAdminModal() { document.getElementById("adminModal").classList.add('hidden'); }
+function verifyAdmin() {
+  const v = document.getElementById("adminPass").value;
+  if (v === ADMIN_PASSWORD) {
+    isAdmin = true;
+    sessionStorage.setItem('productAdmin','1');
+    document.getElementById("adminModal").classList.add('hidden');
+    document.getElementById("adminBadge").classList.remove('hidden');
+    alert('Admin enabled. You can edit product details and rows.');
+  } else {
+    alert('Incorrect password.');
+  }
+}
+
+/* Edit product details: open small modal-like inline form (we'll use prompt for simplicity)  */
+async function openEditProduct(encodedName) {
+  if (!isAdmin) {
+    if (confirm('Admin required to edit. Enable admin now?')) openAdminModal();
+    return;
+  }
+  const name = decodeURIComponent(encodedName);
+  const pg = productGroups[name];
+  if (!pg) return alert('Not found');
+  // gather current typical values (we'll pick first row as representative)
+  const sample = pg.rows[0];
+  const newName = prompt('Product Name', sample['Product Name'] || pg.name);
+  if (newName === null) return;
+  const newCode = prompt('Product Code', sample['Product Code'] || '');
+  if (newCode === null) return;
+  const newUnit = prompt('Price / Unit (optional)', sample['Price / Unit'] || '');
+  if (newUnit === null) return;
+
+  // ask whether apply to all matching rows
+  const applyAll = confirm('Apply these changes to ALL rows with this product name? (OK = Yes)');
+  // build payload
+  const payload = {};
+  if (newName !== null) payload['Product Name'] = newName;
+  if (newCode !== null) payload['Product Code'] = newCode;
+  if (newUnit !== null && newUnit !== '') {
+    // not required, but we don't compute Total Price automatically here
+    payload['Price / Unit'] = Number(newUnit);
+  }
+
+  // perform PATCH: either update all rows in pg.rows or only sample row
+  const targets = applyAll ? pg.rows.map(r=>r.id) : [sample.id];
+  if (!targets.length) return;
+  if (!confirm(`Will update ${targets.length} row(s). Proceed?`)) return;
+  // sequential patch to avoid rate limits
+  for (const id of targets) {
+    const ok = await patchRow(id, payload);
+    if (!ok) { alert('A patch failed. Check console.'); return; }
+  }
+  alert('Updated successfully.');
+  await reload();
+}
+
+/* Edit a single row from product history */
+async function editSingleRow(rowId) {
+  if (!isAdmin) {
+    if (confirm('Admin required. Enable now?')) openAdminModal();
+    return;
+  }
+  const r = allRows.find(x=>x.id==rowId);
+  if (!r) return alert('Row not found');
+  const newName = prompt('Product Name', r['Product Name'] || '');
+  if (newName === null) return;
+  const newCode = prompt('Product Code', r['Product Code'] || '');
+  if (newCode === null) return;
+  const newQty = prompt('Quantity', r['Quantity'] || '0');
+  if (newQty === null) return;
+  const newTotal = prompt('Total Price', r['Total Price'] || '0');
+  if (newTotal === null) return;
+  const payload = {
+    "Product Name": newName,
+    "Product Code": newCode,
+    "Quantity": Number(newQty),
+    "Total Price": Number(newTotal)
+  };
+  const ok = await patchRow(rowId, payload);
+  if (ok) {
+    alert('Row updated.');
+    await reload();
+  } else alert('Update failed.');
+}
+
+/* PATCH helper */
+async function patchRow(rowId, payload) {
+  try {
+    const url = `${BASEROW_API_BASE}/${rowId}/?user_field_names=true`;
+    const resp = await fetch(url, {
+      method: 'PATCH',
+      headers: { Authorization: `Token ${BASEROW_API_KEY}`, 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error('Patch failed', resp.status, text);
+      return false;
+    }
+    const updated = await resp.json();
+    // update local cache row if exists
+    const idx = allRows.findIndex(r => r.id == rowId);
+    if (idx !== -1) allRows[idx] = updated;
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
+/* ------------- Utility: escape html -------------- */
+function escapeHtml(s){ if (s===undefined||s===null) return ''; return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+
+/* ------------- Reload / main init -------------- */
+async function reload() {
+  document.getElementById("tableArea").innerHTML = '<div class="center small">Loading…</div>';
+  await fetchAllRows();
+  const { productGroups:pgs } = buildProductGroups();
+  // update global reference
+  productGroups = pgs;
+  renderSummary();
+  renderTable();
+  // restore admin badge state if session says admin
+  if (sessionStorage.getItem('productAdmin') === '1') {
+    isAdmin = true;
+    document.getElementById("adminBadge").classList.remove('hidden');
+  } else {
+    document.getElementById("adminBadge").classList.add('hidden');
+  }
+}
+
+/* ------------- On load -------------- */
+window.addEventListener('DOMContentLoaded', async () => { await reload(); });
+
+</script>
+</body>
+</html>
