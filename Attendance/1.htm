@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Invoice Search & Daywise Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<style>
+  /* reset & base */
+  * { box-sizing: border-box; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  html,body { height:100%; margin:0; font-family: 'Poppins', sans-serif; background:#f6f7ff; color:#222; }
+  /* main container */
+  .app {
+    max-width:1100px;
+    margin:12px auto;
+    padding:12px;
+    min-height:calc(100vh - 24px);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  /* top controls */
+  .controls {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:stretch;
+  }
+  .controls .group { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+  input[type="text"], input[type="date"] {
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid #e6e6ff;
+    background:white;
+    font-size:15px;
+    min-width:160px;
+  }
+  input[type="text"]:focus, input[type="date"]:focus { outline:none; box-shadow:0 6px 18px rgba(106,17,203,0.06); border-color:#6a11cb; }
+
+  button {
+    appearance:none;
+    border:0;
+    background:linear-gradient(135deg,#6a11cb,#2575fc);
+    color:white;
+    padding:10px 12px;
+    border-radius:10px;
+    font-weight:600;
+    cursor:pointer;
+    font-size:14px;
+  }
+  button.secondary { background:#eef1ff; color:#2d2f91; border:0; }
+  button.ghost { background:transparent; color:#2575fc; text-decoration:underline; padding:6px 8px; border-radius:6px; }
+
+  /* page cards */
+  .card {
+    background:white;
+    border-radius:12px;
+    padding:12px;
+    box-shadow:0 8px 22px rgba(30,40,80,0.04);
+  }
+
+  /* report table */
+  .table-wrap { width:100%; overflow:auto; border-radius:10px; }
+  table { width:100%; border-collapse:collapse; min-width:600px; }
+  th, td { padding:10px 12px; text-align:center; border-bottom:1px solid #f0f2ff; font-size:14px; }
+  thead th { position:sticky; top:0; background:linear-gradient(135deg,#6a11cb,#2575fc); color:white; font-weight:600; z-index:2; }
+  tr:nth-child(even) td { background:#fbfbff; }
+
+  .small { font-size:13px; color:#555; }
+  .muted { color:#667; }
+
+  /* invoice view */
+  .invoice-area { display:flex; gap:12px; flex-direction:column; width:100%; }
+  .invoice-header { text-align:center; color:#2d2f91; font-weight:700; margin-bottom:6px; }
+  .invoice-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+  .invoice-info { text-align:left; font-size:14px; }
+  .qr-code canvas { width:90px; height:90px; display:block; }
+  .copied-msg { position:fixed; right:18px; bottom:18px; background:#2d2f91; color:#fff; padding:8px 10px; border-radius:8px; font-size:13px; display:none; z-index:120; }
+  .copied-msg.show { display:block; }
+
+  .total-section { text-align:right; font-weight:700; font-size:16px; margin-top:8px; color:#2d2f91; }
+
+  /* edit row inputs */
+  .edit-row input { padding:6px 8px; border-radius:8px; border:1px solid #ddd; width:100%; font-size:14px; }
+
+  /* admin indicator */
+  .admin-ind { display:inline-block; padding:6px 10px; background:#fff1c7; color:#8a5a00; border-radius:8px; font-weight:700; font-size:13px; }
+
+  /* modal */
+  #adminModal { position:fixed; left:0; right:0; top:0; bottom:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.36); z-index:200; }
+  #adminModal .modal-card { width:320px; max-width:92%; background:white; padding:14px; border-radius:10px; box-shadow:0 8px 30px rgba(20,30,60,0.12); }
+
+  /* responsive */
+  @media (max-width:900px) {
+    .controls { flex-direction:column; align-items:stretch; }
+    table { min-width:540px; }
+    .invoice-top { flex-direction:column; align-items:flex-start; }
+    .qr-code canvas { width:72px; height:72px; }
+  }
+  @media (max-width:520px) {
+    table { min-width:460px; font-size:13px; }
+    input[type="text"] { min-width:120px; }
+  }
+
+  /* utility */
+  .hidden { display:none !important; }
+  .center { text-align:center; }
+  .right { text-align:right; }
+  .pill { padding:6px 10px; border-radius:8px; background:#f4f6ff; color:#2d2f91; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SEARCH & CONTROLS -->
+  <div class="card" id="topCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input id="invoiceInput" type="text" placeholder="Search Invoice No (e.g. 28102025195329)" />
+        <button onclick="searchInvoice()">Search</button>
+        <div class="small muted">or generate daywise report</div>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="small">Admin: <span id="adminBadge" class="admin-ind hidden">Enabled</span></div>
+        <button class="secondary" onclick="promptAdmin()">Admin</button>
+        <button class="secondary" onclick="loadAllAndShowReport()">Refresh Data</button>
+      </div>
+    </div>
+
+    <hr style="margin:12px 0;border:none;height:1px;background:#eef1ff">
+
+    <div class="controls">
+      <div class="group">
+        <label class="small">From: <input id="fromDate" type="date" /></label>
+        <label class="small">To: <input id="toDate" type="date" /></label>
+        <button onclick="generateReport()">Generate Report</button>
+        <button class="ghost" onclick="resetFilters()">Reset Filters</button>
+      </div>
+
+      <div style="flex:1"></div>
+
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div id="totalRowsSummary" class="small muted">Rows: -</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT CARD -->
+  <div id="reportCard" class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div style="font-weight:700;color:#2d2f91">Daywise Invoice Report</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="secondary" onclick="scrollToTop()">Top</button>
+        <button class="ghost" onclick="resetView()">Back</button>
+      </div>
+    </div>
+
+    <div style="margin-top:10px" id="reportTableContainer">
+      <!-- generated table goes here -->
+      <div class="center small muted">Click "Refresh Data" to load rows if empty.</div>
+    </div>
+
+    <!-- invoice list container (for clicked date) -->
+    <div id="invoiceListContainer" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- RESULT / INVOICE DETAIL -->
+  <div id="resultArea"></div>
+
+  <div id="copiedMsg" class="copied-msg">Copied to clipboard</div>
+</div>
+
+<!-- Admin modal -->
+<div id="adminModal" class="hidden">
+  <div class="modal-card">
+    <h3 style="margin:0 0 8px 0;color:#2d2f91">Admin Access</h3>
+    <input id="adminPassInput" type="password" placeholder="Enter password" style="width:100%;padding:10px;border-radius:8px;border:1px solid #eee;margin-bottom:10px;">
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="secondary" onclick="closeAdminModal()">Cancel</button>
+      <button onclick="verifyAdmin()">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- CONFIG (kept same as requested) ---------- */
+const BASEROW_API_BASE = "http://103.49.131.41:7300/api/database/rows/table/705";
+const BASEROW_API_URL = BASEROW_API_BASE + "/?user_field_names=true";
+const BASEROW_API_KEY = "zOFkhuZBrfnc7LRE71gV7o8Gp01JxYrq";
+
+/* ---------- state ---------- */
+let allRowsCache = [];
+let isAdmin = false;
+const ADMIN_PASSWORD = "8089";
+
+/* ---------- helpers ---------- */
+function extractDateFromInvoice(invoiceNum) {
+  const match = invoiceNum && String(invoiceNum).match(/^(\d{2})(\d{2})(\d{4})/);
+  if (!match) return "—";
+  return `${match[1]}/${match[2]}/${match[3]}`; // dd/mm/yyyy
+}
+function escapeHtml(text) {
+  if (text === undefined || text === null) return '';
+  return String(text).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
+}
+
+/* ---------- fetch all rows (paginated) ---------- */
+async function fetchAllRows() {
+  const rows = [];
+  let url = BASEROW_API_URL;
+  try {
+    while (url) {
+      const resp = await fetch(url, { headers: { Authorization: `Token ${BASEROW_API_KEY}` } });
+      if (!resp.ok) throw new Error("Failed to fetch rows: " + resp.status);
+      const json = await resp.json();
+      rows.push(...(json.results || []));
+      url = json.next || null;
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error fetching data: " + err.message);
+  }
+  allRowsCache = rows;
+  document.getElementById("totalRowsSummary").innerText = `Rows: ${rows.length}`;
+  return rows;
+}
+
+/* ---------- build daywise report ---------- */
+function buildDaywiseReport(rows) {
+  const map = {};
+  rows.forEach(r => {
+    const inv = String(r["Invoice Number"] || "");
+    const dateStr = extractDateFromInvoice(inv);
+    if (dateStr === "—") return;
+    if (!map[dateStr]) map[dateStr] = { date: dateStr, rows: [], totalAmount: 0 };
+    map[dateStr].rows.push(r);
+    map[dateStr].totalAmount += Number(r["Total Price"] || 0);
+  });
+  const arr = Object.values(map).sort((a,b) => {
+    const pa = a.date.split('/').reverse().join('-');
+    const pb = b.date.split('/').reverse().join('-');
+    return pb.localeCompare(pa);
+  });
+  return arr;
+}
+
+/* ---------- render report table ---------- */
+function renderReportTable(daywise) {
+  const container = document.getElementById("reportTableContainer");
+  if (!daywise.length) {
+    container.innerHTML = `<div class="center small muted">No invoices in this range.</div>`;
+    document.getElementById("invoiceListContainer").innerHTML = "";
+    return;
+  }
+
+  let html = `<div class="table-wrap"><table><thead><tr>
+    <th>Date</th><th>Total Invoices</th><th>Total Amount (₹)</th><th>View</th>
+  </tr></thead><tbody>`;
+  daywise.forEach(d => {
+    html += `<tr>
+      <td>${d.date}</td>
+      <td>${d.rows.length}</td>
+      <td>₹${Number(d.totalAmount || 0).toLocaleString()}</td>
+      <td><button class="ghost" onclick="showInvoicesForDate('${d.date}')">Invoices</button></td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+/* ---------- show invoices for a date ---------- */
+function showInvoicesForDate(dateStr) {
+  const found = allRowsCache.filter(r => extractDateFromInvoice(String(r["Invoice Number"] || "")) === dateStr);
+  const container = document.getElementById("invoiceListContainer");
+  if (!found.length) { container.innerHTML = `<div class="center small muted">No invoices for ${dateStr}</div>`; return; }
+
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+    <div style="font-weight:700;color:#2d2f91">Invoices on ${dateStr}</div>
+    <div style="display:flex;gap:8px">
+      <button class="secondary" onclick="generateReport()">Back to Report</button>
+      <button class="ghost" onclick="resetFilters()">Reset Filters</button>
+    </div>
+  </div>`;
+
+  html += `<div class="table-wrap"><table><thead><tr><th>Invoice No</th><th>Customer</th><th>Items</th><th>Total (₹)</th><th>Actions</th></tr></thead><tbody>`;
+  found.forEach(r => {
+    const inv = r["Invoice Number"] || "-";
+    const cust = r["Customer Name"] || r["Customer"] || "-";
+    const qty = Number(r["Quantity"] || 0);
+    const total = Number(r["Total Price"] || 0);
+    html += `<tr>
+      <td><button class="ghost" onclick="openInvoiceDetail('${inv}', ${r.id})">${inv}</button></td>
+      <td class="small">${escapeHtml(cust)}</td>
+      <td>${qty}</td>
+      <td>₹${total.toLocaleString()}</td>
+      <td>
+        <button class="secondary" onclick="openInvoiceDetail('${inv}', ${r.id})">Open</button>
+        <button class="ghost" onclick="openEditInline(${r.id})">Edit</button>
+      </td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+  container.scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ---------- open invoice detail ---------- */
+async function openInvoiceDetail(invoiceNum, sampleRowId=null) {
+  if (!allRowsCache.length) await fetchAllRows();
+  const results = allRowsCache.filter(r => String(r["Invoice Number"]).includes(String(invoiceNum)));
+  if (!results.length) {
+    alert("No invoice found.");
+    return;
+  }
+  const invoiceDate = extractDateFromInvoice(invoiceNum);
+  const totalAmount = results.reduce((a,b) => a + (Number(b["Total Price"]) || 0), 0);
+
+  // build invoice UI
+  let html = `<div class="card invoice-area" id="invoiceView">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="invoice-header">
+        <div style="font-size:16px;font-weight:800;color:#2d2f91">INVOICE RECEIPT</div>
+        <div class="small muted">Invoice: ${invoiceNum} • Date: ${invoiceDate}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="ghost" onclick="goBack()">Back</button>
+        <div id="invoiceAdminControls"></div>
+      </div>
+    </div>
+
+    <div class="invoice-top" style="margin-top:6px">
+      <div class="invoice-info">
+        <div class="small muted">Invoice No</div>
+        <div style="font-weight:700;margin-bottom:8px">${invoiceNum}</div>
+        <div class="small muted">Date</div>
+        <div style="margin-bottom:8px">${invoiceDate}</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+        <div class="qr-code" id="qrButton" title="Click to copy invoice URL"><canvas id="qrCode"></canvas></div>
+        <div class="pill small">Grand Total: ₹${totalAmount.toLocaleString()}</div>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="margin-top:10px">
+      <table id="invoiceProductsTable"><thead><tr>
+        <th>Product</th><th>Code</th><th>Qty</th><th>Price/Unit</th><th>Total</th><th>Action</th>
+      </tr></thead><tbody>`;
+
+  results.forEach(r => {
+    const qty = Number(r["Quantity"]) || 0;
+    const total = Number(r["Total Price"]) || 0;
+    const unit = qty ? (total / qty).toFixed(2) : (r["Price / Unit"] || 0);
+    html += `<tr data-row-id="${r.id}" data-inv="${escapeHtml(String(r["Invoice Number"] || ""))}">
+      <td class="prod-name">${escapeHtml(r["Product Name"] || "-")}</td>
+      <td class="prod-code">${escapeHtml(r["Product Code"] || "-")}</td>
+      <td class="prod-qty">${qty}</td>
+      <td class="prod-unit">₹${Number(unit).toFixed(2)}</td>
+      <td class="prod-total">₹${Number(total).toLocaleString()}</td>
+      <td class="row-actions"><button class="ghost" onclick="openEditInline(${r.id})">Edit</button></td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>
+    <div class="total-section">Grand Total: ₹${totalAmount.toLocaleString()}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;">
+      <div class="small muted">📞 Contact: 6238153008</div>
+      <div><button class="secondary" onclick="resetView()">Back to Report</button></div>
+    </div>
+  </div>`;
+
+  document.getElementById("resultArea").innerHTML = html;
+  // show copy feedback element
+  const currentUrl = `${window.location.origin}${window.location.pathname}?invoice=${encodeURIComponent(invoiceNum)}`;
+  const qr = new QRious({ element: document.getElementById("qrCode"), value: currentUrl, size:100, background:'white', foreground:'#2d2f91' });
+  const qrButton = document.getElementById("qrButton");
+  const copiedEl = document.getElementById("copiedMsg");
+
+  async function doCopy(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try { await navigator.clipboard.writeText(text); return true; } catch(e) {}
+    }
+    try { const ta = document.createElement("textarea"); ta.value = text; ta.style.position='fixed'; ta.style.left='-9999px'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); document.body.removeChild(ta); return ok; } catch(e) { return false; }
+  }
+
+  qrButton.addEventListener("click", async (ev) => {
+    ev.preventDefault();
+    const ok = await doCopy(currentUrl);
+    if (ok) {
+      copiedEl.innerText = "Invoice URL copied";
+      copiedEl.classList.add("show");
+      setTimeout(()=> copiedEl.classList.remove("show"),1500);
+    } else {
+      window.open(currentUrl, "_blank");
+    }
+  });
+
+  renderInvoiceAdminControls();
+  document.getElementById("resultArea").scrollIntoView({ behavior:'smooth' });
+}
+
+/* ---------- admin modal controls ---------- */
+function promptAdmin() {
+  document.getElementById("adminModal").classList.remove("hidden");
+  document.getElementById("adminPassInput").value = "";
+  document.getElementById("adminPassInput").focus();
+}
+function closeAdminModal() { document.getElementById("adminModal").classList.add("hidden"); }
+function verifyAdmin() {
+  const val = document.getElementById("adminPassInput").value;
+  if (val === ADMIN_PASSWORD) {
+    isAdmin = true;
+    sessionStorage.setItem("invoiceAdmin","1");
+    document.getElementById("adminModal").classList.add("hidden");
+    document.getElementById("adminBadge").classList.remove("hidden");
+    alert("Admin mode enabled.");
+    renderInvoiceAdminControls();
+  } else {
+    alert("Incorrect password.");
+  }
+}
+window.addEventListener("DOMContentLoaded", async () => {
+  if (sessionStorage.getItem("invoiceAdmin") === "1") { isAdmin = true; document.getElementById("adminBadge").classList.remove("hidden"); }
+  await fetchAllRows();
+  const daywise = buildDaywiseReport(allRowsCache);
+  renderReportTable(daywise);
+});
+
+/* ---------- render invoice admin controls ---------- */
+function renderInvoiceAdminControls() {
+  const el = document.getElementById("invoiceAdminControls");
+  if (!el) return;
+  if (isAdmin) {
+    el.innerHTML = `<div style="display:flex;gap:8px;align-items:center;">
+      <button class="secondary" onclick="endAdmin()">Exit Admin</button>
+      <button onclick="saveAllEditedRows()">Save All</button>
+    </div>`;
+  } else {
+    el.innerHTML = `<button onclick="promptAdmin()">Enable Admin</button>`;
+  }
+}
+function endAdmin() {
+  isAdmin = false;
+  sessionStorage.removeItem("invoiceAdmin");
+  document.getElementById("adminBadge").classList.add("hidden");
+  renderInvoiceAdminControls();
+  alert("Admin disabled.");
+}
+
+/* ---------- edit flow (inline) ---------- */
+function openEditInline(rowId) {
+  if (!isAdmin) {
+    if (confirm("Editing requires admin. Enable admin now?")) promptAdmin();
+    return;
+  }
+  const r = allRowsCache.find(x => x.id == rowId);
+  if (!r) return alert("Row not found.");
+  // find matching tr on current invoice view
+  const tr = document.querySelector(`tr[data-row-id='${rowId}']`);
+  if (!tr) {
+    // fallback to quick modal prompts
+    const name = prompt("Product Name", r["Product Name"] || "");
+    if (name === null) return;
+    const code = prompt("Product Code", r["Product Code"] || "");
+    if (code === null) return;
+    const qty = prompt("Quantity", r["Quantity"] || "0");
+    if (qty === null) return;
+    const total = prompt("Total Price", r["Total Price"] || "0");
+    if (total === null) return;
+    const payload = { "Product Name": name, "Product Code": code, "Quantity": Number(qty), "Total Price": Number(total) };
+    patchRow(rowId, payload).then(ok => { if (ok) { fetchAllRows().then(()=> generateReport()); alert("Updated"); }});
+    return;
+  }
+
+  tr.classList.add("edit-row");
+  const qtyVal = Number(r["Quantity"] || 0);
+  const totalVal = Number(r["Total Price"] || 0);
+  const unitVal = qtyVal ? (totalVal / qtyVal).toFixed(2) : (r["Price / Unit"] || 0).toFixed(2);
+
+  tr.querySelector(".prod-name").innerHTML = `<input id="name_${rowId}" value="${escapeHtml(r["Product Name"]||'')}" />`;
+  tr.querySelector(".prod-code").innerHTML = `<input id="code_${rowId}" value="${escapeHtml(r["Product Code"]||'')}" />`;
+  tr.querySelector(".prod-qty").innerHTML = `<input id="qty_${rowId}" type="number" min="0" value="${qtyVal}" oninput="recalcRow(${rowId})" />`;
+  tr.querySelector(".prod-unit").innerHTML = `<input id="unit_${rowId}" type="number" min="0" step="0.01" value="${unitVal}" oninput="recalcRow(${rowId})" />`;
+  tr.querySelector(".prod-total").innerHTML = `<input id="total_${rowId}" type="number" min="0" step="0.01" value="${totalVal.toFixed(2)}" oninput="recalcUnitFromTotal(${rowId})" />`;
+  tr.querySelector(".row-actions").innerHTML = `<div style="display:flex;gap:8px;"><button onclick="saveRowEdit(${rowId})">Save</button><button class="secondary" onclick="cancelRowEdit(${rowId})">Cancel</button></div>`;
+}
+function recalcRow(rowId) {
+  const q = Number(document.getElementById(`qty_${rowId}`).value || 0);
+  const u = Number(document.getElementById(`unit_${rowId}`).value || 0);
+  document.getElementById(`total_${rowId}`).value = (q * u).toFixed(2);
+}
+function recalcUnitFromTotal(rowId) {
+  const q = Number(document.getElementById(`qty_${rowId}`).value || 0);
+  const t = Number(document.getElementById(`total_${rowId}`).value || 0);
+  document.getElementById(`unit_${rowId}`).value = q ? (t / q).toFixed(2) : t.toFixed(2);
+}
+function cancelRowEdit(rowId) {
+  const r = allRowsCache.find(x => x.id == rowId);
+  if (!r) return;
+  const tr = document.querySelector(`tr[data-row-id='${rowId}']`);
+  if (!tr) return;
+  tr.classList.remove("edit-row");
+  tr.querySelector(".prod-name").innerText = r["Product Name"] || "-";
+  tr.querySelector(".prod-code").innerText = r["Product Code"] || "-";
+  tr.querySelector(".prod-qty").innerText = Number(r["Quantity"] || 0);
+  const total = Number(r["Total Price"] || 0);
+  const qty = Number(r["Quantity"] || 0);
+  const unit = qty ? (total / qty).toFixed(2) : (r["Price / Unit"] || 0);
+  tr.querySelector(".prod-unit").innerText = `₹${Number(unit).toFixed(2)}`;
+  tr.querySelector(".prod-total").innerText = `₹${Number(total).toLocaleString()}`;
+  tr.querySelector(".row-actions").innerHTML = `<button class="ghost" onclick="openEditInline(${rowId})">Edit</button>`;
+}
+async function saveRowEdit(rowId) {
+  const name = document.getElementById(`name_${rowId}`).value;
+  const code = document.getElementById(`code_${rowId}`).value;
+  const qty = Number(document.getElementById(`qty_${rowId}`).value || 0);
+  const total = Number(document.getElementById(`total_${rowId}`).value || 0);
+  const payload = { "Product Name": name, "Product Code": code, "Quantity": qty, "Total Price": total };
+  const ok = await patchRow(rowId, payload);
+  if (ok) {
+    const idx = allRowsCache.findIndex(x => x.id == rowId);
+    if (idx !== -1) allRowsCache[idx] = { ...allRowsCache[idx], ...payload };
+    alert("Saved.");
+    // refresh invoice view
+    const inv = document.querySelector(`tr[data-row-id='${rowId}']`)?.dataset?.inv || null;
+    if (inv) openInvoiceDetail(inv);
+    else generateReport();
+  } else {
+    alert("Save failed.");
+  }
+}
+
+/* ---------- patch to baserow ---------- */
+async function patchRow(rowId, payload) {
+  try {
+    const url = `${BASEROW_API_BASE}/${rowId}/?user_field_names=true`;
+    const resp = await fetch(url, {
+      method: "PATCH",
+      headers: { Authorization: `Token ${BASEROW_API_KEY}`, "Content-Type":"application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error("Patch failed", resp.status, text);
+      return false;
+    }
+    const updated = await resp.json();
+    const idx = allRowsCache.findIndex(x => x.id == rowId);
+    if (idx !== -1) allRowsCache[idx] = updated;
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
+/* ---------- save all edited rows ---------- */
+async function saveAllEditedRows() {
+  if (!isAdmin) return alert("Admin required.");
+  const editRows = Array.from(document.querySelectorAll("tr.edit-row"));
+  if (!editRows.length) return alert("No edited rows.");
+  if (!confirm(`Save changes to ${editRows.length} row(s)?`)) return;
+  for (const tr of editRows) {
+    const rowId = tr.dataset.rowId;
+    const payload = {
+      "Product Name": document.getElementById(`name_${rowId}`).value,
+      "Product Code": document.getElementById(`code_${rowId}`).value,
+      "Quantity": Number(document.getElementById(`qty_${rowId}`).value || 0),
+      "Total Price": Number(document.getElementById(`total_${rowId}`).value || 0)
+    };
+    const ok = await patchRow(rowId, payload);
+    if (!ok) { alert("Error saving row " + rowId); return; }
+  }
+  alert("All saved.");
+  await fetchAllRows();
+  generateReport();
+}
+
+/* ---------- search & generate ---------- */
+async function searchInvoice(invoiceOverride = null) {
+  const val = (invoiceOverride || document.getElementById("invoiceInput").value || "").trim();
+  if (!val) { alert("Enter invoice number"); return; }
+  if (!allRowsCache.length) await fetchAllRows();
+  const results = allRowsCache.filter(r => String(r["Invoice Number"]).includes(val));
+  if (!results.length) { alert("No invoice found"); return; }
+  openInvoiceDetail(val);
+}
+function generateReport() {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+  if (!allRowsCache.length) { alert("No data loaded. Click Refresh Data."); return; }
+  const filtered = allRowsCache.filter(r => {
+    const inv = String(r["Invoice Number"] || "");
+    const ds = extractDateFromInvoice(inv);
+    if (ds === "—") return false;
+    if (!from && !to) return true;
+    const parts = ds.split('/');
+    const iso = parts[2] + '-' + parts[1] + '-' + parts[0];
+    if (from && iso < from) return false;
+    if (to && iso > to) return false;
+    return true;
+  });
+  const daywise = buildDaywiseReport(filtered);
+  renderReportTable(daywise);
+  document.getElementById("invoiceListContainer").innerHTML = "";
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------- UI helpers ---------- */
+function resetFilters() {
+  document.getElementById("fromDate").value = "";
+  document.getElementById("toDate").value = "";
+  generateReport();
+}
+function resetView() {
+  document.getElementById("resultArea").innerHTML = "";
+  document.getElementById("invoiceListContainer").innerHTML = "";
+  document.getElementById("invoiceInput").value = "";
+  generateReport();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function goBack() { // used inside invoice view
+  // simply clear invoice area and show report + list
+  document.getElementById("resultArea").innerHTML = "";
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------- init load ---------- */
+async function loadAllAndShowReport() {
+  document.getElementById("reportTableContainer").innerHTML = `<div class="center small muted">Loading…</div>`;
+  await fetchAllRows();
+  const daywise = buildDaywiseReport(allRowsCache);
+  renderReportTable(daywise);
+}
+
+/* ---------- initial call ---------- */
+window.addEventListener("DOMContentLoaded", async () => {
+  if (sessionStorage.getItem("invoiceAdmin") === "1") { isAdmin = true; document.getElementById("adminBadge").classList.remove("hidden"); }
+  await fetchAllRows();
+  const params = new URLSearchParams(window.location.search);
+  const invoiceParam = params.get("invoice");
+  if (invoiceParam) {
+    document.getElementById("invoiceInput").value = invoiceParam;
+    openInvoiceDetail(invoiceParam);
+  } else {
+    const daywise = buildDaywiseReport(allRowsCache);
+    renderReportTable(daywise);
+  }
+});
+</script>
+</body>
+</html>
