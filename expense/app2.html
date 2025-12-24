@@ -867,36 +867,6 @@
             border-left-color: var(--expense);
         }
 
-        /* Date Range Filter */
-        .date-range-filter {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .date-range-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .date-input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            font-size: 0.9rem;
-            background: var(--surface);
-        }
-
-        .date-label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            white-space: nowrap;
-        }
-
         /* Responsive */
         @media (max-width: 500px) {
             body {
@@ -910,15 +880,6 @@
             
             .form-row {
                 grid-template-columns: 1fr;
-            }
-            
-            .date-range-row {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .date-input {
-                width: 100%;
             }
         }
     </style>
@@ -974,37 +935,13 @@
                 </div>
             </div>
 
-            <!-- Date Range Filter -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Date Range Filter</div>
-                </div>
-                <!-- Quick Time Filters -->
-                <div class="filter-bar">
-                    <button class="filter-chip" onclick="filterByTime('day')">This Day</button>
-                    <button class="filter-chip" onclick="filterByTime('week')">This Week</button>
-                    <button class="filter-chip active" onclick="filterByTime('month')">This Month</button>
-                    <button class="filter-chip" onclick="filterByTime('year')">This Year</button>
-                    <button class="filter-chip" onclick="filterByTime('all')">All Time</button>
-                </div>
-                
-                <!-- Custom Date Range -->
-                <div class="date-range-filter">
-                    <div class="date-range-row">
-                        <span class="date-label">From:</span>
-                        <input type="date" id="dateFrom" class="date-input" onchange="applyCustomDateRange()">
-                        <span class="date-label">To:</span>
-                        <input type="date" id="dateTo" class="date-input" onchange="applyCustomDateRange()">
-                    </div>
-                    <div class="date-range-row">
-                        <button class="btn btn-primary" onclick="applyCustomDateRange()" style="padding: 10px 20px; flex: 1;">
-                            <i class="fas fa-filter"></i> Apply Date Range
-                        </button>
-                        <button class="btn" onclick="resetDateRange()" style="padding: 10px 20px; flex: 1; background: var(--border);">
-                            <i class="fas fa-redo"></i> Reset
-                        </button>
-                    </div>
-                </div>
+            <!-- Time Filter -->
+            <div class="filter-bar">
+                <button class="filter-chip active" onclick="filterByTime('month')">This Month</button>
+                <button class="filter-chip" onclick="filterByTime('week')">This Week</button>
+                <button class="filter-chip" onclick="filterByTime('today')">Today</button>
+                <button class="filter-chip" onclick="filterByTime('year')">This Year</button>
+                <button class="filter-chip" onclick="filterByTime('all')">All Time</button>
             </div>
 
             <!-- Search Box -->
@@ -1553,11 +1490,6 @@
         let currentTransactionType = 'income';
         let chart = null;
         let flatpickrInstance = null;
-        
-        // Date range variables
-        let dateFrom = null;
-        let dateTo = null;
-        let usingCustomDateRange = false;
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
@@ -1590,123 +1522,9 @@
             // Set today's date by default
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
             
-            // Initialize date range filter with default 30 days
-            initDateRangeFilter();
-            
             // Check for overdue budgets
             checkBudgetAlerts();
         });
-
-        // Initialize date range filter
-        function initDateRangeFilter() {
-            const today = new Date();
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-            
-            // Set default date range (30 days)
-            dateFrom = thirtyDaysAgo.toISOString().split('T')[0];
-            dateTo = today.toISOString().split('T')[0];
-            
-            // Set date inputs
-            document.getElementById('dateFrom').value = dateFrom;
-            document.getElementById('dateTo').value = dateTo;
-            
-            // Set "This Month" as active filter
-            document.querySelectorAll('#dashboard .filter-chip').forEach(chip => {
-                chip.classList.remove('active');
-            });
-            document.querySelectorAll('#dashboard .filter-chip')[2].classList.add('active'); // This Month button
-            currentFilter = 'month';
-            
-            // Apply initial filter
-            updateDashboard();
-        }
-
-        // Date Range Filter Functions
-        function filterByTime(timeFrame) {
-            usingCustomDateRange = false;
-            currentFilter = timeFrame;
-            
-            const today = new Date();
-            let startDate, endDate;
-            
-            switch(timeFrame) {
-                case 'day':
-                    startDate = new Date(today);
-                    endDate = new Date(today);
-                    break;
-                case 'week':
-                    startDate = new Date(today);
-                    startDate.setDate(today.getDate() - today.getDay());
-                    endDate = new Date(startDate);
-                    endDate.setDate(startDate.getDate() + 6);
-                    break;
-                case 'month':
-                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                    endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                    break;
-                case 'year':
-                    startDate = new Date(today.getFullYear(), 0, 1);
-                    endDate = new Date(today.getFullYear(), 11, 31);
-                    break;
-                case 'all':
-                    startDate = null;
-                    endDate = null;
-                    break;
-            }
-            
-            // Update date inputs
-            if (startDate && endDate) {
-                dateFrom = startDate.toISOString().split('T')[0];
-                dateTo = endDate.toISOString().split('T')[0];
-                document.getElementById('dateFrom').value = dateFrom;
-                document.getElementById('dateTo').value = dateTo;
-            } else {
-                dateFrom = null;
-                dateTo = null;
-                document.getElementById('dateFrom').value = '';
-                document.getElementById('dateTo').value = '';
-            }
-            
-            // Update UI
-            document.querySelectorAll('#dashboard .filter-chip').forEach(chip => {
-                chip.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            updateDashboard();
-            updateChart();
-        }
-
-        function applyCustomDateRange() {
-            usingCustomDateRange = true;
-            
-            dateFrom = document.getElementById('dateFrom').value;
-            dateTo = document.getElementById('dateTo').value;
-            
-            if (!dateFrom || !dateTo) {
-                alert('Please select both start and end dates');
-                return;
-            }
-            
-            if (new Date(dateFrom) > new Date(dateTo)) {
-                alert('Start date cannot be after end date');
-                return;
-            }
-            
-            // Update UI - remove active class from quick filters
-            document.querySelectorAll('#dashboard .filter-chip').forEach(chip => {
-                chip.classList.remove('active');
-            });
-            
-            updateDashboard();
-            updateChart();
-        }
-
-        function resetDateRange() {
-            initDateRangeFilter();
-            usingCustomDateRange = false;
-        }
 
         // Navigation functions
         function showSection(sectionId) {
@@ -1974,7 +1792,7 @@
                 monthlyDisplay.style.display = 'block';
                 monthlyValue.textContent = monthlyBudget.toFixed(2);
                 
-                // Calculate monthly spent based on current filter
+                // Calculate monthly spent
                 const now = new Date();
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -2362,7 +2180,7 @@
         }
 
         function updateCategoryFilters() {
-            const dashboardFilters = document.querySelector('#dashboard .filter-bar:nth-child(5)');
+            const dashboardFilters = document.querySelector('#dashboard .filter-bar:nth-child(4)');
             const transactionFilters = document.querySelector('#transactions .filter-bar:nth-child(3)');
             
             // Clear existing filters except "All"
@@ -2637,17 +2455,7 @@
             }
             
             // Sort by date (newest first) and take 5
-            let filtered = [...transactions];
-            
-            // Apply date range filter
-            if (dateFrom && dateTo) {
-                filtered = filtered.filter(t => {
-                    const transactionDate = new Date(t.date);
-                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
-                });
-            }
-            
-            const recent = filtered
+            const recent = [...transactions]
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .slice(0, 5);
             
@@ -2739,9 +2547,22 @@
         }
 
         // Filter Functions
+        function filterByTime(timeFrame) {
+            currentFilter = timeFrame;
+            
+            // Update UI
+            document.querySelectorAll('#dashboard .filter-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            updateDashboard();
+            updateChart();
+        }
+
         function filterByCategory(categoryId) {
             // Update UI
-            document.querySelectorAll('#dashboard .filter-bar:nth-child(5) .filter-chip').forEach(chip => {
+            document.querySelectorAll('#dashboard .filter-bar:nth-child(4) .filter-chip').forEach(chip => {
                 chip.classList.remove('active');
             });
             event.target.classList.add('active');
@@ -2749,15 +2570,6 @@
             // Filter and update dashboard
             let filtered = [...transactions];
             
-            // Apply date range filter first
-            if (dateFrom && dateTo) {
-                filtered = filtered.filter(t => {
-                    const transactionDate = new Date(t.date);
-                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
-                });
-            }
-            
-            // Then apply category filter
             if (categoryId !== 'all') {
                 filtered = filtered.filter(t => t.categoryId === categoryId);
             }
@@ -2792,22 +2604,12 @@
         function searchTransactions() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             
-            let filtered = [...transactions];
-            
-            // Apply date range filter first
-            if (dateFrom && dateTo) {
-                filtered = filtered.filter(t => {
-                    const transactionDate = new Date(t.date);
-                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
-                });
-            }
-            
             if (!searchTerm) {
                 loadRecentTransactions();
                 return;
             }
             
-            filtered = filtered.filter(t => {
+            const filtered = transactions.filter(t => {
                 const category = categories.find(c => c.id === t.categoryId);
                 return (
                     t.remark.toLowerCase().includes(searchTerm) ||
@@ -2915,14 +2717,28 @@
 
         // Dashboard Functions
         function updateDashboard() {
+            const now = new Date();
             let filtered = [...transactions];
             
-            // Apply date range filter
-            if (dateFrom && dateTo) {
-                filtered = filtered.filter(t => {
-                    const transactionDate = new Date(t.date);
-                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
-                });
+            // Apply time filter
+            switch(currentFilter) {
+                case 'today':
+                    const today = now.toISOString().split('T')[0];
+                    filtered = filtered.filter(t => t.date === today);
+                    break;
+                case 'week':
+                    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+                    filtered = filtered.filter(t => new Date(t.date) >= startOfWeek);
+                    break;
+                case 'month':
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    filtered = filtered.filter(t => new Date(t.date) >= startOfMonth);
+                    break;
+                case 'year':
+                    const startOfYear = new Date(now.getFullYear(), 0, 1);
+                    filtered = filtered.filter(t => new Date(t.date) >= startOfYear);
+                    break;
+                // 'all' - no filter
             }
             
             // Calculate totals
@@ -2948,9 +2764,6 @@
             } else {
                 balanceElement.style.color = 'var(--income)';
             }
-            
-            // Update recent transactions
-            loadRecentTransactions();
         }
 
         // Chart Functions
@@ -4026,9 +3839,6 @@
                         checkDueSubscriptions();
                         updateNotificationCount();
                         
-                        // Reset date range filter
-                        initDateRangeFilter();
-                        
                         alert('Data imported successfully!');
                     }
                 } catch (error) {
@@ -4164,9 +3974,6 @@
                 loadSubscriptions();
                 checkBudgetAlerts();
                 updateNotificationCount();
-                
-                // Reset date range filter
-                initDateRangeFilter();
                 
                 alert('All data has been cleared!');
                 closeModal('importExportModal');
