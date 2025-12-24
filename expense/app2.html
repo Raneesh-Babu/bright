@@ -347,71 +347,6 @@
             font-size: 1rem;
         }
 
-        /* Date Range Filter */
-        .date-range-filter {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-
-        .date-range-input {
-            flex: 1;
-            min-width: 140px;
-            padding: 12px 16px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            font-size: 0.9rem;
-            background: var(--surface);
-            transition: all 0.3s;
-        }
-
-        .date-range-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        .date-range-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-
-        .date-range-container {
-            flex: 1;
-            min-width: 140px;
-        }
-
-        .date-range-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .date-range-title {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-
-        .date-range-clear {
-            background: none;
-            border: none;
-            color: var(--primary);
-            font-size: 0.8rem;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: background 0.3s;
-        }
-
-        .date-range-clear:hover {
-            background: rgba(99, 102, 241, 0.1);
-        }
-
         /* Transactions */
         .transactions-list {
             max-height: 400px;
@@ -932,6 +867,36 @@
             border-left-color: var(--expense);
         }
 
+        /* Date Range Filter */
+        .date-range-filter {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .date-range-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .date-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            background: var(--surface);
+        }
+
+        .date-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
         /* Responsive */
         @media (max-width: 500px) {
             body {
@@ -947,8 +912,13 @@
                 grid-template-columns: 1fr;
             }
             
-            .date-range-filter {
+            .date-range-row {
                 flex-direction: column;
+                gap: 8px;
+            }
+            
+            .date-input {
+                width: 100%;
             }
         }
     </style>
@@ -1004,33 +974,36 @@
                 </div>
             </div>
 
-            <!-- Enhanced Date Range Filter -->
-            <div class="card" style="margin-bottom: 16px;">
-                <div class="date-range-header">
-                    <div class="date-range-title">Date Range Filter</div>
-                    <button class="date-range-clear" onclick="clearDateRange()">Clear</button>
+            <!-- Date Range Filter -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Date Range Filter</div>
                 </div>
-                
-                <!-- Date Range Inputs -->
-                <div class="date-range-filter">
-                    <div class="date-range-container">
-                        <div class="date-range-label">From Date</div>
-                        <input type="text" id="fromDate" class="date-range-input datepicker" placeholder="Select start date">
-                    </div>
-                    <div class="date-range-container">
-                        <div class="date-range-label">To Date</div>
-                        <input type="text" id="toDate" class="date-range-input datepicker" placeholder="Select end date">
-                    </div>
-                </div>
-                
                 <!-- Quick Time Filters -->
                 <div class="filter-bar">
-                    <button class="filter-chip" onclick="setTimeFilter('today')">This Day</button>
-                    <button class="filter-chip" onclick="setTimeFilter('week')">This Week</button>
-                    <button class="filter-chip active" onclick="setTimeFilter('month')">This Month</button>
-                    <button class="filter-chip" onclick="setTimeFilter('year')">This Year</button>
-                    <button class="filter-chip" onclick="setTimeFilter('all')">All Time</button>
-                    <button class="filter-chip" onclick="setTimeFilter('30days')">Last 30 Days</button>
+                    <button class="filter-chip" onclick="filterByTime('day')">This Day</button>
+                    <button class="filter-chip" onclick="filterByTime('week')">This Week</button>
+                    <button class="filter-chip active" onclick="filterByTime('month')">This Month</button>
+                    <button class="filter-chip" onclick="filterByTime('year')">This Year</button>
+                    <button class="filter-chip" onclick="filterByTime('all')">All Time</button>
+                </div>
+                
+                <!-- Custom Date Range -->
+                <div class="date-range-filter">
+                    <div class="date-range-row">
+                        <span class="date-label">From:</span>
+                        <input type="date" id="dateFrom" class="date-input" onchange="applyCustomDateRange()">
+                        <span class="date-label">To:</span>
+                        <input type="date" id="dateTo" class="date-input" onchange="applyCustomDateRange()">
+                    </div>
+                    <div class="date-range-row">
+                        <button class="btn btn-primary" onclick="applyCustomDateRange()" style="padding: 10px 20px; flex: 1;">
+                            <i class="fas fa-filter"></i> Apply Date Range
+                        </button>
+                        <button class="btn" onclick="resetDateRange()" style="padding: 10px 20px; flex: 1; background: var(--border);">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1576,43 +1549,24 @@
         // Notifications
         let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
 
-        let currentFilter = '30days'; // Default to 30 days
+        let currentFilter = 'month';
         let currentTransactionType = 'income';
         let chart = null;
         let flatpickrInstance = null;
-        let fromDatePicker = null;
-        let toDatePicker = null;
+        
+        // Date range variables
+        let dateFrom = null;
+        let dateTo = null;
+        let usingCustomDateRange = false;
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize datepicker for transaction form
-            flatpickrInstance = flatpickr("#date, #nextOccurrence", {
+            // Initialize datepicker
+            flatpickrInstance = flatpickr(".datepicker", {
                 dateFormat: "Y-m-d",
                 defaultDate: "today",
                 maxDate: "today"
             });
-
-            // Initialize date range pickers
-            fromDatePicker = flatpickr("#fromDate", {
-                dateFormat: "Y-m-d",
-                onChange: function(selectedDates, dateStr) {
-                    if (dateStr && toDatePicker.input.value) {
-                        updateDashboardWithDateRange();
-                    }
-                }
-            });
-
-            toDatePicker = flatpickr("#toDate", {
-                dateFormat: "Y-m-d",
-                onChange: function(selectedDates, dateStr) {
-                    if (dateStr && fromDatePicker.input.value) {
-                        updateDashboardWithDateRange();
-                    }
-                }
-            });
-
-            // Set default date range to last 30 days
-            setDefaultDateRange();
 
             // Load initial data
             loadCategories();
@@ -1636,309 +1590,122 @@
             // Set today's date by default
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
             
+            // Initialize date range filter with default 30 days
+            initDateRangeFilter();
+            
             // Check for overdue budgets
             checkBudgetAlerts();
         });
 
-        // Set default date range to last 30 days
-        function setDefaultDateRange() {
+        // Initialize date range filter
+        function initDateRangeFilter() {
             const today = new Date();
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(today.getDate() - 30);
             
-            fromDatePicker.setDate(thirtyDaysAgo);
-            toDatePicker.setDate(today);
+            // Set default date range (30 days)
+            dateFrom = thirtyDaysAgo.toISOString().split('T')[0];
+            dateTo = today.toISOString().split('T')[0];
             
-            // Set active filter chip
-            setActiveFilterChip('30days');
+            // Set date inputs
+            document.getElementById('dateFrom').value = dateFrom;
+            document.getElementById('dateTo').value = dateTo;
+            
+            // Set "This Month" as active filter
+            document.querySelectorAll('#dashboard .filter-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            document.querySelectorAll('#dashboard .filter-chip')[2].classList.add('active'); // This Month button
+            currentFilter = 'month';
+            
+            // Apply initial filter
+            updateDashboard();
         }
 
-        // Set time filter
-        function setTimeFilter(timeFrame) {
+        // Date Range Filter Functions
+        function filterByTime(timeFrame) {
+            usingCustomDateRange = false;
             currentFilter = timeFrame;
             
-            // Update UI
-            setActiveFilterChip(timeFrame);
+            const today = new Date();
+            let startDate, endDate;
             
-            // Clear date inputs
-            fromDatePicker.clear();
-            toDatePicker.clear();
+            switch(timeFrame) {
+                case 'day':
+                    startDate = new Date(today);
+                    endDate = new Date(today);
+                    break;
+                case 'week':
+                    startDate = new Date(today);
+                    startDate.setDate(today.getDate() - today.getDay());
+                    endDate = new Date(startDate);
+                    endDate.setDate(startDate.getDate() + 6);
+                    break;
+                case 'month':
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    break;
+                case 'year':
+                    startDate = new Date(today.getFullYear(), 0, 1);
+                    endDate = new Date(today.getFullYear(), 11, 31);
+                    break;
+                case 'all':
+                    startDate = null;
+                    endDate = null;
+                    break;
+            }
             
-            // Apply the filter
-            applyTimeFilter(timeFrame);
-        }
-
-        function setActiveFilterChip(timeFrame) {
+            // Update date inputs
+            if (startDate && endDate) {
+                dateFrom = startDate.toISOString().split('T')[0];
+                dateTo = endDate.toISOString().split('T')[0];
+                document.getElementById('dateFrom').value = dateFrom;
+                document.getElementById('dateTo').value = dateTo;
+            } else {
+                dateFrom = null;
+                dateTo = null;
+                document.getElementById('dateFrom').value = '';
+                document.getElementById('dateTo').value = '';
+            }
+            
             // Update UI
             document.querySelectorAll('#dashboard .filter-chip').forEach(chip => {
                 chip.classList.remove('active');
             });
+            event.target.classList.add('active');
             
-            // Find and activate the correct chip
-            const chips = document.querySelectorAll('#dashboard .filter-chip');
-            chips.forEach(chip => {
-                if (chip.textContent.trim() === getFilterLabel(timeFrame)) {
-                    chip.classList.add('active');
-                }
-            });
+            updateDashboard();
+            updateChart();
         }
 
-        function getFilterLabel(timeFrame) {
-            switch(timeFrame) {
-                case 'today': return 'This Day';
-                case 'week': return 'This Week';
-                case 'month': return 'This Month';
-                case 'year': return 'This Year';
-                case 'all': return 'All Time';
-                case '30days': return 'Last 30 Days';
-                default: return 'Last 30 Days';
-            }
-        }
-
-        function applyTimeFilter(timeFrame) {
-            const now = new Date();
-            let fromDate, toDate;
+        function applyCustomDateRange() {
+            usingCustomDateRange = true;
             
-            switch(timeFrame) {
-                case 'today':
-                    fromDate = new Date(now);
-                    toDate = new Date(now);
-                    break;
-                case 'week':
-                    fromDate = new Date(now);
-                    fromDate.setDate(now.getDate() - now.getDay());
-                    toDate = new Date(now);
-                    break;
-                case 'month':
-                    fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                    toDate = new Date(now);
-                    break;
-                case 'year':
-                    fromDate = new Date(now.getFullYear(), 0, 1);
-                    toDate = new Date(now);
-                    break;
-                case 'all':
-                    // For "All Time", we'll handle specially
-                    updateDashboard();
-                    updateChart();
-                    return;
-                case '30days':
-                    fromDate = new Date(now);
-                    fromDate.setDate(now.getDate() - 30);
-                    toDate = new Date(now);
-                    break;
-            }
+            dateFrom = document.getElementById('dateFrom').value;
+            dateTo = document.getElementById('dateTo').value;
             
-            // Set the date inputs
-            fromDatePicker.setDate(fromDate);
-            toDatePicker.setDate(toDate);
-            
-            // Update dashboard with date range
-            updateDashboardWithDateRange();
-        }
-
-        function updateDashboardWithDateRange() {
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
-            
-            if (!fromDate || !toDate) {
-                return; // Don't update if dates are not selected
-            }
-            
-            // Filter transactions by date range
-            const filtered = transactions.filter(t => {
-                const transactionDate = new Date(t.date);
-                const startDate = new Date(fromDate);
-                const endDate = new Date(toDate);
-                
-                // Set time to beginning and end of day for proper comparison
-                startDate.setHours(0, 0, 0, 0);
-                endDate.setHours(23, 59, 59, 999);
-                
-                return transactionDate >= startDate && transactionDate <= endDate;
-            });
-            
-            // Update dashboard with filtered data
-            updateDashboardWithData(filtered);
-            updateChartWithData(filtered);
-        }
-
-        function updateDashboardWithData(filteredTransactions) {
-            // Calculate totals
-            const totalIncome = filteredTransactions
-                .filter(t => t.type === 'income')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            const totalExpense = filteredTransactions
-                .filter(t => t.type === 'expense')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            const balance = totalIncome - totalExpense;
-            
-            // Update UI
-            document.getElementById('totalIncome').textContent = totalIncome.toFixed(2);
-            document.getElementById('totalExpense').textContent = totalExpense.toFixed(2);
-            document.getElementById('currentBalance').textContent = balance.toFixed(2);
-            
-            // Update color based on balance
-            const balanceElement = document.getElementById('currentBalance').parentElement;
-            if (balance < 0) {
-                balanceElement.style.color = 'var(--expense)';
-            } else {
-                balanceElement.style.color = 'var(--income)';
-            }
-        }
-
-        function updateChartWithData(filteredTransactions) {
-            const ctx = document.getElementById('monthlyChart').getContext('2d');
-            const chartType = document.getElementById('chartType').value;
-            
-            // Destroy existing chart
-            if (chart) {
-                chart.destroy();
-            }
-            
-            // Get date range
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
-            
-            if (!fromDate || !toDate) {
+            if (!dateFrom || !dateTo) {
+                alert('Please select both start and end dates');
                 return;
             }
             
-            const startDate = new Date(fromDate);
-            const endDate = new Date(toDate);
-            
-            // Calculate days in range
-            const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-            
-            if (daysDiff <= 0) {
-                // Create empty chart
-                chart = new Chart(ctx, {
-                    type: chartType,
-                    data: {
-                        labels: ['No Data'],
-                        datasets: [
-                            {
-                                label: 'Income',
-                                data: [0],
-                                borderColor: '#10b981',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                tension: 0.4,
-                                fill: true
-                            },
-                            {
-                                label: 'Expenses',
-                                data: [0],
-                                borderColor: '#ef4444',
-                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                tension: 0.4,
-                                fill: true
-                            }
-                        ]
-                    },
-                    options: getChartOptions()
-                });
+            if (new Date(dateFrom) > new Date(dateTo)) {
+                alert('Start date cannot be after end date');
                 return;
             }
             
-            // Create labels for each day
-            const labels = [];
-            const dateMap = {};
-            
-            for (let i = 0; i <= daysDiff; i++) {
-                const currentDate = new Date(startDate);
-                currentDate.setDate(startDate.getDate() + i);
-                const dateStr = currentDate.toISOString().split('T')[0];
-                labels.push(`${currentDate.getDate()}/${currentDate.getMonth() + 1}`);
-                dateMap[dateStr] = i;
-            }
-            
-            // Initialize data arrays
-            const incomeData = new Array(labels.length).fill(0);
-            const expenseData = new Array(labels.length).fill(0);
-            
-            // Fill data
-            filteredTransactions.forEach(transaction => {
-                const date = new Date(transaction.date);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                if (dateMap[dateStr] !== undefined) {
-                    const index = dateMap[dateStr];
-                    if (transaction.type === 'income') {
-                        incomeData[index] += transaction.amount;
-                    } else {
-                        expenseData[index] += transaction.amount;
-                    }
-                }
+            // Update UI - remove active class from quick filters
+            document.querySelectorAll('#dashboard .filter-chip').forEach(chip => {
+                chip.classList.remove('active');
             });
             
-            // Create chart
-            chart = new Chart(ctx, {
-                type: chartType,
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Income',
-                            data: incomeData,
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        },
-                        {
-                            label: 'Expenses',
-                            data: expenseData,
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }
-                    ]
-                },
-                options: getChartOptions()
-            });
+            updateDashboard();
+            updateChart();
         }
 
-        function getChartOptions() {
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 20
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '₹' + value;
-                            }
-                        },
-                        grid: {
-                            drawBorder: false
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            };
-        }
-
-        function clearDateRange() {
-            fromDatePicker.clear();
-            toDatePicker.clear();
-            setDefaultDateRange();
+        function resetDateRange() {
+            initDateRangeFilter();
+            usingCustomDateRange = false;
         }
 
         // Navigation functions
@@ -2003,263 +1770,6 @@
                 item.classList.remove('active');
             });
         }
-
-        // Original updateDashboard function (for backward compatibility)
-        function updateDashboard() {
-            const now = new Date();
-            let filtered = [...transactions];
-            
-            // Check if we're using date range
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
-            
-            if (fromDate && toDate) {
-                // Filter by date range
-                filtered = filtered.filter(t => {
-                    const transactionDate = new Date(t.date);
-                    const startDate = new Date(fromDate);
-                    const endDate = new Date(toDate);
-                    
-                    // Set time to beginning and end of day for proper comparison
-                    startDate.setHours(0, 0, 0, 0);
-                    endDate.setHours(23, 59, 59, 999);
-                    
-                    return transactionDate >= startDate && transactionDate <= endDate;
-                });
-            } else {
-                // Apply time filter
-                switch(currentFilter) {
-                    case 'today':
-                        const today = now.toISOString().split('T')[0];
-                        filtered = filtered.filter(t => t.date === today);
-                        break;
-                    case 'week':
-                        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-                        filtered = filtered.filter(t => new Date(t.date) >= startOfWeek);
-                        break;
-                    case 'month':
-                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                        filtered = filtered.filter(t => new Date(t.date) >= startOfMonth);
-                        break;
-                    case 'year':
-                        const startOfYear = new Date(now.getFullYear(), 0, 1);
-                        filtered = filtered.filter(t => new Date(t.date) >= startOfYear);
-                        break;
-                    case '30days':
-                        const thirtyDaysAgo = new Date();
-                        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                        filtered = filtered.filter(t => new Date(t.date) >= thirtyDaysAgo);
-                        break;
-                    // 'all' - no filter
-                }
-            }
-            
-            // Calculate totals
-            const totalIncome = filtered
-                .filter(t => t.type === 'income')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            const totalExpense = filtered
-                .filter(t => t.type === 'expense')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            const balance = totalIncome - totalExpense;
-            
-            // Update UI
-            document.getElementById('totalIncome').textContent = totalIncome.toFixed(2);
-            document.getElementById('totalExpense').textContent = totalExpense.toFixed(2);
-            document.getElementById('currentBalance').textContent = balance.toFixed(2);
-            
-            // Update color based on balance
-            const balanceElement = document.getElementById('currentBalance').parentElement;
-            if (balance < 0) {
-                balanceElement.style.color = 'var(--expense)';
-            } else {
-                balanceElement.style.color = 'var(--income)';
-            }
-        }
-
-        // Original updateChart function (for backward compatibility)
-        function updateChart() {
-            const ctx = document.getElementById('monthlyChart').getContext('2d');
-            const chartType = document.getElementById('chartType').value;
-            
-            // Destroy existing chart
-            if (chart) {
-                chart.destroy();
-            }
-            
-            // Check if we're using date range
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
-            
-            if (fromDate && toDate) {
-                // Use date range chart
-                updateChartWithDateRange(fromDate, toDate, chartType);
-                return;
-            }
-            
-            // Prepare data for current month (default)
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-            
-            // Get days in current month
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const labels = Array.from({length: daysInMonth}, (_, i) => i + 1);
-            
-            // Initialize data arrays
-            const incomeData = new Array(daysInMonth).fill(0);
-            const expenseData = new Array(daysInMonth).fill(0);
-            
-            // Fill data
-            transactions.forEach(transaction => {
-                const date = new Date(transaction.date);
-                if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
-                    const day = date.getDate() - 1; // Array index
-                    if (transaction.type === 'income') {
-                        incomeData[day] += transaction.amount;
-                    } else {
-                        expenseData[day] += transaction.amount;
-                    }
-                }
-            });
-            
-            // Create chart
-            chart = new Chart(ctx, {
-                type: chartType,
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Income',
-                            data: incomeData,
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        },
-                        {
-                            label: 'Expenses',
-                            data: expenseData,
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }
-                    ]
-                },
-                options: getChartOptions()
-            });
-        }
-
-        function updateChartWithDateRange(fromDateStr, toDateStr, chartType) {
-            const ctx = document.getElementById('monthlyChart').getContext('2d');
-            
-            // Destroy existing chart
-            if (chart) {
-                chart.destroy();
-            }
-            
-            const startDate = new Date(fromDateStr);
-            const endDate = new Date(toDateStr);
-            
-            // Calculate days in range
-            const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-            
-            if (daysDiff <= 0) {
-                // Create empty chart
-                chart = new Chart(ctx, {
-                    type: chartType,
-                    data: {
-                        labels: ['No Data'],
-                        datasets: [
-                            {
-                                label: 'Income',
-                                data: [0],
-                                borderColor: '#10b981',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                tension: 0.4,
-                                fill: true
-                            },
-                            {
-                                label: 'Expenses',
-                                data: [0],
-                                borderColor: '#ef4444',
-                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                tension: 0.4,
-                                fill: true
-                            }
-                        ]
-                    },
-                    options: getChartOptions()
-                });
-                return;
-            }
-            
-            // Create labels for each day
-            const labels = [];
-            const dateMap = {};
-            
-            for (let i = 0; i <= daysDiff; i++) {
-                const currentDate = new Date(startDate);
-                currentDate.setDate(startDate.getDate() + i);
-                const dateStr = currentDate.toISOString().split('T')[0];
-                labels.push(`${currentDate.getDate()}/${currentDate.getMonth() + 1}`);
-                dateMap[dateStr] = i;
-            }
-            
-            // Initialize data arrays
-            const incomeData = new Array(labels.length).fill(0);
-            const expenseData = new Array(labels.length).fill(0);
-            
-            // Fill data
-            transactions.forEach(transaction => {
-                const date = new Date(transaction.date);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                if (dateMap[dateStr] !== undefined) {
-                    const index = dateMap[dateStr];
-                    if (transaction.type === 'income') {
-                        incomeData[index] += transaction.amount;
-                    } else {
-                        expenseData[index] += transaction.amount;
-                    }
-                }
-            });
-            
-            // Create chart
-            chart = new Chart(ctx, {
-                type: chartType,
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Income',
-                            data: incomeData,
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        },
-                        {
-                            label: 'Expenses',
-                            data: expenseData,
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }
-                    ]
-                },
-                options: getChartOptions()
-            });
-        }
-
-        // Rest of the functions remain the same as previous implementation...
-        // [Previous code for Category Management, Budget Management, etc. continues here...]
-        // Due to character limits, I'm including only the new/changed functions above.
-        // The rest of the functions (loadCategories, loadCategoryLists, etc.) remain the same as in the previous response.
 
         // Category Management Functions
         function loadCategoryLists() {
@@ -2377,127 +1887,6 @@
             alert('Category deleted successfully!');
         }
 
-        function loadCategories() {
-            const categorySelect = document.getElementById('category');
-            const quickSelect = document.getElementById('categoryQuickSelect');
-            
-            // Clear existing options
-            categorySelect.innerHTML = '<option value="">Select Category</option>';
-            quickSelect.innerHTML = '';
-            
-            // Filter categories by current type
-            const filteredCategories = categories.filter(cat => cat.type === currentTransactionType);
-            
-            // Add to select
-            filteredCategories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.textContent = category.name;
-                categorySelect.appendChild(option);
-            });
-            
-            // Add quick selection tags
-            filteredCategories.forEach(category => {
-                const tag = document.createElement('div');
-                tag.className = 'category-tag';
-                tag.innerHTML = `<i class="${category.icon}"></i> ${category.name}`;
-                tag.onclick = () => {
-                    document.getElementById('category').value = category.id;
-                    // Highlight selected tag
-                    document.querySelectorAll('#categoryQuickSelect .category-tag').forEach(t => {
-                        t.classList.remove('active');
-                    });
-                    tag.classList.add('active');
-                };
-                quickSelect.appendChild(tag);
-            });
-            
-            // Save to localStorage
-            localStorage.setItem('categories', JSON.stringify(categories));
-            
-            // Update category filters
-            updateCategoryFilters();
-        }
-
-        function updateCategoryFilters() {
-            const dashboardFilters = document.querySelector('#dashboard .filter-bar:nth-child(5)');
-            const transactionFilters = document.querySelector('#transactions .filter-bar:nth-child(3)');
-            
-            // Clear existing filters except "All"
-            dashboardFilters.innerHTML = '<button class="filter-chip active" onclick="filterByCategory(\'all\')">All</button>';
-            transactionFilters.innerHTML = `
-                <button class="filter-chip active" onclick="filterTransactionList(\'all\')">All</button>
-                <button class="filter-chip" onclick="filterTransactionList(\'income\')">Income</button>
-                <button class="filter-chip" onclick="filterTransactionList(\'expense\')">Expense</button>
-                <button class="filter-chip" onclick="filterTransactionList(\'recurring\')">Recurring</button>
-            `;
-            
-            // Add category filters
-            categories.forEach(category => {
-                // Dashboard filters
-                const dashFilter = document.createElement('button');
-                dashFilter.className = 'filter-chip';
-                dashFilter.textContent = category.name;
-                dashFilter.onclick = () => filterByCategory(category.id);
-                dashboardFilters.appendChild(dashFilter);
-                
-                // Transaction filters
-                const transFilter = document.createElement('button');
-                transFilter.className = 'filter-chip';
-                transFilter.textContent = category.name;
-                transFilter.onclick = () => filterTransactionList('category', category.id);
-                transactionFilters.appendChild(transFilter);
-            });
-        }
-
-        function filterByCategory(categoryId) {
-            // Update UI
-            document.querySelectorAll('#dashboard .filter-bar:nth-child(5) .filter-chip').forEach(chip => {
-                chip.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Get date range
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
-            
-            let filtered = [...transactions];
-            
-            // Apply date range filter if set
-            if (fromDate && toDate) {
-                filtered = filtered.filter(t => {
-                    const transactionDate = new Date(t.date);
-                    const startDate = new Date(fromDate);
-                    const endDate = new Date(toDate);
-                    
-                    startDate.setHours(0, 0, 0, 0);
-                    endDate.setHours(23, 59, 59, 999);
-                    
-                    return transactionDate >= startDate && transactionDate <= endDate;
-                });
-            }
-            
-            if (categoryId !== 'all') {
-                filtered = filtered.filter(t => t.categoryId === categoryId);
-            }
-            
-            // Calculate totals for filtered data
-            const totalIncome = filtered
-                .filter(t => t.type === 'income')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            const totalExpense = filtered
-                .filter(t => t.type === 'expense')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            const balance = totalIncome - totalExpense;
-            
-            // Update stats
-            document.getElementById('totalIncome').textContent = totalIncome.toFixed(2);
-            document.getElementById('totalExpense').textContent = totalExpense.toFixed(2);
-            document.getElementById('currentBalance').textContent = balance.toFixed(2);
-        }
-
         // Budget Management
         function setMonthlyBudget() {
             const amount = parseFloat(document.getElementById('monthlyBudget').value);
@@ -2585,7 +1974,7 @@
                 monthlyDisplay.style.display = 'block';
                 monthlyValue.textContent = monthlyBudget.toFixed(2);
                 
-                // Calculate monthly spent
+                // Calculate monthly spent based on current filter
                 const now = new Date();
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -2827,9 +2216,6 @@
             container.innerHTML = html;
         }
 
-        // The remaining functions (checkBudgetAlerts, selectType, toggleRecurringOptions, saveTransaction, etc.)
-        // remain the same as in the previous implementation...
-
         function checkBudgetAlerts() {
             const alertDiv = document.getElementById('budgetAlert');
             const now = new Date();
@@ -2930,6 +2316,84 @@
             }
             
             updateNotificationCount();
+        }
+
+        // Category Functions
+        function loadCategories() {
+            const categorySelect = document.getElementById('category');
+            const quickSelect = document.getElementById('categoryQuickSelect');
+            
+            // Clear existing options
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            quickSelect.innerHTML = '';
+            
+            // Filter categories by current type
+            const filteredCategories = categories.filter(cat => cat.type === currentTransactionType);
+            
+            // Add to select
+            filteredCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categorySelect.appendChild(option);
+            });
+            
+            // Add quick selection tags
+            filteredCategories.forEach(category => {
+                const tag = document.createElement('div');
+                tag.className = 'category-tag';
+                tag.innerHTML = `<i class="${category.icon}"></i> ${category.name}`;
+                tag.onclick = () => {
+                    document.getElementById('category').value = category.id;
+                    // Highlight selected tag
+                    document.querySelectorAll('#categoryQuickSelect .category-tag').forEach(t => {
+                        t.classList.remove('active');
+                    });
+                    tag.classList.add('active');
+                };
+                quickSelect.appendChild(tag);
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('categories', JSON.stringify(categories));
+            
+            // Update category filters
+            updateCategoryFilters();
+        }
+
+        function updateCategoryFilters() {
+            const dashboardFilters = document.querySelector('#dashboard .filter-bar:nth-child(5)');
+            const transactionFilters = document.querySelector('#transactions .filter-bar:nth-child(3)');
+            
+            // Clear existing filters except "All"
+            dashboardFilters.innerHTML = '<button class="filter-chip active" onclick="filterByCategory(\'all\')">All</button>';
+            transactionFilters.innerHTML = `
+                <button class="filter-chip active" onclick="filterTransactionList(\'all\')">All</button>
+                <button class="filter-chip" onclick="filterTransactionList(\'income\')">Income</button>
+                <button class="filter-chip" onclick="filterTransactionList(\'expense\')">Expense</button>
+                <button class="filter-chip" onclick="filterTransactionList(\'recurring\')">Recurring</button>
+            `;
+            
+            // Add category filters
+            categories.forEach(category => {
+                // Dashboard filters
+                const dashFilter = document.createElement('button');
+                dashFilter.className = 'filter-chip';
+                dashFilter.textContent = category.name;
+                dashFilter.onclick = () => filterByCategory(category.id);
+                dashboardFilters.appendChild(dashFilter);
+                
+                // Transaction filters
+                const transFilter = document.createElement('button');
+                transFilter.className = 'filter-chip';
+                transFilter.textContent = category.name;
+                transFilter.onclick = () => filterTransactionList('category', category.id);
+                transactionFilters.appendChild(transFilter);
+            });
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
         }
 
         function selectType(type) {
@@ -3173,7 +2637,17 @@
             }
             
             // Sort by date (newest first) and take 5
-            const recent = [...transactions]
+            let filtered = [...transactions];
+            
+            // Apply date range filter
+            if (dateFrom && dateTo) {
+                filtered = filtered.filter(t => {
+                    const transactionDate = new Date(t.date);
+                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
+                });
+            }
+            
+            const recent = filtered
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .slice(0, 5);
             
@@ -3264,6 +2738,47 @@
             }).join('');
         }
 
+        // Filter Functions
+        function filterByCategory(categoryId) {
+            // Update UI
+            document.querySelectorAll('#dashboard .filter-bar:nth-child(5) .filter-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Filter and update dashboard
+            let filtered = [...transactions];
+            
+            // Apply date range filter first
+            if (dateFrom && dateTo) {
+                filtered = filtered.filter(t => {
+                    const transactionDate = new Date(t.date);
+                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
+                });
+            }
+            
+            // Then apply category filter
+            if (categoryId !== 'all') {
+                filtered = filtered.filter(t => t.categoryId === categoryId);
+            }
+            
+            // Calculate totals for filtered data
+            const totalIncome = filtered
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const totalExpense = filtered
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const balance = totalIncome - totalExpense;
+            
+            // Update stats
+            document.getElementById('totalIncome').textContent = totalIncome.toFixed(2);
+            document.getElementById('totalExpense').textContent = totalExpense.toFixed(2);
+            document.getElementById('currentBalance').textContent = balance.toFixed(2);
+        }
+
         function filterTransactionList(filterType, filterValue = null) {
             // Update UI
             document.querySelectorAll('#transactions .filter-bar:nth-child(3) .filter-chip').forEach(chip => {
@@ -3277,12 +2792,22 @@
         function searchTransactions() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             
+            let filtered = [...transactions];
+            
+            // Apply date range filter first
+            if (dateFrom && dateTo) {
+                filtered = filtered.filter(t => {
+                    const transactionDate = new Date(t.date);
+                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
+                });
+            }
+            
             if (!searchTerm) {
                 loadRecentTransactions();
                 return;
             }
             
-            const filtered = transactions.filter(t => {
+            filtered = filtered.filter(t => {
                 const category = categories.find(c => c.id === t.categoryId);
                 return (
                     t.remark.toLowerCase().includes(searchTerm) ||
@@ -3388,8 +2913,138 @@
             }).join('');
         }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
+        // Dashboard Functions
+        function updateDashboard() {
+            let filtered = [...transactions];
+            
+            // Apply date range filter
+            if (dateFrom && dateTo) {
+                filtered = filtered.filter(t => {
+                    const transactionDate = new Date(t.date);
+                    return transactionDate >= new Date(dateFrom) && transactionDate <= new Date(dateTo);
+                });
+            }
+            
+            // Calculate totals
+            const totalIncome = filtered
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const totalExpense = filtered
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const balance = totalIncome - totalExpense;
+            
+            // Update UI
+            document.getElementById('totalIncome').textContent = totalIncome.toFixed(2);
+            document.getElementById('totalExpense').textContent = totalExpense.toFixed(2);
+            document.getElementById('currentBalance').textContent = balance.toFixed(2);
+            
+            // Update color based on balance
+            const balanceElement = document.getElementById('currentBalance').parentElement;
+            if (balance < 0) {
+                balanceElement.style.color = 'var(--expense)';
+            } else {
+                balanceElement.style.color = 'var(--income)';
+            }
+            
+            // Update recent transactions
+            loadRecentTransactions();
+        }
+
+        // Chart Functions
+        function updateChart() {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            const chartType = document.getElementById('chartType').value;
+            
+            // Destroy existing chart
+            if (chart) {
+                chart.destroy();
+            }
+            
+            // Prepare data for current month
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            // Get days in current month
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const labels = Array.from({length: daysInMonth}, (_, i) => i + 1);
+            
+            // Initialize data arrays
+            const incomeData = new Array(daysInMonth).fill(0);
+            const expenseData = new Array(daysInMonth).fill(0);
+            
+            // Fill data
+            transactions.forEach(transaction => {
+                const date = new Date(transaction.date);
+                if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+                    const day = date.getDate() - 1; // Array index
+                    if (transaction.type === 'income') {
+                        incomeData[day] += transaction.amount;
+                    } else {
+                        expenseData[day] += transaction.amount;
+                    }
+                }
+            });
+            
+            // Create chart
+            chart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: incomeData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Expenses',
+                            data: expenseData,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value;
+                                }
+                            },
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         // Recurring Transactions
@@ -3464,7 +3119,7 @@
             return date.toISOString().split('T')[0];
         }
 
-        // Subscription Management
+        // Subscription Management (keep existing functions)
         function showAddSubscriptionModal() {
             const categorySelect = document.getElementById('subscriptionCategory');
             categorySelect.innerHTML = '<option value="">Select Category</option>';
@@ -3959,7 +3614,7 @@
             }
         }
 
-        // Report Functions
+        // Report Functions (keep existing)
         function generateReport() {
             const reportType = document.getElementById('reportType').value;
             const container = document.getElementById('reportContent');
@@ -4371,6 +4026,9 @@
                         checkDueSubscriptions();
                         updateNotificationCount();
                         
+                        // Reset date range filter
+                        initDateRangeFilter();
+                        
                         alert('Data imported successfully!');
                     }
                 } catch (error) {
@@ -4506,6 +4164,9 @@
                 loadSubscriptions();
                 checkBudgetAlerts();
                 updateNotificationCount();
+                
+                // Reset date range filter
+                initDateRangeFilter();
                 
                 alert('All data has been cleared!');
                 closeModal('importExportModal');
