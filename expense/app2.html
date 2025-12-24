@@ -935,11 +935,11 @@
                 </div>
             </div>
 
-            <!-- Time Filter -->
+            <!-- Time Filter - UPDATED WITH ALL FILTERS -->
             <div class="filter-bar">
-                <button class="filter-chip active" onclick="filterByTime('month')">This Month</button>
+                <button class="filter-chip active" onclick="filterByTime('today')">This Day</button>
                 <button class="filter-chip" onclick="filterByTime('week')">This Week</button>
-                <button class="filter-chip" onclick="filterByTime('today')">Today</button>
+                <button class="filter-chip" onclick="filterByTime('month')">This Month</button>
                 <button class="filter-chip" onclick="filterByTime('year')">This Year</button>
                 <button class="filter-chip" onclick="filterByTime('all')">All Time</button>
             </div>
@@ -1486,7 +1486,7 @@
         // Notifications
         let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
 
-        let currentFilter = 'month';
+        let currentFilter = 'today'; // Default to "This Day"
         let currentTransactionType = 'income';
         let chart = null;
         let flatpickrInstance = null;
@@ -2546,7 +2546,7 @@
             }).join('');
         }
 
-        // Filter Functions
+        // Filter Functions - UPDATED WITH ALL TIME FILTERS
         function filterByTime(timeFrame) {
             currentFilter = timeFrame;
             
@@ -2558,6 +2558,17 @@
             
             updateDashboard();
             updateChart();
+            
+            // Update filter label
+            const filterLabels = {
+                'today': 'This Day',
+                'week': 'This Week',
+                'month': 'This Month',
+                'year': 'This Year',
+                'all': 'All Time'
+            };
+            
+            console.log(`Filter applied: ${filterLabels[timeFrame]}`);
         }
 
         function filterByCategory(categoryId) {
@@ -2715,7 +2726,7 @@
             }).join('');
         }
 
-        // Dashboard Functions
+        // Dashboard Functions - UPDATED WITH ALL TIME FILTERS
         function updateDashboard() {
             const now = new Date();
             let filtered = [...transactions];
@@ -2726,19 +2737,47 @@
                     const today = now.toISOString().split('T')[0];
                     filtered = filtered.filter(t => t.date === today);
                     break;
+                    
                 case 'week':
-                    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-                    filtered = filtered.filter(t => new Date(t.date) >= startOfWeek);
+                    // Get start of week (Sunday)
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setDate(now.getDate() - now.getDay());
+                    startOfWeek.setHours(0, 0, 0, 0);
+                    
+                    // Get end of week (Saturday)
+                    const endOfWeek = new Date(startOfWeek);
+                    endOfWeek.setDate(startOfWeek.getDate() + 6);
+                    endOfWeek.setHours(23, 59, 59, 999);
+                    
+                    filtered = filtered.filter(t => {
+                        const transactionDate = new Date(t.date);
+                        return transactionDate >= startOfWeek && transactionDate <= endOfWeek;
+                    });
                     break;
+                    
                 case 'month':
                     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                    filtered = filtered.filter(t => new Date(t.date) >= startOfMonth);
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    endOfMonth.setHours(23, 59, 59, 999);
+                    
+                    filtered = filtered.filter(t => {
+                        const transactionDate = new Date(t.date);
+                        return transactionDate >= startOfMonth && transactionDate <= endOfMonth;
+                    });
                     break;
+                    
                 case 'year':
                     const startOfYear = new Date(now.getFullYear(), 0, 1);
-                    filtered = filtered.filter(t => new Date(t.date) >= startOfYear);
+                    const endOfYear = new Date(now.getFullYear(), 11, 31);
+                    endOfYear.setHours(23, 59, 59, 999);
+                    
+                    filtered = filtered.filter(t => {
+                        const transactionDate = new Date(t.date);
+                        return transactionDate >= startOfYear && transactionDate <= endOfYear;
+                    });
                     break;
-                // 'all' - no filter
+                    
+                // 'all' - no filter, use all transactions
             }
             
             // Calculate totals
@@ -2764,6 +2803,18 @@
             } else {
                 balanceElement.style.color = 'var(--income)';
             }
+            
+            // Update filter indicator
+            const filterLabels = {
+                'today': 'This Day',
+                'week': 'This Week',
+                'month': 'This Month',
+                'year': 'This Year',
+                'all': 'All Time'
+            };
+            
+            console.log(`Showing transactions for: ${filterLabels[currentFilter]}`);
+            console.log(`Filtered transactions: ${filtered.length} out of ${transactions.length} total`);
         }
 
         // Chart Functions
