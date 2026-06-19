@@ -1,144 +1,902 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sales Dashboard</title>
+  <meta name="description" content="Premium Sales Dashboard with advanced analytics and reporting."/>
+  <title>Premium Sales Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Outfit', 'sans-serif'] },
+          colors: {
+            brand: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',500:'#6366f1',600:'#4f46e5',700:'#4338ca',900:'#312e81' },
+            dark:  { bg:'#0f172a', card:'#1e293b', border:'#334155' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { font-family: 'Outfit', sans-serif; }
+    body { margin:0; min-height:100vh; background:#f1f5f9; color:#334155; transition:background .3s,color .3s; }
+    html.dark body { background:#0f172a; color:#f1f5f9; }
+
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+    html.dark ::-webkit-scrollbar-thumb { background:#475569; }
+
+    .glass-card {
+      background:rgba(255,255,255,.82);
+      backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      border:1px solid rgba(255,255,255,.6);
+      box-shadow:0 4px 24px rgba(0,0,0,.06);
+      border-radius:1rem;
+      transition:box-shadow .25s,transform .25s;
+    }
+    html.dark .glass-card { background:rgba(30,41,59,.78); border:1px solid rgba(255,255,255,.07); box-shadow:0 4px 24px rgba(0,0,0,.35); }
+    .glass-card:hover { box-shadow:0 12px 32px rgba(0,0,0,.12); transform:translateY(-2px); }
+    html.dark .glass-card:hover { box-shadow:0 12px 32px rgba(0,0,0,.45); }
+
+    .gradient-bg {
+      background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);
+      border-radius:1rem; position:relative; overflow:hidden;
+    }
+    .gradient-bg::before {
+      content:''; position:absolute; inset:-50%;
+      background:radial-gradient(circle at 70% 30%,rgba(255,255,255,.12) 0%,transparent 60%);
+    }
+
+    .form-input {
+      width:100%; border-radius:.75rem; border:1px solid #e2e8f0;
+      background:rgba(255,255,255,.6); padding:.6rem .9rem;
+      font-size:.875rem; font-family:'Outfit',sans-serif; color:#334155;
+      outline:none; transition:border-color .2s,box-shadow .2s,background .2s;
+      appearance:none; -webkit-appearance:none;
+    }
+    .form-input:focus { border-color:#6366f1; background:#fff; box-shadow:0 0 0 3px rgba(99,102,241,.15); }
+    html.dark .form-input { border-color:#334155; background:rgba(30,41,59,.6); color:#f1f5f9; }
+    html.dark .form-input:focus { border-color:#6366f1; background:#1e293b; }
+
+    .skeleton {
+      background:linear-gradient(90deg,#e2e8f0 25%,#f8fafc 50%,#e2e8f0 75%);
+      background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:.375rem;
+    }
+    html.dark .skeleton {
+      background:linear-gradient(90deg,#1e293b 25%,#334155 50%,#1e293b 75%);
+      background-size:200% 100%;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    #toast {
+      position:fixed; bottom:1.5rem; right:1.5rem; z-index:300;
+      min-width:200px; max-width:340px;
+      padding:.85rem 1.25rem; border-radius:.75rem;
+      font-size:.875rem; font-weight:500; color:#fff; background:#10b981;
+      box-shadow:0 10px 25px rgba(0,0,0,.15);
+      opacity:0; transform:translateY(16px);
+      transition:opacity .3s,transform .3s; pointer-events:none;
+      word-break:break-word;
+    }
+    #toast.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+
+    /* Sales cards uppercase */
+    .sales-record-card, .sales-record-card * { text-transform:uppercase; }
+    .sales-record-card {
+      background:rgba(255,255,255,.87); border:1px solid #e2e8f0;
+      border-radius:.875rem; padding:1.1rem;
+      transition:box-shadow .25s,transform .25s;
+      animation:slideUp .35s ease-out forwards; opacity:0;
+    }
+    html.dark .sales-record-card { background:rgba(30,41,59,.87); border-color:#334155; }
+    .sales-record-card:hover { box-shadow:0 8px 24px rgba(0,0,0,.10); transform:translateY(-2px); }
+    html.dark .sales-record-card:hover { box-shadow:0 8px 24px rgba(0,0,0,.4); }
+    @keyframes slideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+    .copyable { cursor:pointer; transition:color .15s,opacity .15s; }
+    .copyable:hover { color:#6366f1; }
+    .copyable:active { opacity:.6; }
+    html.dark .copyable:hover { color:#818cf8; }
+
+    .chart-wrap { position:relative; height:240px; }
+
+    .sort-btn {
+      padding:.35rem 1rem; border-radius:.5rem;
+      font-size:.8125rem; font-weight:500;
+      transition:background .2s,color .2s,box-shadow .2s; color:#64748b;
+    }
+    .sort-btn.active { background:#fff; color:#1e293b; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+    html.dark .sort-btn { color:#94a3b8; }
+    html.dark .sort-btn.active { background:#334155; color:#f1f5f9; }
+
+    .stat-card {
+      border-radius:1rem; padding:1.1rem 1.25rem;
+      position:relative; overflow:hidden;
+      transition:transform .25s,box-shadow .25s;
+    }
+    .stat-card:hover { transform:translateY(-3px); }
+    .stat-card .orb {
+      position:absolute; width:80px; height:80px; border-radius:50%;
+      top:-20px; right:-20px; transition:transform .4s;
+    }
+    .stat-card:hover .orb { transform:scale(1.6); }
+
+    /* PDF Modal */
+    #pdfModal {
+      position:fixed; inset:0; z-index:500;
+      background:rgba(15,23,42,.65);
+      backdrop-filter:blur(5px);
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity .25s;
+    }
+    #pdfModal.open { opacity:1; pointer-events:auto; }
+    #pdfModalBox {
+      background:#fff; border-radius:1.25rem; padding:2rem;
+      width:100%; max-width:520px; margin:1rem;
+      box-shadow:0 24px 48px rgba(0,0,0,.25);
+      transform:translateY(20px); transition:transform .25s;
+    }
+    #pdfModal.open #pdfModalBox { transform:translateY(0); }
+    html.dark #pdfModalBox { background:#1e293b; color:#f1f5f9; }
+
+    .pdf-check-label {
+      display:flex; align-items:center; gap:.65rem;
+      padding:.5rem .75rem; border-radius:.6rem; cursor:pointer;
+      transition:background .15s; font-size:.875rem; font-weight:500;
+      user-select:none; color:#334155;
+    }
+    html.dark .pdf-check-label { color:#e2e8f0; }
+    .pdf-check-label:hover { background:#eef2ff; }
+    html.dark .pdf-check-label:hover { background:#334155; }
+    .pdf-check-label input[type=checkbox] {
+      width:1.1rem; height:1.1rem; accent-color:#6366f1;
+      cursor:pointer; flex-shrink:0;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4">
-  <div class="max-w-7xl mx-auto space-y-6">
-    <!-- Filter Section -->
-    <div class="bg-white rounded-xl shadow p-6">
-      <h2 class="text-2xl font-bold text-center text-blue-700 mb-4">Sales Dashboard</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <input type="date" id="startDate" class="border p-2 rounded w-full" placeholder="Start Date">
-        <input type="date" id="endDate" class="border p-2 rounded w-full" placeholder="End Date">
-        <select id="filterSpec" class="border p-2 rounded w-full">
-          <option value="">Filter by Model</option>
-          <option value="RIDER">RIDER</option>
-          <option value="CUTIE SUPER">CUTIE SUPER</option>
-          <option value="RIDER">RIDER</option>
-          <option value="CUTIE SUPER">CUTIE SUPER</option>
-          <option value="ROYAL">ROYAL</option>
-          <option value="LEGEND R">LEGEND R</option>
-          <option value="LEGEND S">LEGEND S</option>
-          <option value="LEGEND SUPER S">LEGEND SUPER S</option>
-          <option value="BMW">BMW</option>
-          <option value="HANDICAPPED">HANDICAPPED</option>
-          <option value="2W LOADER">2W LOADER</option>
-          <option value="3W LOADER">3W LOADER</option>
-        </select>
-        <select id="filterSalesman" class="border p-2 rounded w-full">
-          <option value="">Filter by Salesman</option>
-           <option value="ABINU TP">ABINU TP</option>
-           <option value="RAMSHAD">RAMSHAD</option>
-           <option value="UNIVERSITY">UNIVERSITY</option>
-           <option value="NILAMBUR">NILAMBUR</option>
-        </select>
-        <select id="filterBranch" class="border p-2 rounded w-full">
-          <option value="">Filter by Branch</option>
-          <option value="ANGADIPPURAM">ANGADIPPURAM</option>
-          <option value="MANJERI">MANJERI</option>
-          <option value="UNIVERSITY">UNIVERSITY</option>
-          <option value="NILAMBUR">NILAMBUR</option>
-          <option value="AKSA">AKSA</option>
-        </select>
+<body class="p-3 sm:p-5 lg:p-8">
+<div class="max-w-7xl mx-auto space-y-5">
+
+  <!-- Header -->
+  <header class="gradient-bg p-5 shadow-lg text-white relative z-10">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">Premium Sales</h1>
+        <p class="text-indigo-200 mt-0.5 text-sm font-medium">Advanced insights &amp; analytics</p>
       </div>
-      <div class="text-center">
-        <button onclick="loadData()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Filter</button>
-      </div><!-- Stats Section -->
-  <div id="stats" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 hidden">
-    <div class="bg-green-100 p-4 rounded shadow text-center">
-      <div class="text-2xl font-bold" id="totalSales">0</div>
-      <div class="text-gray-700">Total Sales</div>
+      <div class="flex items-center gap-3">
+        <button id="themeToggle" aria-label="Toggle Dark Mode"
+          class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-colors">
+          <i id="themeIcon" class="fas fa-moon text-lg w-5 text-center"></i>
+        </button>
+        <button onclick="downloadExcel()"
+          class="flex items-center gap-2 bg-white text-indigo-600 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-md hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all">
+          <i class="fas fa-file-excel"></i> Excel
+        </button>
+        <button onclick="downloadPDF()"
+          class="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-md hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all">
+          <i class="fas fa-file-pdf"></i> PDF Report
+        </button>
+      </div>
     </div>
-    <div class="bg-yellow-100 p-4 rounded shadow text-center">
-      <div class="text-2xl font-bold" id="totalRevenue">₹0</div>
-      <div class="text-gray-700">Total Revenue</div>
+  </header>
+
+  <!-- Main -->
+  <main class="grid grid-cols-1 lg:grid-cols-4 gap-5">
+
+    <!-- Sidebar -->
+    <aside class="lg:col-span-1 space-y-5">
+      <div class="glass-card p-5">
+        <h2 class="font-bold text-base mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-100">
+          <i class="fas fa-sliders-h text-indigo-500"></i> Filters
+        </h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Date Range</label>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="date" id="startDate" class="form-input">
+              <input type="date" id="endDate" class="form-input">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Model</label>
+            <select id="filterSpec" class="form-input">
+              <option value="">All Models</option>
+              <option>RIDER</option><option>CUTIE SUPER</option><option>ROYAL</option>
+              <option>LEGEND R</option><option>LEGEND S</option><option>LEGEND SUPER S</option>
+              <option>BMW</option><option>HANDICAPPED</option><option>2W LOADER</option><option>3W LOADER</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Salesman</label>
+            <select id="filterSalesman" class="form-input">
+              <option value="">All Salesmen</option>
+              <option>ABINU TP</option><option>RAMSHAD</option>
+              <option>UNIVERSITY</option><option>NILAMBUR</option><option>AKSA</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Branch</label>
+            <select id="filterBranch" class="form-input">
+              <option value="">All Branches</option>
+              <option>ANGADIPPURAM</option><option>MANJERI</option>
+              <option>UNIVERSITY</option><option>NILAMBUR</option>
+            </select>
+          </div>
+          <button onclick="loadData()"
+            class="w-full flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-0.5 active:translate-y-0 text-sm">
+            <i id="refreshIcon" class="fas fa-sync-alt"></i> Apply Filters
+          </button>
+        </div>
+      </div>
+      <div id="statsContainer" class="space-y-3"></div>
+    </aside>
+
+    <!-- Content -->
+    <section class="lg:col-span-3 space-y-5">
+      <!-- Charts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass-card p-5">
+          <h3 class="font-bold text-sm text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-4">Sales by Model</h3>
+          <div id="modelChartSkeleton" class="chart-wrap flex items-center justify-center">
+            <div class="skeleton rounded-full w-40 h-40"></div>
+          </div>
+          <div class="chart-wrap hidden" id="modelChartWrap"><canvas id="modelChart"></canvas></div>
+        </div>
+        <div class="glass-card p-5">
+          <h3 class="font-bold text-sm text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-4">Revenue Trend</h3>
+          <div id="revenueChartSkeleton" class="chart-wrap flex items-end gap-1.5 justify-between px-2">
+            <div class="skeleton w-full h-1/3 rounded-t"></div>
+            <div class="skeleton w-full h-2/3 rounded-t"></div>
+            <div class="skeleton w-full h-1/2 rounded-t"></div>
+            <div class="skeleton w-full h-full rounded-t"></div>
+            <div class="skeleton w-full h-3/4 rounded-t"></div>
+            <div class="skeleton w-full h-2/5 rounded-t"></div>
+          </div>
+          <div class="chart-wrap hidden" id="revenueChartWrap"><canvas id="revenueChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Records -->
+      <div class="glass-card p-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5">
+          <h3 class="font-bold text-lg text-gray-800 dark:text-gray-100">Sales Records</h3>
+          <div class="flex items-center bg-gray-100 dark:bg-dark-card rounded-xl p-1 gap-0.5">
+            <button id="sortDesc" class="sort-btn active"><i class="fas fa-arrow-down mr-1.5"></i>Newest</button>
+            <button id="sortAsc"  class="sort-btn"><i class="fas fa-arrow-up mr-1.5"></i>Oldest</button>
+          </div>
+        </div>
+        <div id="salesCards" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[650px] overflow-y-auto pr-1 pb-1"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<!-- PDF Field Selection Modal -->
+<div id="pdfModal">
+  <div id="pdfModalBox">
+    <div class="flex justify-between items-center mb-5">
+      <div>
+        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Generate PDF Report</h3>
+        <p class="text-sm text-gray-400 mt-0.5">Select the fields to include</p>
+      </div>
+      <button onclick="closePdfModal()"
+        class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-300 transition-colors">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="flex justify-between items-center mb-3">
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Fields</span>
+      <button id="toggleAllBtn" onclick="toggleAllPdfFields()"
+        class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Deselect All</button>
+    </div>
+
+    <div class="grid grid-cols-2 gap-1 mb-6" id="pdfFieldList">
+      <label class="pdf-check-label"><input type="checkbox" value="date"     checked> Purchase Date</label>
+      <label class="pdf-check-label"><input type="checkbox" value="name"     checked> Customer Name</label>
+      <label class="pdf-check-label"><input type="checkbox" value="mob"      checked> Mobile</label>
+      <label class="pdf-check-label"><input type="checkbox" value="spec"     checked> Model</label>
+      <label class="pdf-check-label"><input type="checkbox" value="battery"  checked> Battery</label>
+      <label class="pdf-check-label"><input type="checkbox" value="price"    checked> Price</label>
+      <label class="pdf-check-label"><input type="checkbox" value="branch"   checked> Branch</label>
+      <label class="pdf-check-label"><input type="checkbox" value="salesman" checked> Salesman</label>
+      <label class="pdf-check-label"><input type="checkbox" value="motor"    checked> Motor No</label>
+      <label class="pdf-check-label"><input type="checkbox" value="vin"      checked> VIN</label>
+      <label class="pdf-check-label col-span-2"><input type="checkbox" value="address" checked> Address</label>
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="closePdfModal()"
+        class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+        Cancel
+      </button>
+      <button onclick="generatePdfFromModal()"
+        class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+        <i class="fas fa-file-pdf"></i> Generate PDF
+      </button>
     </div>
   </div>
 </div>
 
-<!-- Sales Cards -->
-<div id="salesCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+<script>
+  // ── Config ──────────────────────────────────────────────────────
+  const API_KEY  = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+  const TABLE_ID = '615787';
+  const API_URL  = 'https://api.baserow.io/api/database/rows/table/' + TABLE_ID + '/?user_field_names=true';
 
-<!-- Floating Excel Download -->
-<button onclick="downloadExcel()" class="fixed bottom-6 right-6 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full shadow-lg">Download Excel</button>
+  let fetchedData  = [];
+  let sortOrder    = 'desc';
+  let modelChart   = null;
+  let revenueChart = null;
 
-  </div>  <script>
-    const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
-    const TABLE_ID = "615787";
-    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
-    let fetchedData = [];
+  // ── Theme ────────────────────────────────────────────────────────
+  function applyTheme(dark) {
+    document.documentElement.classList.toggle('dark', dark);
+    document.getElementById('themeIcon').className = dark
+      ? 'fas fa-sun text-yellow-300 text-lg w-5 text-center'
+      : 'fas fa-moon text-white text-lg w-5 text-center';
+  }
+  function initTheme() {
+    const s = localStorage.getItem('theme');
+    applyTheme(s === 'dark' || (!s && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  }
+  document.getElementById('themeToggle').addEventListener('click', function() {
+    var dark = !document.documentElement.classList.contains('dark');
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    applyTheme(dark);
+    updateChartsTheme();
+  });
+  initTheme();
 
-    async function loadData() {
-      const start = document.getElementById("startDate").value;
-      const end = document.getElementById("endDate").value;
-      if (!start || !end) return alert("Please select a date range.");
+  // ── Toast ─────────────────────────────────────────────────────────
+  var toastTimer = null;
+  function showToast(msg, type) {
+    var toast = document.getElementById('toast');
+    toast.textContent = msg.length > 80 ? msg.slice(0, 77) + '…' : msg;
+    toast.style.backgroundColor = (type === 'error') ? '#ef4444' : '#10b981';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
+  }
 
-      const spec = document.getElementById("filterSpec").value;
-      const salesman = document.getElementById("filterSalesman").value;
-      const branch = document.getElementById("filterBranch").value;
+  // ── Helpers ───────────────────────────────────────────────────────
+  function formatDate(str) {
+    if (!str) return 'N/A';
+    var d = new Date(str);
+    if (isNaN(d)) return str;
+    var dd   = String(d.getDate()).padStart(2, '0');
+    var mm   = String(d.getMonth() + 1).padStart(2, '0');
+    var yyyy = d.getFullYear();
+    return dd + '/' + mm + '/' + yyyy;
+  }
 
-      const res = await fetch(API_URL, {
-        headers: { Authorization: `Token ${API_KEY}` }
+  function formatCurrency(val) {
+    var n = parseInt(val);
+    return isNaN(n) ? '₹0'
+      : new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', maximumFractionDigits:0 }).format(n);
+  }
+
+  function safeAttr(str) {
+    return String(str || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;')
+      .replace(/[\r\n]+/g, ' ');
+  }
+
+  function copyToClipboard(text) {
+    if (!text || text === 'N/A') return;
+    navigator.clipboard.writeText(String(text).toUpperCase())
+      .then(function() { showToast('Copied!'); })
+      .catch(function() { showToast('Copy failed', 'error'); });
+  }
+
+  // ── Chart helpers ─────────────────────────────────────────────────
+  Chart.defaults.font.family = "'Outfit', sans-serif";
+
+  function getThemeColors() {
+    var dark = document.documentElement.classList.contains('dark');
+    return {
+      dark: dark,
+      text: dark ? '#94a3b8' : '#64748b',
+      grid: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+      ttBg:    dark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.97)',
+      ttTitle: dark ? '#f1f5f9' : '#0f172a',
+      ttBody:  dark ? '#cbd5e1' : '#334155',
+      ttBorder:dark ? '#334155' : '#e2e8f0',
+    };
+  }
+
+  function updateChartsTheme() {
+    var c = getThemeColors();
+    if (revenueChart) {
+      revenueChart.options.scales.x.ticks.color = c.text;
+      revenueChart.options.scales.y.ticks.color = c.text;
+      revenueChart.options.scales.y.grid.color  = c.grid;
+      revenueChart.options.plugins.tooltip.backgroundColor = c.ttBg;
+      revenueChart.options.plugins.tooltip.titleColor      = c.ttTitle;
+      revenueChart.options.plugins.tooltip.bodyColor       = c.ttBody;
+      revenueChart.update();
+    }
+    if (modelChart) {
+      modelChart.options.plugins.legend.labels.color = c.text;
+      modelChart.options.plugins.tooltip.backgroundColor  = c.ttBg;
+      modelChart.options.plugins.tooltip.titleColor       = c.ttTitle;
+      modelChart.options.plugins.tooltip.bodyColor        = c.ttBody;
+      modelChart.update();
+    }
+  }
+
+  // ── Fetch data ────────────────────────────────────────────────────
+  async function loadData() {
+    var start    = document.getElementById('startDate').value;
+    var end      = document.getElementById('endDate').value;
+    if (!start || !end) { showToast('Please select a date range', 'error'); return; }
+
+    var spec     = document.getElementById('filterSpec').value;
+    var salesman = document.getElementById('filterSalesman').value;
+    var branch   = document.getElementById('filterBranch').value;
+
+    showLoadingState();
+
+    try {
+      var res  = await fetch(API_URL, { headers: { Authorization: 'Token ' + API_KEY } });
+      if (!res.ok) throw new Error('API ' + res.status);
+      var json = await res.json();
+
+      fetchedData = (json.results || []).filter(function(row) {
+        var d = row['Purchase Date'] || '';
+        return d >= start && d <= end
+          && (!spec     || row.Spec     === spec)
+          && (!salesman || row.Salesman === salesman)
+          && (!branch   || row.Branch   === branch);
       });
-      const json = await res.json();
 
-      fetchedData = json.results.filter(row => {
-        const date = row["Purchase Date"];
-        return (
-          date >= start &&
-          date <= end &&
-          (!spec || row.Spec === spec) &&
-          (!salesman || row.Salesman === salesman) &&
-          (!branch || row.Branch === branch)
-        );
-      });
-
-      showStats();
-      showCards();
+      sortDataByDate();
+      renderStats();
+      renderCards();
+      renderCharts();
+      showToast(fetchedData.length + ' record' + (fetchedData.length !== 1 ? 's' : '') + ' loaded');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to fetch data', 'error');
+      renderEmptyState(true);
+    } finally {
+      document.getElementById('refreshIcon').classList.remove('fa-spin');
     }
+  }
 
-    function showStats() {
-      const total = fetchedData.length;
-      const revenue = fetchedData.reduce((sum, r) => sum + parseFloat(r.Price || 0), 0);
+  function sortDataByDate() {
+    fetchedData.sort(function(a, b) {
+      var da = new Date(a['Purchase Date'] || 0);
+      var db = new Date(b['Purchase Date'] || 0);
+      return sortOrder === 'asc' ? da - db : db - da;
+    });
+  }
 
-      document.getElementById("totalSales").textContent = total;
-      document.getElementById("totalRevenue").textContent = `₹${revenue}`;
-      document.getElementById("stats").classList.remove("hidden");
+  // ── Loading state ─────────────────────────────────────────────────
+  function showLoadingState() {
+    document.getElementById('refreshIcon').classList.add('fa-spin');
+
+    document.getElementById('statsContainer').innerHTML = [1,2,3].map(function() {
+      return '<div class="glass-card p-4"><div class="skeleton h-3 w-24 mb-3"></div><div class="skeleton h-7 w-28"></div></div>';
+    }).join('');
+
+    document.getElementById('salesCards').innerHTML = [1,2,3,4].map(function() {
+      return '<div class="sales-record-card"><div class="flex justify-between mb-3"><div class="skeleton h-4 w-32"></div><div class="skeleton h-5 w-16 rounded-full"></div></div><div class="space-y-2"><div class="skeleton h-3 w-full"></div><div class="skeleton h-3 w-5/6"></div><div class="skeleton h-3 w-4/6"></div></div></div>';
+    }).join('');
+
+    document.getElementById('modelChartSkeleton').classList.remove('hidden');
+    document.getElementById('modelChartWrap').classList.add('hidden');
+    document.getElementById('revenueChartSkeleton').classList.remove('hidden');
+    document.getElementById('revenueChartWrap').classList.add('hidden');
+  }
+
+  // ── Empty/Error state ─────────────────────────────────────────────
+  function renderEmptyState(isError) {
+    document.getElementById('statsContainer').innerHTML =
+      '<div class="glass-card p-4 text-center text-gray-400 text-sm">No stats to show</div>';
+
+    var icon = isError ? 'fa-exclamation-triangle text-red-400' : 'fa-folder-open text-indigo-400';
+    var bg   = isError ? 'bg-red-50 dark:bg-red-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20';
+    var ttl  = isError ? 'Error Loading Data' : 'No Records Found';
+    var txt  = isError ? 'Please check your connection and try again.' : 'Try adjusting your date range or filters.';
+
+    document.getElementById('salesCards').innerHTML =
+      '<div class="col-span-full flex flex-col items-center justify-center py-16 text-center">' +
+      '<div class="w-20 h-20 rounded-full flex items-center justify-center mb-4 ' + bg + '">' +
+      '<i class="fas ' + icon + ' text-3xl"></i></div>' +
+      '<p class="font-bold text-gray-700 dark:text-gray-200">' + ttl + '</p>' +
+      '<p class="text-sm text-gray-400 mt-1 max-w-xs">' + txt + '</p></div>';
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────
+  function renderStats() {
+    if (!fetchedData.length) { renderEmptyState(false); return; }
+    var total   = fetchedData.length;
+    var revenue = fetchedData.reduce(function(s, r) { return s + parseFloat(r.Price || 0); }, 0);
+    var avg     = revenue / total;
+
+    var cards = [
+      { label:'Total Sales',   value: total.toLocaleString('en-IN'), icon:'fa-shopping-bag', color:'indigo'  },
+      { label:'Total Revenue', value: formatCurrency(revenue),        icon:'fa-chart-line',   color:'emerald' },
+      { label:'Avg Sale',      value: formatCurrency(avg),            icon:'fa-receipt',      color:'purple'  },
+    ];
+
+    document.getElementById('statsContainer').innerHTML = cards.map(function(c) {
+      return '<div class="stat-card glass-card">' +
+        '<div class="orb bg-' + c.color + '-500/10"></div>' +
+        '<p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">' + c.label + '</p>' +
+        '<p class="text-2xl font-bold text-gray-800 dark:text-white leading-tight">' + c.value + '</p>' +
+        '<i class="fas ' + c.icon + ' absolute top-4 right-4 text-2xl text-' + c.color + '-400/20"></i>' +
+        '</div>';
+    }).join('');
+  }
+
+  // ── Cards ─────────────────────────────────────────────────────────
+  function fieldRow(label, display, safeVal, extra) {
+    extra = extra || '';
+    return '<div class="flex justify-between items-center gap-3">' +
+      '<span class="text-gray-400 dark:text-gray-500 shrink-0">' + label + '</span>' +
+      '<span class="font-medium text-gray-700 dark:text-gray-200 text-right copyable ' + extra + '" ' +
+        'onclick="copyToClipboard(\'' + safeVal + '\')" title="Click to copy">' + display + '</span>' +
+      '</div>';
+  }
+
+  function renderCards() {
+    var container = document.getElementById('salesCards');
+    if (!fetchedData.length) { renderEmptyState(false); return; }
+
+    container.innerHTML = fetchedData.map(function(row, i) {
+      var name     = row.Name        || 'Unknown Customer';
+      var date     = row['Purchase Date'] || '';
+      var spec     = row.Spec        || 'N/A';
+      var price    = row.Price       || '0';
+      var mob      = row.Mob         || 'N/A';
+      var branch   = row.Branch      || 'N/A';
+      var salesman = row.Salesman    || 'N/A';
+      var battery  = row.Battery     || 'N/A';
+      var address  = row.Address     || 'N/A';
+      var motor    = row['Motor No'] || 'N/A';
+      var vin      = row.VIN         || 'N/A';
+
+      var e = safeAttr;
+
+      return '<div class="sales-record-card" style="animation-delay:' + (i * 0.04) + 's">' +
+
+        // Header
+        '<div class="flex justify-between items-start gap-2 pb-3 mb-3 border-b border-gray-100 dark:border-gray-700/60">' +
+          '<div class="min-w-0">' +
+            '<p class="font-bold text-gray-800 dark:text-white text-sm truncate copyable" ' +
+              'onclick="copyToClipboard(\'' + e(name) + '\')" title="Click to copy">' + name + '</p>' +
+            '<p class="text-xs text-gray-400 mt-0.5 copyable" ' +
+              'onclick="copyToClipboard(\'' + e(formatDate(date)) + '\')" title="Click to copy">' + formatDate(date) + '</p>' +
+          '</div>' +
+          '<span class="shrink-0 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 ' +
+            'text-xs font-bold px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 ' +
+            'copyable whitespace-nowrap" onclick="copyToClipboard(\'' + e(spec) + '\')" title="Click to copy">' + spec + '</span>' +
+        '</div>' +
+
+        // Fields
+        '<div class="space-y-2 text-sm">' +
+          fieldRow('Price',    formatCurrency(price), e(formatCurrency(price)), 'font-bold text-emerald-600 dark:text-emerald-400') +
+          fieldRow('Mobile',   mob,      e(mob)) +
+          fieldRow('Branch',   branch,   e(branch)) +
+          fieldRow('Salesman', salesman, e(salesman)) +
+          fieldRow('Battery',  battery,  e(battery), 'text-amber-600 dark:text-amber-400 font-semibold') +
+        '</div>' +
+
+        // Address
+        '<div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/60">' +
+          '<p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Address</p>' +
+          '<p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed copyable" ' +
+            'onclick="copyToClipboard(\'' + e(address) + '\')" title="Click to copy">' + address + '</p>' +
+        '</div>' +
+
+        // Motor / VIN
+        '<div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/60 grid grid-cols-2 gap-x-4">' +
+          '<div><p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Motor No</p>' +
+            '<p class="text-xs text-gray-500 dark:text-gray-400 font-mono truncate copyable" ' +
+              'onclick="copyToClipboard(\'' + e(motor) + '\')" title="Click to copy">' + motor + '</p></div>' +
+          '<div><p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">VIN</p>' +
+            '<p class="text-xs text-gray-500 dark:text-gray-400 font-mono truncate copyable" ' +
+              'onclick="copyToClipboard(\'' + e(vin) + '\')" title="Click to copy">' + vin + '</p></div>' +
+        '</div>' +
+
+      '</div>';
+    }).join('');
+  }
+
+  // ── Charts ────────────────────────────────────────────────────────
+  function renderCharts() {
+    if (!fetchedData.length) return;
+    var c = getThemeColors();
+
+    var modelCounts = {};
+    var revByDate   = {};
+    fetchedData.forEach(function(row) {
+      var m = row.Spec || 'Unknown';
+      modelCounts[m] = (modelCounts[m] || 0) + 1;
+      var d = row['Purchase Date'];
+      if (d) revByDate[d] = (revByDate[d] || 0) + (parseFloat(row.Price) || 0);
+    });
+
+    document.getElementById('modelChartSkeleton').classList.add('hidden');
+    document.getElementById('modelChartWrap').classList.remove('hidden');
+    document.getElementById('revenueChartSkeleton').classList.add('hidden');
+    document.getElementById('revenueChartWrap').classList.remove('hidden');
+
+    if (modelChart) modelChart.destroy();
+    modelChart = new Chart(document.getElementById('modelChart'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(modelCounts),
+        datasets: [{ data: Object.values(modelCounts),
+          backgroundColor:['#6366f1','#8b5cf6','#ec4899','#f43f5e','#f97316','#eab308','#22c55e','#0ea5e9','#3b82f6','#14b8a6'],
+          borderWidth:0, hoverOffset:8 }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: {
+          legend:{ position:'right', labels:{ color:c.text, padding:14, usePointStyle:true, pointStyle:'circle', font:{size:11} } },
+          tooltip:{ backgroundColor:c.ttBg, titleColor:c.ttTitle, bodyColor:c.ttBody, borderColor:c.ttBorder, borderWidth:1, padding:10, cornerRadius:8 }
+        },
+        cutout:'72%'
+      }
+    });
+
+    if (revenueChart) revenueChart.destroy();
+    var sortedDates = Object.keys(revByDate).sort();
+    var ctx  = document.getElementById('revenueChart').getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 0, 240);
+    grad.addColorStop(0, 'rgba(99,102,241,.45)');
+    grad.addColorStop(1, 'rgba(99,102,241,0)');
+
+    revenueChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: sortedDates.map(formatDate),
+        datasets: [{ label:'Revenue', data: sortedDates.map(function(d){ return revByDate[d]; }),
+          borderColor:'#6366f1', backgroundColor:grad, borderWidth:2.5, tension:.4, fill:true,
+          pointBackgroundColor:'#fff', pointBorderColor:'#6366f1', pointBorderWidth:2, pointRadius:4, pointHoverRadius:6 }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        plugins: {
+          legend:{ display:false },
+          tooltip:{ backgroundColor:c.ttBg, titleColor:c.ttTitle, bodyColor:c.ttBody,
+            borderColor:c.ttBorder, borderWidth:1, padding:10, cornerRadius:8,
+            callbacks:{ label: function(ctx){ return formatCurrency(ctx.raw); } } }
+        },
+        scales: {
+          y:{ beginAtZero:true, grid:{ color:c.grid, drawBorder:false },
+              ticks:{ color:c.text, callback:function(v){ return '₹'+(v/1000)+'k'; } } },
+          x:{ grid:{ display:false, drawBorder:false }, ticks:{ color:c.text, maxTicksLimit:7, maxRotation:0 } }
+        }
+      }
+    });
+  }
+
+  // ── Export Excel ──────────────────────────────────────────────────
+  function downloadExcel() {
+    if (!fetchedData.length) { showToast('No data to export', 'error'); return; }
+    try {
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(fetchedData), 'Sales Report');
+      XLSX.writeFile(wb, 'Sales_Report.xlsx');
+      showToast('Excel exported!');
+    } catch(e) { showToast('Excel export failed', 'error'); }
+  }
+
+  // ── PDF Modal ─────────────────────────────────────────────────────
+  function downloadPDF() {
+    if (!fetchedData.length) { showToast('No data to export', 'error'); return; }
+    document.getElementById('pdfModal').classList.add('open');
+  }
+  function closePdfModal() {
+    document.getElementById('pdfModal').classList.remove('open');
+  }
+  document.getElementById('pdfModal').addEventListener('click', function(e) {
+    if (e.target === this) closePdfModal();
+  });
+
+  var allChecked = true;
+  function toggleAllPdfFields() {
+    allChecked = !allChecked;
+    document.querySelectorAll('#pdfFieldList input[type=checkbox]').forEach(function(cb) { cb.checked = allChecked; });
+    document.getElementById('toggleAllBtn').textContent = allChecked ? 'Deselect All' : 'Select All';
+  }
+
+  function generatePdfFromModal() {
+    var selected = {};
+    document.querySelectorAll('#pdfFieldList input[type=checkbox]').forEach(function(cb) {
+      selected[cb.value] = cb.checked;
+    });
+    if (!Object.values(selected).some(Boolean)) { showToast('Select at least one field', 'error'); return; }
+    closePdfModal();
+    setTimeout(function() { buildPDF(selected); }, 80);
+  }
+
+  // ── Build PDF ─────────────────────────────────────────────────────
+  function buildPDF(selected) {
+    var jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!jsPDFCtor) { showToast('PDF library not loaded yet', 'error'); return; }
+
+    showToast('Generating PDF...');
+    setTimeout(function() {
+      try {
+        var doc   = new jsPDFCtor({ orientation:'landscape', unit:'mm', format:'a4' });
+        var pageW = doc.internal.pageSize.getWidth();
+        var pageH = doc.internal.pageSize.getHeight();
+        var now   = new Date();
+
+        var start    = document.getElementById('startDate').value;
+        var end      = document.getElementById('endDate').value;
+        var spec     = (document.getElementById('filterSpec').value     || 'All Models').toUpperCase();
+        var salesman = (document.getElementById('filterSalesman').value || 'All Salesmen').toUpperCase();
+        var branch   = (document.getElementById('filterBranch').value   || 'All Branches').toUpperCase();
+
+        function fmtDT(d) {
+          return formatDate(d.toISOString().split('T')[0]) + ' ' +
+            String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+
+        // Header
+        doc.setFillColor(79,70,229); doc.rect(0,0,pageW,32,'F');
+        doc.setFillColor(124,58,237); doc.circle(pageW-20,16,28,'F');
+        doc.setFillColor(99,102,241); doc.circle(pageW-50,4,16,'F');
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(20); doc.setFont('helvetica','bold');
+        doc.text('PREMIUM SALES REPORT', 12, 14);
+        doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+        doc.setTextColor(199,210,254);
+        doc.text('Advanced Analytics Dashboard', 12, 21);
+        doc.text('Generated: ' + fmtDT(now), 12, 27);
+
+        // Summary boxes
+        var total   = fetchedData.length;
+        var revenue = fetchedData.reduce(function(s,r){ return s + parseFloat(r.Price||0); }, 0);
+        var avg     = total > 0 ? revenue/total : 0;
+        var sumY = 36; var colW = pageW/4;
+        [
+          { label:'TOTAL RECORDS',  value: total.toLocaleString('en-IN'),                        color:[79,70,229]  },
+          { label:'TOTAL REVENUE',  value:'Rs '+Math.round(revenue).toLocaleString('en-IN'),      color:[16,185,129] },
+          { label:'AVG SALE VALUE', value:'Rs '+Math.round(avg).toLocaleString('en-IN'),          color:[168,85,247] },
+          { label:'DATE RANGE',     value: formatDate(start)+' to '+formatDate(end),              color:[59,130,246] },
+        ].forEach(function(box, idx) {
+          var x = idx * colW;
+          doc.setFillColor.apply(doc, box.color); doc.rect(x,sumY,colW-0.5,20,'F');
+          doc.setTextColor(255,255,255);
+          doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.text(box.label, x+4, sumY+6);
+          doc.setFontSize(10); doc.text(String(box.value), x+4, sumY+15, {maxWidth:colW-8});
+        });
+
+        // Filter bar
+        var filterY = sumY + 23;
+        doc.setFillColor(241,245,249); doc.rect(0,filterY,pageW,9,'F');
+        doc.setTextColor(100,116,139); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+        doc.text('FILTERS:  Model: '+spec+'   |   Salesman: '+salesman+'   |   Branch: '+branch, 5, filterY+6);
+
+        // Dynamic columns — weights are relative, widths computed to always fill the page
+        var ALL_COLS = [
+          { key:'date',     header:'DATE',     wt:3,   halign:'center', fn:function(r){ return formatDate(r['Purchase Date']||''); } },
+          { key:'name',     header:'NAME',     wt:4,                    fn:function(r){ return (r.Name||'').toUpperCase(); } },
+          { key:'mob',      header:'MOBILE',   wt:3,                    fn:function(r){ return (r.Mob||'').toUpperCase(); } },
+          { key:'spec',     header:'MODEL',    wt:3,                    fn:function(r){ return (r.Spec||'').toUpperCase(); } },
+          { key:'battery',  header:'BATTERY',  wt:3.5,                  fn:function(r){ return (r.Battery||'').toUpperCase(); } },
+          { key:'price',    header:'PRICE',    wt:2.5, halign:'right', green:true, fn:function(r){ return 'Rs '+Math.round(parseFloat(r.Price||0)).toLocaleString('en-IN'); } },
+          { key:'branch',   header:'BRANCH',   wt:3,                    fn:function(r){ return (r.Branch||'').toUpperCase(); } },
+          { key:'salesman', header:'SALESMAN', wt:3,                    fn:function(r){ return (r.Salesman||'').toUpperCase(); } },
+          { key:'motor',    header:'MOTOR NO', wt:3.5,                  fn:function(r){ return (r['Motor No']||'').toUpperCase(); } },
+          { key:'vin',      header:'VIN',      wt:3.5,                  fn:function(r){ return (r.VIN||'').toUpperCase(); } },
+          { key:'address',  header:'ADDRESS',  wt:6,                    fn:function(r){ return (r.Address||'').replace(/[\r\n]+/g,' ').toUpperCase(); } },
+        ];
+
+        var activeCols = ALL_COLS.filter(function(c){ return selected[c.key]; });
+        var margin = 4;
+        var serialW = 7;
+        var totalTableW = pageW - (margin * 2) - serialW;
+        var totalWeight = activeCols.reduce(function(s, c){ return s + c.wt; }, 0);
+
+        activeCols.forEach(function(col) {
+          col.computedW = Math.floor((col.wt / totalWeight) * totalTableW * 10) / 10;
+        });
+
+        var sortedForPdf = fetchedData.slice().sort(function(a, b) {
+          var da = new Date(a['Purchase Date'] || 0);
+          var db = new Date(b['Purchase Date'] || 0);
+          return da - db; // Ascending: oldest on top
+        });
+
+        var head = [['#'].concat(activeCols.map(function(c){ return c.header; }))];
+        var body = sortedForPdf.map(function(row, i) {
+          return [i+1].concat(activeCols.map(function(c){ return c.fn(row); }));
+        });
+        
+        var colStyles = { 0:{ halign:'center', cellWidth: serialW } };
+        activeCols.forEach(function(col, i) {
+          colStyles[i+1] = { cellWidth: col.computedW };
+          if (col.halign) colStyles[i+1].halign = col.halign;
+        });
+        doc.autoTable({
+          head: head, body: body,
+          startY: filterY + 13,
+          margin: { left:4, right:4 },
+          styles: { fontSize:6.5, cellPadding:2.2, font:'helvetica', textColor:[30,41,59], lineColor:[226,232,240], lineWidth:.1, overflow:'linebreak' },
+          headStyles: { fillColor:[79,70,229], textColor:[255,255,255], fontStyle:'bold', fontSize:7, halign:'center' },
+          alternateRowStyles: { fillColor:[238,242,255] },
+          columnStyles: colStyles,
+          didParseCell: function(data) {
+            var col = activeCols[data.column.index - 1];
+            if (col && col.green && data.section === 'body') {
+              data.cell.styles.textColor = [5,150,105];
+              data.cell.styles.fontStyle = 'bold';
+            }
+          },
+          didDrawPage: function() {
+            var pg  = doc.internal.getCurrentPageInfo().pageNumber;
+            var tot = doc.internal.getNumberOfPages();
+            doc.setFontSize(6.5); doc.setTextColor(148,163,184); doc.setFont('helvetica','normal');
+            doc.text('Page '+pg+' of '+tot, pageW/2, pageH-3, {align:'center'});
+            doc.text('Premium Sales Dashboard  |  Confidential', 4, pageH-3);
+            doc.text('Generated '+formatDate(now.toISOString().split('T')[0]), pageW-4, pageH-3, {align:'right'});
+          }
+        });
+
+        doc.save('Sales_Report_'+start+'_to_'+end+'.pdf');
+        showToast('PDF saved successfully!');
+      } catch(err) {
+        console.error('PDF error:', err);
+        showToast('PDF error: '+err.message, 'error');
+      }
+    }, 50);
+  }
+
+  // ── Sort buttons ──────────────────────────────────────────────────
+  function setupSortButtons() {
+    var btnDesc = document.getElementById('sortDesc');
+    var btnAsc  = document.getElementById('sortAsc');
+    function updateSort(order) {
+      sortOrder = order;
+      btnDesc.classList.toggle('active', order === 'desc');
+      btnAsc.classList.toggle('active',  order === 'asc');
+      sortDataByDate();
+      renderCards();
     }
+    btnDesc.addEventListener('click', function() { if (sortOrder !== 'desc') updateSort('desc'); });
+    btnAsc.addEventListener('click',  function() { if (sortOrder !== 'asc')  updateSort('asc'); });
+  }
 
-    function showCards() {
-      const container = document.getElementById("salesCards");
-      container.innerHTML = "";
-
-      fetchedData.forEach(row => {
-        const card = document.createElement("div");
-        card.className = "bg-white p-4 rounded shadow space-y-2";
-        card.innerHTML = `
-          <div><b>📅 Purchase:</b> ${row["Purchase Date"]}</div>
-          <div><b>👤 Name:</b> ${row.Name}</div>
-          <div><b>📞 Mobile:</b> <a href="tel:${row.Mob}" class="text-blue-600 underline">${row.Mob}</a></div>
-          <div><b>💡 Model:</b> ${row.Spec}</div>
-          <div><b>🔋 Battery:</b> ${row.Battery}</div>
-          <div><b>💰 Price:</b> ₹${row.Price}</div>
-          <div><b>🛠️ Motor No:</b> ${row["Motor No"]}</div>
-          <div><b>🚗 VIN:</b> ${row.VIN}</div>
-          <div><b>🏢 Branch:</b> ${row.Branch}</div>
-          <div><b>🧑‍💼 Salesman:</b> ${row.Salesman}</div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function downloadExcel() {
-      if (fetchedData.length === 0) return alert("No data to export.");
-      const sheet = XLSX.utils.json_to_sheet(fetchedData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, sheet, "Sales Report");
-      XLSX.writeFile(wb, "sales_report.xlsx");
-    }
-  </script></body>
+  // ── Init ──────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', function() {
+    var now = new Date();
+    function fmt(d) { return d.toISOString().split('T')[0]; }
+    document.getElementById('startDate').value = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
+    document.getElementById('endDate').value   = fmt(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    setupSortButtons();
+    loadData();
+  });
+</script>
+</body>
 </html>
