@@ -1,339 +1,381 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sales Form</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Custom CSS enhancements */
-    body {
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      min-height: 100vh;
-    }
-    
-    .form-container {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s ease;
-    }
-    
-    .form-container:hover {
-      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
-    }
-    
-    .form-title {
-      color: #2563eb;
-      position: relative;
-      padding-bottom: 8px;
-    }
-    
-    .form-title:after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 60px;
-      height: 3px;
-      background: #2563eb;
-      border-radius: 3px;
-    }
-    
-    .form-input {
-      transition: all 0.3s ease;
-      border: 1px solid #e2e8f0;
-    }
-    
-    .form-input:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-    
-    .submit-btn {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-      transition: all 0.3s ease;
-      letter-spacing: 0.5px;
-      font-weight: 500;
-    }
-    
-    .submit-btn:hover:not(:disabled) {
-      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-      transform: translateY(-2px);
-    }
-    
-    .submit-btn:disabled {
-      background: #94a3b8;
-      cursor: not-allowed;
-      opacity: 0.8;
-    }
-    
-    .dialog-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-    
-    .dialog-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    .dialog-box {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      transform: translateY(20px);
-      transition: all 0.3s ease;
-    }
-    
-    .dialog-overlay.active .dialog-box {
-      transform: translateY(0);
-    }
-    
-    .success-dialog {
-      border-top: 4px solid #10b981;
-    }
-    
-    .error-dialog {
-      border-top: 4px solid #ef4444;
-    }
-    
-    .dialog-title {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-    
-    .success-dialog .dialog-title {
-      color: #10b981;
-    }
-    
-    .error-dialog .dialog-title {
-      color: #ef4444;
-    }
-    
-    .dialog-content {
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
-    
-    .dialog-btn {
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .success-dialog .dialog-btn {
-      background: #10b981;
-      color: white;
-    }
-    
-    .error-dialog .dialog-btn {
-      background: #ef4444;
-      color: white;
-    }
-    
-    .dialog-btn:hover {
-      opacity: 0.9;
-    }
-    
-    .loading-spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s ease-in-out infinite;
-      margin-right: 8px;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sales Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom CSS enhancements */
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .form-container:hover {
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .form-title {
+            color: #2563eb;
+            position: relative;
+            padding-bottom: 8px;
+        }
+
+        .form-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: #2563eb;
+            border-radius: 3px;
+        }
+
+        .form-input {
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .form-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .dialog-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .dialog-box {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .dialog-overlay.active .dialog-box {
+            transform: translateY(0);
+        }
+
+        .success-dialog {
+            border-top: 4px solid #10b981;
+        }
+
+        .error-dialog {
+            border-top: 4px solid #ef4444;
+        }
+
+        .dialog-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .success-dialog .dialog-title {
+            color: #10b981;
+        }
+
+        .error-dialog .dialog-title {
+            color: #ef4444;
+        }
+
+        .dialog-content {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .dialog-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .success-dialog .dialog-btn {
+            background: #10b981;
+            color: white;
+        }
+
+        .error-dialog .dialog-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .dialog-btn:hover {
+            opacity: 0.9;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
+
 <body class="p-4">
-  <div class="max-w-2xl mx-auto form-container p-6 space-y-6">
-    <h2 class="text-2xl font-bold text-center form-title">Sales Entry Form</h2>
-    <form id="salesForm" class="space-y-4">
-      <input class="w-full border p-3 rounded-lg form-input" type="text" id="name" placeholder="Name" required>
-      <input class="w-full border p-3 rounded-lg form-input" type="text" id="address" placeholder="Address" required>
-      <input class="w-full border p-3 rounded-lg form-input" type="text" id="mob" placeholder="Mobile" required>
-      <input class="w-full border p-3 rounded-lg form-input" type="text" id="price" placeholder="Price" required>
-      <input class="w-full border p-3 rounded-lg form-input" type="text" id="vin" placeholder="VIN Number" required>
-      <input class="w-full border p-3 rounded-lg form-input" type="text" id="motor" placeholder="Motor Number" required>
+    <div class="max-w-2xl mx-auto form-container p-6 space-y-6">
+        <h2 class="text-2xl font-bold text-center form-title">Sales Entry Form</h2>
+        <form id="salesForm" class="space-y-4">
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="name" placeholder="Name" required>
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="address" placeholder="Address"
+                required>
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="mob" placeholder="Mobile" required>
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="price" placeholder="Price" required>
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="vin" placeholder="VIN Number"
+                required>
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="motor" placeholder="Motor Number"
+                required>
 
-      <select id="branch" class="w-full border p-3 rounded-lg form-input" required>
-        <option value="">Select Branch</option>
-        <option value="ANGADIPPURAM">ANGADIPPURAM</option>
-        <option value="MANJERI">MANJERI</option>
-        <option value="UNIVERSITY">UNIVERSITY</option>
-        <option value="NILAMBUR">NILAMBUR</option>
-      </select>
+            <select id="branch" class="w-full border p-3 rounded-lg form-input" required>
+                <option value="">Select Branch</option>
+                <option value="ANGADIPPURAM">ANGADIPPURAM</option>
+                <option value="MANJERI">MANJERI</option>
+                <option value="UNIVERSITY">UNIVERSITY</option>
+                <option value="NILAMBUR">NILAMBUR</option>
+            </select>
 
-      <select id="salesman" class="w-full border p-3 rounded-lg form-input" required>
-        <option value="">Select Salesman</option>
-        <option value="ABINU TP">ABINU TP</option>
-        <option value="RAMSHAD">RAMSHAD</option>
-        <option value="UNIVERSITY">UNIVERSITY</option>
-        <option value="NILAMBUR">NILAMBUR</option>
-<option value="AKSA">AKSA</option>
-      </select>
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="salesman" list="salesmanOptions" placeholder="Select or type Salesman" required>
+            <datalist id="salesmanOptions">
+                <option value="RAMSHAD">
+                <option value="UNIVERSITY">
+                <option value="NILAMBUR">
+            </datalist>
 
-      <select id="battery" class="w-full border p-3 rounded-lg form-input" required>
-        <option value="">Select Battery</option>
-        <option value="GRAPHENE 48V28AH">GRAPHENE 48V28AH </option>
-        <option value="GRAPHENE 60V32AH">GRAPHENE 60V32AH</option>
-        <option value="LITHIUM ION 60V32AH">LITHIUM 60V32AH</option>
-        <option value="LITHIUM ION 72V36AH">LITHIUM ION 72V36AH</option>
-        <option value="LITHIUM PHOSPHATE 72V36AH">LITHIUM PHOSPHATE 72V36AH</option>
-      </select>
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="battery" list="batteryOptions" placeholder="Select or type Battery" required>
+            <datalist id="batteryOptions">
+                <option value="GRAPHENE 48V28AH">
+                <option value="GRAPHENE 60V32AH">
+                <option value="LITHIUM ION 60V32AH">
+                <option value="LITHIUM ION 72V36AH">
+                <option value="LITHIUM PHOSPHATE 72V36AH">
+            </datalist>
 
-      <select id="spec" class="w-full border p-3 rounded-lg form-input" required>
-        <option value="">Select Model</option>
-        <option value="RIDER">RIDER</option>
-        <option value="CUTIE SUPER">CUTIE SUPER</option>
-        <option value="ROYAL">ROYAL</option>
-        <option value="LEGEND R">LEGEND R</option>
-        <option value="LEGEND S">LEGEND S</option>
-        <option value="LEGEND SUPER S">LEGEND SUPER S</option>
-        <option value="BMW">BMW</option>
-        <option value="HANDICAPPED">HANDICAPPED</option>
-        <option value="2W LOADER">2W LOADER</option>
-        <option value="3W LOADER">3W LOADER</option>
-      </select>
+            <select id="spec" class="w-full border p-3 rounded-lg form-input" required>
+                <option value="">Select Model</option>
+                <option value="RIDER">RIDER</option>
+                <option value="CUTIE SUPER">CUTIE SUPER</option>
+                <option value="ROYAL">ROYAL</option>
+                <option value="LEGEND R">LEGEND R</option>
+                <option value="LEGEND S">LEGEND S</option>
+                <option value="LEGEND SUPER S">LEGEND SUPER S</option>
+                <option value="BMW">BMW</option>
+                <option value="HANDICAPPED">HANDICAPPED</option>
+                <option value="2W LOADER">2W LOADER</option>
+                <option value="3W LOADER">3W LOADER</option>
+            </select>
 
-      <button type="submit" id="submitBtn" class="w-full text-white py-3 rounded-lg submit-btn">
-        Add Sale
-      </button>
-    </form>
-  </div>
+            <select id="finance" class="w-full border p-3 rounded-lg form-input" required>
+                <option value="">Select Means of Finance</option>
+                <option value="Loan">Loan</option>
+                <option value="Cash">Cash</option>
+                <option value="UPI">UPI</option>
+            </select>
 
-  <!-- Dialog Box -->
-  <div id="dialogOverlay" class="dialog-overlay">
-    <div id="dialogBox" class="dialog-box">
-      <div id="dialogTitle" class="dialog-title"></div>
-      <div id="dialogContent" class="dialog-content"></div>
-      <button id="dialogClose" class="dialog-btn">OK</button>
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="vehicle_company" placeholder="Vehicle Company">
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="battery_company" placeholder="Battery Company Name">
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="battery_serial" placeholder="Battery Serial Number">
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="color" list="colorOptions" placeholder="Color (Select or type custom)">
+            <datalist id="colorOptions">
+                <option value="Black">
+                <option value="White">
+                <option value="Silver">
+                <option value="Grey">
+                <option value="Red">
+                <option value="Blue">
+                <option value="Green">
+            </datalist>
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="charger_company" placeholder="Charger Company">
+            <input class="w-full border p-3 rounded-lg form-input" type="text" id="charger_serial" placeholder="Charger Serial Number">
+            <textarea class="w-full border p-3 rounded-lg form-input" id="remark" placeholder="Remark If any"></textarea>
+
+            <button type="submit" id="submitBtn" class="w-full text-white py-3 rounded-lg submit-btn">
+                Add Sale
+            </button>
+        </form>
     </div>
-  </div>
 
-  <script>
-    const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
-    const TABLE_ID = "615787";
-    const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
+    <!-- Dialog Box -->
+    <div id="dialogOverlay" class="dialog-overlay">
+        <div id="dialogBox" class="dialog-box">
+            <div id="dialogTitle" class="dialog-title"></div>
+            <div id="dialogContent" class="dialog-content"></div>
+            <button id="dialogClose" class="dialog-btn">OK</button>
+        </div>
+    </div>
 
-    // Get DOM elements
-    const submitBtn = document.getElementById('submitBtn');
-    const dialogOverlay = document.getElementById('dialogOverlay');
-    const dialogBox = document.getElementById('dialogBox');
-    const dialogTitle = document.getElementById('dialogTitle');
-    const dialogContent = document.getElementById('dialogContent');
-    const dialogClose = document.getElementById('dialogClose');
+    <script>
+        const API_KEY = "jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw";
+        const TABLE_ID = "615787";
+        const API_URL = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true`;
 
-    // Close dialog function
-    function closeDialog() {
-      dialogOverlay.classList.remove('active');
-    }
+        // Get DOM elements
+        const submitBtn = document.getElementById('submitBtn');
+        const dialogOverlay = document.getElementById('dialogOverlay');
+        const dialogBox = document.getElementById('dialogBox');
+        const dialogTitle = document.getElementById('dialogTitle');
+        const dialogContent = document.getElementById('dialogContent');
+        const dialogClose = document.getElementById('dialogClose');
 
-    // Show dialog function
-    function showDialog(type, title, content) {
-      dialogBox.className = 'dialog-box ' + type + '-dialog';
-      dialogTitle.textContent = title;
-      dialogContent.innerHTML = content;
-      dialogOverlay.classList.add('active');
-    }
+        // Close dialog function
+        function closeDialog() {
+            dialogOverlay.classList.remove('active');
+        }
 
-    // Close dialog when clicking the button or outside
-    dialogClose.addEventListener('click', closeDialog);
-    dialogOverlay.addEventListener('click', (e) => {
-      if (e.target === dialogOverlay) {
-        closeDialog();
-      }
-    });
+        // Show dialog function
+        function showDialog(type, title, content) {
+            dialogBox.className = 'dialog-box ' + type + '-dialog';
+            dialogTitle.textContent = title;
+            dialogContent.innerHTML = content;
+            dialogOverlay.classList.add('active');
+        }
 
-    async function uploadToBaserow(data) {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Token ${API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-      });
+        // Close dialog when clicking the button or outside
+        dialogClose.addEventListener('click', closeDialog);
+        dialogOverlay.addEventListener('click', (e) => {
+            if (e.target === dialogOverlay) {
+                closeDialog();
+            }
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Upload failed");
-      }
+        async function uploadToBaserow(data) {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    Authorization: `Token ${API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
 
-      return response.json();
-    }
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Upload failed");
+            }
 
-    document.getElementById("salesForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
+            return response.json();
+        }
 
-      // Disable submit button
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
+        document.getElementById("salesForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-      const formData = {
-        Name: document.getElementById("name").value.trim(),
-        Address: document.getElementById("address").value.trim(),
-        Mob: document.getElementById("mob").value.trim(),
-        Price: document.getElementById("price").value.trim(),
-        VIN: document.getElementById("vin").value.trim(),
-        "Motor No": document.getElementById("motor").value.trim(),
-        Branch: document.getElementById("branch").value,
-        Salesman: document.getElementById("salesman").value,
-        Battery: document.getElementById("battery").value,
-        Spec: document.getElementById("spec").value,
-        "Purchase Date": new Date().toISOString().split("T")[0]
-      };
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
 
-      try {
-        const result = await uploadToBaserow(formData);
-        
-        // Show success dialog
-        showDialog(
-          'success', 
-          '✅ Sale Added Successfully!',
-          `<div><b>Name:</b> ${formData.Name}</div>
+            const formData = {
+                Name: document.getElementById("name").value.trim().toUpperCase(),
+                Address: document.getElementById("address").value.trim().toUpperCase(),
+                Mob: document.getElementById("mob").value.trim().toUpperCase(),
+                Price: document.getElementById("price").value.trim().toUpperCase(),
+                VIN: document.getElementById("vin").value.trim().toUpperCase(),
+                "Motor No": document.getElementById("motor").value.trim().toUpperCase(),
+                Branch: document.getElementById("branch").value.toUpperCase(),
+                Salesman: document.getElementById("salesman").value.toUpperCase(),
+                Battery: document.getElementById("battery").value.toUpperCase(),
+                Spec: document.getElementById("spec").value.toUpperCase(),
+                "Purchase Date": new Date().toISOString().split("T")[0]
+            };
+
+            const additionalData = {
+                "Means of Finance": document.getElementById("finance").value.toUpperCase(),
+                "Vehicle Company": document.getElementById("vehicle_company").value.trim().toUpperCase(),
+                "Battery Company Name": document.getElementById("battery_company").value.trim().toUpperCase(),
+                "Battery Serial Number": document.getElementById("battery_serial").value.trim().toUpperCase(),
+                "Color": document.getElementById("color").value.trim().toUpperCase(),
+                "Charger Company": document.getElementById("charger_company").value.trim().toUpperCase(),
+                "Charger Serial Number": document.getElementById("charger_serial").value.trim().toUpperCase(),
+                "Remark": document.getElementById("remark").value.trim().toUpperCase()
+            };
+            formData.Data = JSON.stringify(additionalData);
+
+            try {
+                const result = await uploadToBaserow(formData);
+
+                // Show success dialog
+                showDialog(
+                    'success',
+                    '✅ Sale Added Successfully!',
+                    `<div><b>Name:</b> ${formData.Name}</div>
            <div><b>Branch:</b> ${formData.Branch}</div>
            <div><b>Salesman:</b> ${formData.Salesman}</div>
            <div><b>Battery:</b> ${formData.Battery}</div>
            <div><b>Model:</b> ${formData.Spec}</div>`
-        );
-        
-        // Reset form
-        document.getElementById("salesForm").reset();
-      } catch (error) {
-        // Show error dialog
-        showDialog('error', '❌ Error', error.message);
-      } finally {
-        // Re-enable submit button
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Add Sale';
-      }
-    });
-  </script>
+                );
+
+                // Reset form
+                document.getElementById("salesForm").reset();
+            } catch (error) {
+                // Show error dialog
+                showDialog('error', '❌ Error', error.message);
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Sale';
+            }
+        });
+    </script>
 </body>
+
 </html>
