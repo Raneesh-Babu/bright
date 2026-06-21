@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="Customer Vehicle Portal"/>
-  <title>Customer Vehicle Portal</title>
+  <meta name="description" content="Premium Admin Dashboard for managing sales data."/>
+  <title>Premium Admin Dashboard</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -20,6 +20,7 @@
           fontFamily: { sans: ['Outfit', 'sans-serif'] },
           colors: {
             brand: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',500:'#6366f1',600:'#4f46e5',700:'#4338ca',900:'#312e81' },
+            dark:  { bg:'#0f172a', card:'#1e293b', border:'#334155' }
           }
         }
       }
@@ -32,207 +33,156 @@
     body { margin:0; min-height:100vh; background:#f1f5f9; color:#334155; transition:background .3s,color .3s; }
     html.dark body { background:#0f172a; color:#f1f5f9; }
 
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+    html.dark ::-webkit-scrollbar-thumb { background:#475569; }
+
     .glass-card {
       background:rgba(255,255,255,.82);
       backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
       border:1px solid rgba(255,255,255,.6);
       box-shadow:0 4px 24px rgba(0,0,0,.06);
       border-radius:1rem;
+      transition:box-shadow .25s,transform .25s;
     }
     html.dark .glass-card { background:rgba(30,41,59,.78); border:1px solid rgba(255,255,255,.07); box-shadow:0 4px 24px rgba(0,0,0,.35); }
+    .glass-card:hover { box-shadow:0 12px 32px rgba(0,0,0,.12); transform:translateY(-2px); }
+    html.dark .glass-card:hover { box-shadow:0 12px 32px rgba(0,0,0,.45); }
 
     .gradient-bg {
       background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);
-      position:relative; overflow:hidden;
+      border-radius:1rem; position:relative; overflow:hidden;
     }
     .gradient-bg::before {
       content:''; position:absolute; inset:-50%;
       background:radial-gradient(circle at 70% 30%,rgba(255,255,255,.12) 0%,transparent 60%);
     }
 
-    .timeline-dot {
-      width: 12px; height: 12px; border-radius: 50%;
-      background-color: #6366f1; border: 3px solid #e0e7ff;
-      position: absolute; left: -6px; top: 6px;
+    .form-input {
+      width:100%; border-radius:.75rem; border:1px solid #e2e8f0;
+      background:rgba(255,255,255,.6); padding:.6rem .9rem;
+      font-size:.875rem; font-family:'Outfit',sans-serif; color:#334155;
+      outline:none; transition:border-color .2s,box-shadow .2s,background .2s;
     }
-    html.dark .timeline-dot { border-color: #312e81; }
+    .form-input:focus { border-color:#6366f1; background:#fff; box-shadow:0 0 0 3px rgba(99,102,241,.15); }
+    html.dark .form-input { border-color:#334155; background:rgba(30,41,59,.6); color:#f1f5f9; }
+    html.dark .form-input:focus { border-color:#6366f1; background:#1e293b; }
 
-    /* Modal styles for preview */
-    #previewModal.open { opacity: 1; pointer-events: auto; }
+    #toast {
+      position:fixed; bottom:1.5rem; right:1.5rem; z-index:300;
+      min-width:200px; max-width:340px;
+      padding:.85rem 1.25rem; border-radius:.75rem;
+      font-size:.875rem; font-weight:500; color:#fff; background:#10b981;
+      box-shadow:0 10px 25px rgba(0,0,0,.15);
+      opacity:0; transform:translateY(16px);
+      transition:opacity .3s,transform .3s; pointer-events:none;
+    }
+    #toast.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+
+    .stat-card {
+      border-radius:1rem; padding:1.1rem 1.25rem;
+      position:relative; overflow:hidden;
+      transition:transform .25s,box-shadow .25s;
+    }
+    .stat-card:hover { transform:translateY(-3px); }
+    .stat-card .orb {
+      position:absolute; width:80px; height:80px; border-radius:50%;
+      top:-20px; right:-20px; transition:transform .4s;
+    }
+    .stat-card:hover .orb { transform:scale(1.6); }
+
+    /* Modal styles */
+    #recordModal {
+      position:fixed; inset:0; z-index:500;
+      background:rgba(15,23,42,.65);
+      backdrop-filter:blur(5px);
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity .25s;
+    }
+    #recordModal.open { opacity:1; pointer-events:auto; }
+    #recordModalBox {
+      background:#fff; border-radius:1.25rem; padding:2rem;
+      width:100%; max-width:600px; margin:1rem;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow:0 24px 48px rgba(0,0,0,.25);
+      transform:translateY(20px); transition:transform .25s;
+    }
+    #recordModal.open #recordModalBox { transform:translateY(0); }
+    html.dark #recordModalBox { background:#1e293b; color:#f1f5f9; }
+
+    /* Table row hover */
+    tbody tr { transition: background .2s; }
+    tbody tr:hover { background: rgba(99,102,241,0.05); }
+    html.dark tbody tr:hover { background: rgba(99,102,241,0.1); }
   </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body class="pb-10">
+<body class="p-3 sm:p-5 lg:p-8">
+<div class="max-w-7xl mx-auto space-y-5">
 
   <!-- Header -->
-  <header class="gradient-bg p-6 shadow-lg text-white text-center">
-    <div class="max-w-4xl mx-auto flex justify-between items-center">
-      <div class="text-left">
-        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Customer Portal</h1>
-        <p class="text-indigo-200 mt-1 text-sm font-medium">Your Vehicle Details & Service History</p>
-      </div>
-      <button id="themeToggle" class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-colors">
-        <i id="themeIcon" class="fas fa-moon w-5"></i>
+  <header class="gradient-bg p-5 shadow-lg text-white relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+      <p class="text-indigo-200 mt-0.5 text-sm font-medium">Manage and Analyze Sales Data</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="dash.html" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors border border-white/20">
+        <i class="fas fa-chart-bar"></i> View Main Dash
+      </a>
+      <button id="themeToggle" aria-label="Toggle Dark Mode"
+        class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-colors">
+        <i id="themeIcon" class="fas fa-moon text-lg w-5 text-center"></i>
       </button>
     </div>
   </header>
 
-  <div class="max-w-4xl mx-auto mt-8 px-4">
-    
-    <!-- Search View -->
-    <div id="searchView" class="hidden">
-      <div class="glass-card p-8 max-w-md mx-auto text-center">
-        <i class="fas fa-search text-4xl text-indigo-500 mb-4"></i>
-        <h2 class="text-xl font-bold mb-2">Find Your Vehicle</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Enter your BSA Invoice Number to view your details.</p>
-        <form onsubmit="searchVehicle(event)" class="flex flex-col gap-3">
-          <input type="text" id="searchInput" placeholder="e.g. BSA-171895689" class="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 focus:outline-none focus:border-indigo-500 transition-colors text-center font-bold tracking-wider uppercase">
-          <button type="submit" id="searchBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition-colors">
-            View Details
-          </button>
-        </form>
-        <p id="searchError" class="text-red-500 text-sm mt-3 hidden">Vehicle not found. Please check the number.</p>
+  <!-- Stats -->
+  <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <!-- Stats will be loaded here -->
+  </div>
+
+  <!-- Data Management Table -->
+  <div class="glass-card p-5">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+      <h2 class="font-bold text-lg text-gray-800 dark:text-gray-100"><i class="fas fa-database text-indigo-500 mr-2"></i>Sales Records Database</h2>
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <button onclick="loadData()" id="refreshBtn" class="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-xl font-semibold text-sm transition-colors shadow-sm">
+          <i class="fas fa-sync-alt" id="refreshIcon"></i> Refresh
+        </button>
+        <button onclick="openModal()" class="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-semibold text-sm shadow-md hover:-translate-y-0.5 transition-all">
+          <i class="fas fa-plus"></i> Add New Record
+        </button>
       </div>
     </div>
 
-    <!-- Loading View -->
-    <div id="loadingView" class="text-center py-20 hidden">
-      <i class="fas fa-circle-notch fa-spin text-4xl text-indigo-500 mb-4"></i>
-      <h2 class="text-xl font-bold text-gray-700 dark:text-gray-300">Loading your data...</h2>
-    </div>
-
-    <!-- Details View -->
-    <div id="detailsView" class="hidden space-y-6">
-      
-      <!-- Top Overview -->
-      <div class="glass-card p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <div class="flex flex-wrap items-center gap-3">
-            <h2 class="text-2xl font-bold text-gray-800 dark:text-white" id="cvName">Customer Name</h2>
-            <span class="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 px-3 py-1 rounded-full text-xs font-semibold border border-gray-200 dark:border-gray-700" id="cvPhone"><i class="fas fa-phone mr-1"></i> N/A</span>
-          </div>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-2"><i class="fas fa-calendar-alt mr-1"></i> Purchased on <span id="cvDate" class="font-semibold text-gray-700 dark:text-gray-200"></span></p>
-        </div>
-        <div class="text-left sm:text-right mt-4 sm:mt-0">
-          <p class="text-xs text-gray-400 uppercase tracking-widest font-bold">Invoice Number</p>
-          <p class="text-lg font-bold text-indigo-600 dark:text-indigo-400 font-mono bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded border border-indigo-100 dark:border-indigo-800/50 inline-block mt-1 mb-3" id="cvInvoice">BSA-XXXXX</p>
-          
-          <button onclick="downloadCard()" class="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg transition-colors flex items-center justify-center gap-2 text-sm ml-auto">
-            <i class="fas fa-id-card"></i> Download ID Card
-          </button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        <!-- Vehicle Specs -->
-        <div class="glass-card p-6">
-          <h3 class="text-lg font-bold text-gray-800 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3 mb-4"><i class="fas fa-motorcycle text-indigo-500 mr-2"></i>Vehicle Specs</h3>
-          <ul class="space-y-3">
-            <li class="flex justify-between items-center border-b border-gray-50 dark:border-gray-700/50 pb-2">
-              <span class="text-sm text-gray-500">Branch</span>
-              <span class="text-sm font-bold text-gray-800 dark:text-gray-200" id="specBranch">-</span>
-            </li>
-            <li class="flex justify-between items-center border-b border-gray-50 dark:border-gray-700/50 pb-2">
-              <span class="text-sm text-gray-500">Model</span>
-              <span class="text-sm font-bold text-gray-800 dark:text-gray-200" id="specModel">-</span>
-            </li>
-            <li class="flex justify-between items-center border-b border-gray-50 dark:border-gray-700/50 pb-2">
-              <span class="text-sm text-gray-500">Color</span>
-              <span class="text-sm font-bold text-gray-800 dark:text-gray-200" id="specColor">-</span>
-            </li>
-            <li class="flex justify-between items-center border-b border-gray-50 dark:border-gray-700/50 pb-2">
-              <span class="text-sm text-gray-500">Battery</span>
-              <span class="text-sm font-bold text-gray-800 dark:text-gray-200" id="specBattery">-</span>
-            </li>
-            <li class="flex justify-between items-center border-b border-gray-50 dark:border-gray-700/50 pb-2">
-              <span class="text-sm text-gray-500">Battery Company</span>
-              <span class="text-sm font-bold text-gray-800 dark:text-gray-200" id="specBatteryCompany">-</span>
-            </li>
-            <li class="flex justify-between items-center border-b border-gray-50 dark:border-gray-700/50 pb-2">
-              <span class="text-sm text-gray-500">Motor No.</span>
-              <span class="text-sm font-bold text-gray-800 dark:text-gray-200" id="specMotor">-</span>
-            </li>
-            <li class="flex justify-between items-center">
-              <span class="text-sm text-gray-500">VIN</span>
-              <span class="text-sm font-bold text-gray-800 dark:text-gray-200" id="specVin">-</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Warranty Dashboard -->
-        <div class="glass-card p-6">
-          <h3 class="text-lg font-bold text-gray-800 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3 mb-4"><i class="fas fa-shield-alt text-emerald-500 mr-2"></i>Warranty Status</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="warrantyContainer">
-            <!-- Populated via JS -->
-          </div>
-          <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700 text-center" id="invoiceBtnContainer">
-            <!-- Invoice Button -->
-          </div>
-
-      <!-- Additional Details -->
-      <div class="glass-card p-6">
-        <h3 class="text-lg font-bold text-gray-800 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3 mb-4"><i class="fas fa-info-circle text-blue-500 mr-2"></i>Additional Details</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          <div class="md:col-span-2">
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-1">Address</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-all" id="specAddress">-</p>
-          </div>
-          <div class="md:col-span-2">
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-1">Means of Finance</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-all" id="specFinance">-</p>
-          </div>
-          <div class="md:col-span-2">
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-1">Charger Company</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-gray-200" id="specChargerCompany">-</p>
-          </div>
-          <div class="md:col-span-2">
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-1">Charger Serial</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-gray-200" id="specChargerSerial">-</p>
-          </div>
-          <div class="sm:col-span-2 md:col-span-4">
-            <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-1">Remark</p>
-            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-all" id="specRemark">-</p>
-          </div>
-        </div>
-      </div>
-        </div>
-
-      </div>
-
-      <!-- Vehicle Gallery -->
-      <div id="galleryView" class="hidden">
-        <h3 class="text-lg font-bold text-gray-800 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3 mb-4"><i class="fas fa-camera text-indigo-500 mr-2"></i>Vehicle Gallery</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" id="galleryContainer">
-           <!-- Populated via JS -->
-        </div>
-      </div>
-
-      <!-- Service History Timeline -->
-      <div class="glass-card p-6">
-        <h3 class="text-lg font-bold text-gray-800 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3 mb-4"><i class="fas fa-tools text-amber-500 mr-2"></i>Service History</h3>
-        <div class="relative pl-4 border-l-2 border-indigo-100 dark:border-indigo-900/50 space-y-6" id="historyTimeline">
-          <!-- Populated via JS -->
-        </div>
-      </div>
-
+    <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
+      <table class="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+        <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800 text-gray-400 border-b border-gray-100 dark:border-gray-700">
+          <tr>
+            <th class="p-4 font-semibold">Date</th>
+            <th class="p-4 font-semibold">Customer Name</th>
+            <th class="p-4 font-semibold">Model</th>
+            <th class="p-4 font-semibold">Price</th>
+            <th class="p-4 font-semibold">Branch</th>
+            <th class="p-4 font-semibold">Salesman</th>
+            <th class="p-4 font-semibold text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="divide-y divide-gray-100 dark:divide-gray-700/50">
+          <tr><td colspan="7" class="p-8 text-center text-gray-400">Loading data...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- File Preview Modal -->
-  <div id="previewModal" class="fixed inset-0 z-[600] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-    <div class="bg-white dark:bg-slate-800 rounded-xl w-full max-w-5xl mx-4 shadow-2xl flex flex-col max-h-[95vh]">
-      <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700">
-        <h3 id="previewTitle" class="font-bold text-gray-800 dark:text-white truncate pr-4 text-lg">Preview</h3>
-        <button onclick="closePreview()" class="text-gray-500 hover:text-gray-700 dark:bg-slate-700 dark:text-gray-300 dark:hover:text-white rounded-lg transition-colors shrink-0 p-2 w-8 h-8 flex items-center justify-center"><i class="fas fa-times"></i></button>
-      </div>
-      <div id="previewContainer" class="p-4 flex-1 overflow-auto bg-gray-50 dark:bg-slate-900/50 flex items-center justify-center min-h-[50vh]">
-        <!-- Image or Iframe injected here -->
-      </div>
-    </div>
-  </div>
+</div>
 
-  <!-- Hidden ID Card Template for PDF -->
-  <div id="pdfCardWrapper" style="display:none;">
+<div id="pdfCardWrapper" style="display:none;">
     <div id="pdfCard" style="width: 856px; background: transparent;">
       <!-- FRONT SIDE -->
       <div id="pdfFront" style="width: 856px; height: 540px; background: white; color: #1e293b; padding: 0; position: relative; overflow: hidden; font-family: 'Outfit', sans-serif;">
@@ -323,394 +273,841 @@
     </div>
   </div>
 
-  <script>
-    // ── Config ──────────────────────────────────────────────────────
-    const API_KEY  = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
-    const TABLE_ID = '615787';
-    const API_URL  = 'https://api.baserow.io/api/database/rows/table/' + TABLE_ID + '/?user_field_names=true';
+  
+<!-- Toast -->
+<div id="toast"></div>
 
-    let currentRecordData = null;
+<!-- File Preview Modal -->
+<div id="previewModal" class="fixed inset-0 z-[600] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+  <div class="bg-white dark:bg-slate-800 rounded-xl w-full max-w-5xl mx-4 shadow-2xl flex flex-col max-h-[95vh]">
+    <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700">
+      <h3 id="previewTitle" class="font-bold text-gray-800 dark:text-white truncate pr-4 text-lg">Preview</h3>
+      <button onclick="closePreview()" class="text-gray-500 hover:text-gray-700 dark:bg-slate-700 dark:text-gray-300 dark:hover:text-white rounded-lg transition-colors shrink-0 p-2 w-8 h-8 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="previewContainer" class="p-4 flex-1 overflow-auto bg-gray-50 dark:bg-slate-900/50 flex items-center justify-center min-h-[50vh]">
+      <!-- Image or Iframe injected here -->
+    </div>
+  </div>
+</div>
 
-    // ── Theme ────────────────────────────────────────────────────────
-    function applyTheme(dark) {
-      document.documentElement.classList.toggle('dark', dark);
-      document.getElementById('themeIcon').className = dark ? 'fas fa-sun text-yellow-300' : 'fas fa-moon text-white';
-    }
-    function initTheme() {
-      const s = localStorage.getItem('theme');
-      applyTheme(s === 'dark' || (!s && window.matchMedia('(prefers-color-scheme: dark)').matches));
-    }
-    document.getElementById('themeToggle').addEventListener('click', function() {
-      var dark = !document.documentElement.classList.contains('dark');
-      localStorage.setItem('theme', dark ? 'dark' : 'light');
-      applyTheme(dark);
-    });
-    initTheme();
+<!-- Add / Edit Modal -->
+<div id="recordModal">
+  <div id="recordModalBox">
+    <div class="flex justify-between items-center mb-5">
+      <h3 id="modalTitle" class="text-xl font-bold text-gray-800 dark:text-white">Add New Record</h3>
+      <button type="button" onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-500 transition-colors">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
 
-    // ── Helpers ───────────────────────────────────────────────────────
-    function formatDate(str) {
-      if (!str) return 'N/A';
-      var d = new Date(str);
-      if (isNaN(d)) return str;
-      return String(d.getDate()).padStart(2, '0') + ' ' + d.toLocaleString('en-US',{month:'short'}) + ' ' + d.getFullYear();
-    }
-    function escapeHtml(unsafe) {
-      return String(unsafe||'').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-
-    // ── Initialization ────────────────────────────────────────────────
-    window.onload = function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const bsaId = urlParams.get('id');
-
-      if (bsaId) {
-        document.getElementById('searchView').classList.add('hidden');
-        document.getElementById('loadingView').classList.remove('hidden');
-        fetchData(bsaId.toUpperCase());
-      } else {
-        document.getElementById('searchView').classList.remove('hidden');
-      }
-    };
-
-    async function searchVehicle(e) {
-      e.preventDefault();
-      var input = document.getElementById('searchInput').value.trim().toUpperCase();
-      if (!input) return;
+    <form id="recordForm" onsubmit="saveRecord(event)">
+      <input type="hidden" id="recordId">
       
-      document.getElementById('searchError').classList.add('hidden');
-      document.getElementById('searchBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Purchase Date</label>
+          <input type="date" id="fieldDate" class="form-input" required onchange="updateWarrantyStatus()">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Customer Name</label>
+          <input type="text" id="fieldName" class="form-input" placeholder="John Doe" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Mobile</label>
+          <input type="text" id="fieldMob" class="form-input" placeholder="9876543210">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Model (Spec)</label>
+          <input type="text" id="fieldSpec" class="form-input" placeholder="RIDER" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Battery</label>
+          <input type="text" id="fieldBattery" class="form-input" placeholder="72V 30Ah">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Price (₹)</label>
+          <input type="number" id="fieldPrice" class="form-input" placeholder="85000" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Branch</label>
+          <input type="text" id="fieldBranch" class="form-input" placeholder="ANGADIPPURAM" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Salesman</label>
+          <input type="text" id="fieldSalesman" class="form-input" placeholder="RAMSHAD">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Motor No</label>
+          <input type="text" id="fieldMotor" class="form-input" placeholder="MT12345">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">VIN</label>
+          <input type="text" id="fieldVin" class="form-input" placeholder="VIN987654321">
+        </div>
+      </div>
       
-      // Update URL without reloading
-      window.history.pushState({}, '', '?id=' + input);
-      
-      document.getElementById('searchView').classList.add('hidden');
-      document.getElementById('loadingView').classList.remove('hidden');
-      
-      await fetchData(input);
-      document.getElementById('searchBtn').innerHTML = 'View Details';
-    }
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Address</label>
+        <textarea id="fieldAddress" rows="2" class="form-input resize-none" placeholder="123 Street Name, City"></textarea>
+      </div>
 
-    // ── Fetch Data ────────────────────────────────────────────────────
-    async function fetchData(bsaId) {
-      try {
-        var res = await fetch(API_URL, { headers: { 'Authorization': 'Token ' + API_KEY } });
-        if (!res.ok) throw new Error('API ' + res.status);
-        var json = await res.json();
-        var rows = json.results || [];
-        
-        let foundRow = null;
-        let foundData = null;
+      <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Additional Data</h4>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Means of Finance</label>
+          <select id="fieldFinance" class="form-input">
+             <option value="">Select Means of Finance</option>
+             <option value="LOAN">Loan</option>
+             <option value="CASH">Cash</option>
+             <option value="UPI">UPI</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Vehicle Company</label>
+          <input type="text" id="fieldVehicleCompany" class="form-input" placeholder="Vehicle Company">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Battery Company Name</label>
+          <input type="text" id="fieldBatteryCompany" class="form-input" placeholder="Battery Company Name">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Battery Serial Number</label>
+          <input type="text" id="fieldBatterySerial" class="form-input" placeholder="Battery Serial Number">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Color</label>
+          <input type="text" id="fieldColor" class="form-input" placeholder="Color">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Charger Company</label>
+          <input type="text" id="fieldChargerCompany" class="form-input" placeholder="Charger Company">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Charger Serial Number</label>
+          <input type="text" id="fieldChargerSerial" class="form-input" placeholder="Charger Serial Number">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Remark</label>
+          <input type="text" id="fieldRemark" class="form-input" placeholder="Remark If any">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Invoice Number</label>
+          <input type="text" id="fieldInvoiceNumber" class="form-input" placeholder="Auto-generated on save" readonly>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Invoice File</label>
+          <input type="file" id="fieldInvoiceFile" class="form-input text-sm">
+          <p id="invoiceFileStatus" class="text-xs mt-1 text-indigo-500 font-medium"></p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Vehicle Photo</label>
+          <input type="file" id="fieldVehiclePhoto" class="form-input text-sm" accept="image/*">
+          <p id="vehiclePhotoStatus" class="text-xs mt-1 text-indigo-500 font-medium"></p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Delivery Photo</label>
+          <input type="file" id="fieldDeliveryPhoto" class="form-input text-sm" accept="image/*">
+          <p id="deliveryPhotoStatus" class="text-xs mt-1 text-indigo-500 font-medium"></p>
+        </div>
 
-        for (let row of rows) {
-          if (row.Data) {
-            try {
-              let addData = JSON.parse(row.Data);
-              if (addData['Invoice Number'] && addData['Invoice Number'].toUpperCase() === bsaId) {
-                foundRow = row;
-                foundData = addData;
-                break;
-              }
-            } catch(e) {}
-          }
-        }
+      </div>
 
-        if (foundRow) {
-          currentRecordData = { row: foundRow, addData: foundData };
-          renderDetails();
-        } else {
-          document.getElementById('loadingView').classList.add('hidden');
-          document.getElementById('searchView').classList.remove('hidden');
-          document.getElementById('searchError').classList.remove('hidden');
-        }
-      } catch (err) {
-        console.error(err);
-        document.getElementById('loadingView').classList.add('hidden');
-        document.getElementById('searchView').classList.remove('hidden');
-        document.getElementById('searchError').textContent = "Connection error. Try again.";
-        document.getElementById('searchError').classList.remove('hidden');
-      }
-    }
-
-    // ── Render Views ──────────────────────────────────────────────────
-    function renderDetails() {
-      document.getElementById('loadingView').classList.add('hidden');
-      document.getElementById('detailsView').classList.remove('hidden');
-
-      const r = currentRecordData.row;
-      const d = currentRecordData.addData;
-
-      // Header Info
-      document.getElementById('cvName').textContent = r.Name || 'Unknown Customer';
-      document.getElementById('cvPhone').innerHTML = `<i class="fas fa-phone mr-1 opacity-70"></i> ` + escapeHtml(r.Mob || 'N/A');
-      document.getElementById('cvDate').textContent = formatDate(r['Purchase Date']);
-      document.getElementById('cvInvoice').textContent = d['Invoice Number'] || 'N/A';
-
-      // Specs
-      document.getElementById('specBranch').textContent = r.Branch || 'N/A';
-      document.getElementById('specModel').textContent = r.Spec || 'N/A';
-      document.getElementById('specColor').textContent = d.Color || 'N/A';
-      document.getElementById('specBattery').textContent = r.Battery || 'N/A';
-      document.getElementById('specBatteryCompany').textContent = d['Battery Company Name'] || 'N/A';
-      document.getElementById('specMotor').textContent = r['Motor No'] || 'N/A';
-      document.getElementById('specVin').textContent = r.VIN || 'N/A';
-
-      // Additional Details
-      document.getElementById('specAddress').textContent = r.Address || 'N/A';
-      document.getElementById('specFinance').textContent = d['Means of Finance'] || 'N/A';
-      document.getElementById('specChargerCompany').textContent = d['Charger Company'] || 'N/A';
-      document.getElementById('specChargerSerial').textContent = d['Charger Serial Number'] || 'N/A';
-      document.getElementById('specRemark').textContent = d['Remark'] || 'N/A';
-
-      // Warranty
-      renderWarranty(r['Purchase Date'], d.Warranty);
-
-      // Invoice Button
-      if (d.InvoiceBase64) {
-        document.getElementById('invoiceBtnContainer').innerHTML = `
-          <button onclick="openPreview('${d.InvoiceBase64}', 'Invoice - ${d['Invoice Number']}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-colors inline-flex items-center gap-2 shadow-sm">
-            <i class="fas fa-file-invoice"></i> View Original Invoice
-          </button>
-        `;
-      } else {
-        document.getElementById('invoiceBtnContainer').innerHTML = `<p class="text-xs text-gray-400">No digital invoice available.</p>`;
-      }
-
-      // Gallery
-      let galleryHtml = '';
-      if (d.VehiclePhoto) {
-        galleryHtml += `
-          <div class="glass-card overflow-hidden group cursor-pointer" onclick="openPreview('${d.VehiclePhoto}', 'Vehicle Photo')">
-            <div class="h-48 bg-gray-100 dark:bg-slate-800 relative">
-              <img src="${d.VehiclePhoto}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Vehicle">
-              <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <i class="fas fa-search-plus text-white text-3xl"></i>
-              </div>
-            </div>
-            <div class="p-3 text-center bg-white dark:bg-slate-900/80">
-              <p class="font-bold text-sm text-gray-800 dark:text-gray-200 uppercase tracking-widest">Vehicle Photo</p>
-            </div>
+      <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Warranty Details</h4>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <!-- Vehicle removed -->
+        <!-- Motor -->
+        <div class="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest">Motor</label>
+            <span id="statusMotor" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500">N/A</span>
           </div>
-        `;
-      }
-      if (d.DeliveryPhoto) {
-        galleryHtml += `
-          <div class="glass-card overflow-hidden group cursor-pointer" onclick="openPreview('${d.DeliveryPhoto}', 'Delivery Photo')">
-            <div class="h-48 bg-gray-100 dark:bg-slate-800 relative">
-              <img src="${d.DeliveryPhoto}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Delivery">
-              <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <i class="fas fa-search-plus text-white text-3xl"></i>
-              </div>
-            </div>
-            <div class="p-3 text-center bg-white dark:bg-slate-900/80">
-              <p class="font-bold text-sm text-gray-800 dark:text-gray-200 uppercase tracking-widest">Delivery Photo</p>
-            </div>
-          </div>
-        `;
-      }
-      
-      if (galleryHtml) {
-        document.getElementById('galleryContainer').innerHTML = galleryHtml;
-        document.getElementById('galleryView').classList.remove('hidden');
-      } else {
-        document.getElementById('galleryView').classList.add('hidden');
-      }
-
-      // History
-      renderHistory(d.History);
-    }
-
-    function calcWarrantyStatus(purchaseDateStr, replMonths, servMonths) {
-      if (!purchaseDateStr || (!replMonths && !servMonths)) return { text: 'N/A', class: 'bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:border-gray-700' };
-      
-      var purchaseDate = new Date(purchaseDateStr);
-      if(isNaN(purchaseDate)) return { text: 'N/A', class: 'bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:border-gray-700' };
-      
-      var now = new Date();
-      
-      var replDate = new Date(purchaseDate);
-      replDate.setMonth(replDate.getMonth() + parseInt(replMonths || 0));
-      
-      var servDate = new Date(replDate);
-      servDate.setMonth(servDate.getMonth() + parseInt(servMonths || 0));
-      
-      if (now <= replDate) {
-        return { text: 'Replacement Active', class: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50' };
-      } else if (now <= servDate) {
-        return { text: 'Service Only', class: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50' };
-      } else {
-        return { text: 'Expired', class: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50' };
-      }
-    }
-
-    function renderWarranty(purchaseDate, warrantyObj) {
-      const container = document.getElementById('warrantyContainer');
-      const w = warrantyObj || {};
-      const components = ['Motor', 'Controller', 'Battery'];
-      
-      let html = '';
-      components.forEach(comp => {
-        let repl = w[comp]?.Repl || 0;
-        let serv = w[comp]?.Serv || 0;
-        let status = calcWarrantyStatus(purchaseDate, repl, serv);
-        
-        let icon = 'fa-cogs';
-        if (comp==='Vehicle') icon = 'fa-motorcycle';
-        if (comp==='Battery') icon = 'fa-car-battery';
-        if (comp==='Controller') icon = 'fa-microchip';
-        
-        html += `
-          <div class="border rounded-lg p-3 ${status.class} flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-white/50 dark:bg-black/20 flex items-center justify-center shrink-0">
-              <i class="fas ${icon} opacity-80"></i>
-            </div>
-            <div>
-              <p class="text-[10px] uppercase tracking-wider font-bold opacity-70">${comp}</p>
-              <p class="text-sm font-bold">${status.text}</p>
-            </div>
-          </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
-
-    function renderHistory(historyArr) {
-      const container = document.getElementById('historyTimeline');
-      if (!historyArr || historyArr.length === 0) {
-        container.innerHTML = `<p class="text-sm text-gray-500 italic ml-4">No service history recorded.</p>`;
-        return;
-      }
-
-      // Sort newest first
-      const sorted = [...historyArr].sort((a,b) => new Date(b.Date) - new Date(a.Date));
-
-      container.innerHTML = sorted.map(h => `
-        <div class="relative">
-          <div class="timeline-dot"></div>
-          <div class="ml-6 bg-white dark:bg-slate-800 border border-gray-100 dark:border-gray-700 p-4 rounded-xl shadow-sm">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
-              <span class="text-xs font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded w-max"><i class="fas fa-calendar-day mr-1"></i> ${formatDate(h.Date)}</span>
-              ${h.FileBase64 ? `<button onclick="openPreview('${h.FileBase64}', '${escapeHtml(h.FileName)}')" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-bold self-start sm:self-auto"><i class="fas fa-paperclip"></i> View Attachment</button>` : ''}
-            </div>
-            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">${escapeHtml(h.Details)}</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-[10px] text-gray-400 uppercase mb-1">Repl (Months)</label><input type="number" id="wMotorRepl" class="form-input text-sm px-2 py-1.5" min="0" oninput="updateWarrantyStatus()"></div>
+            <div><label class="block text-[10px] text-gray-400 uppercase mb-1">Service (Months)</label><input type="number" id="wMotorServ" class="form-input text-sm px-2 py-1.5" min="0" oninput="updateWarrantyStatus()"></div>
           </div>
         </div>
-      `).join('');
+        <!-- Controller -->
+        <div class="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest">Controller</label>
+            <span id="statusController" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500">N/A</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-[10px] text-gray-400 uppercase mb-1">Repl (Months)</label><input type="number" id="wControllerRepl" class="form-input text-sm px-2 py-1.5" min="0" oninput="updateWarrantyStatus()"></div>
+            <div><label class="block text-[10px] text-gray-400 uppercase mb-1">Service (Months)</label><input type="number" id="wControllerServ" class="form-input text-sm px-2 py-1.5" min="0" oninput="updateWarrantyStatus()"></div>
+          </div>
+        </div>
+        <!-- Battery -->
+        <div class="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest">Battery</label>
+            <span id="statusBattery" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500">N/A</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-[10px] text-gray-400 uppercase mb-1">Repl (Months)</label><input type="number" id="wBatteryRepl" class="form-input text-sm px-2 py-1.5" min="0" oninput="updateWarrantyStatus()"></div>
+            <div><label class="block text-[10px] text-gray-400 uppercase mb-1">Service (Months)</label><input type="number" id="wBatteryServ" class="form-input text-sm px-2 py-1.5" min="0" oninput="updateWarrantyStatus()"></div>
+          </div>
+        </div>
+      </div>
+
+      <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Vehicle History</h4>
+      <div id="historyList" class="space-y-3 mb-4 max-h-48 overflow-y-auto pr-2">
+        <!-- History items will be injected here -->
+      </div>
+      
+      <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700 mb-6">
+        <h5 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest mb-3">Add History Entry</h5>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div>
+             <label class="block text-xs font-semibold text-gray-400 mb-1">Date</label>
+             <input type="date" id="historyDate" class="form-input text-sm">
+          </div>
+          <div>
+             <label class="block text-xs font-semibold text-gray-400 mb-1">Supporting File</label>
+             <input type="file" id="historyFile" class="form-input text-sm">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-semibold text-gray-400 mb-1">Details / Notes</label>
+          <textarea id="historyNotes" rows="2" class="form-input text-sm resize-none" placeholder="Enter service notes or details..."></textarea>
+        </div>
+        <button type="button" onclick="addHistoryEntry(event)" class="w-full py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+          <i class="fas fa-plus mr-1"></i> Add to History
+        </button>
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-700 mt-6">
+        <button type="button" onclick="copyCustomerLink()" id="copyLinkBtn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-semibold text-sm hover:bg-indigo-100 dark:hover:bg-indigo-800/50 transition-colors hidden"><i class="fas fa-link mr-1"></i> Copy Customer Link</button>
+        <div class="flex gap-3 w-full sm:w-auto justify-end">
+          <button type="button" onclick="closeModal()" class="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+          <button type="submit" id="saveBtn" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow flex items-center justify-center gap-2 min-w-[120px] transition-colors">
+            <i class="fas fa-save"></i> <span>Save Record</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────────
+  const API_KEY  = 'jXXkrUUqrQK3RlESaDPs2gq0Eu0SK4Sw';
+  const TABLE_ID = '615787';
+  const API_URL  = 'https://api.baserow.io/api/database/rows/table/' + TABLE_ID + '/?user_field_names=true';
+  const HEADERS  = { 'Authorization': 'Token ' + API_KEY, 'Content-Type': 'application/json' };
+
+  let fetchedData = [];
+  let currentHistory = [];
+
+  // ── Theme ────────────────────────────────────────────────────────
+  function applyTheme(dark) {
+    document.documentElement.classList.toggle('dark', dark);
+    document.getElementById('themeIcon').className = dark
+      ? 'fas fa-sun text-yellow-300 text-lg w-5 text-center'
+      : 'fas fa-moon text-white text-lg w-5 text-center';
+  }
+  function initTheme() {
+    const s = localStorage.getItem('theme');
+    applyTheme(s === 'dark' || (!s && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  }
+  document.getElementById('themeToggle').addEventListener('click', function() {
+    var dark = !document.documentElement.classList.contains('dark');
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    applyTheme(dark);
+  });
+  initTheme();
+
+  // ── Toast ─────────────────────────────────────────────────────────
+  var toastTimer = null;
+  function showToast(msg, type) {
+    var toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.backgroundColor = (type === 'error') ? '#ef4444' : '#10b981';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  function formatDate(str) {
+    if (!str) return 'N/A';
+    var d = new Date(str);
+    if (isNaN(d)) return str;
+    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+  }
+  function formatCurrency(val) {
+    var n = parseInt(val);
+    return isNaN(n) ? '₹0' : new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', maximumFractionDigits:0 }).format(n);
+  }
+  function escapeHtml(unsafe) {
+    return String(unsafe||'').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
+  // ── Fetch Data ────────────────────────────────────────────────────
+  async function loadData() {
+    var icon = document.getElementById('refreshIcon');
+    icon.classList.add('fa-spin');
+    
+    try {
+      var res = await fetch(API_URL, { headers: { 'Authorization': 'Token ' + API_KEY } });
+      if (!res.ok) throw new Error('API ' + res.status);
+      var json = await res.json();
+      fetchedData = json.results || [];
+      
+      // Sort newest first
+      fetchedData.sort((a,b) => new Date(b['Purchase Date'] || 0) - new Date(a['Purchase Date'] || 0));
+      
+      renderStats();
+      renderTable();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to load data', 'error');
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="p-8 text-center text-red-500">Error loading data.</td></tr>';
+    } finally {
+      icon.classList.remove('fa-spin');
+    }
+  }
+
+  // ── Render Stats ──────────────────────────────────────────────────
+  function renderStats() {
+    var total = fetchedData.length;
+    var revenue = fetchedData.reduce((s, r) => s + parseFloat(r.Price || 0), 0);
+    var avg = total > 0 ? revenue / total : 0;
+
+    var cards = [
+      { label:'Total Records', value: total.toLocaleString('en-IN'), icon:'fa-database', color:'indigo' },
+      { label:'Total Revenue', value: formatCurrency(revenue), icon:'fa-wallet', color:'emerald' },
+      { label:'Average Sale', value: formatCurrency(avg), icon:'fa-chart-pie', color:'purple' },
+    ];
+
+    document.getElementById('statsContainer').innerHTML = cards.map(c => `
+      <div class="stat-card glass-card">
+        <div class="orb bg-${c.color}-500/10"></div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">${c.label}</p>
+        <p class="text-2xl font-bold text-gray-800 dark:text-white leading-tight">${c.value}</p>
+        <i class="fas ${c.icon} absolute top-4 right-4 text-2xl text-${c.color}-400/20"></i>
+      </div>
+    `).join('');
+  }
+
+  // ── Render Table ──────────────────────────────────────────────────
+  function renderTable() {
+    var tbody = document.getElementById('tableBody');
+    if (!fetchedData.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">No records found.</td></tr>';
+      return;
     }
 
-    // ── Preview Modal ─────────────────────────────────────────────────
-    function openPreview(base64, filename) {
-      document.getElementById('previewTitle').textContent = filename || 'Preview';
-      var container = document.getElementById('previewContainer');
-      
-      if (base64.startsWith('data:image')) {
-        container.innerHTML = `<img src="${base64}" class="max-w-full h-auto rounded shadow-lg" alt="Preview">`;
-      } else if (base64.startsWith('data:application/pdf')) {
-        container.innerHTML = `<iframe src="${base64}" class="w-full h-[75vh] border-0 rounded shadow-lg bg-white"></iframe>`;
-      } else {
-        container.innerHTML = `<div class="text-center"><p class="text-gray-500 dark:text-gray-400 mb-3">Preview not available for this file type.</p><a href="${base64}" download="${filename || 'download'}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"><i class="fas fa-download mr-1"></i> Download File</a></div>`;
+    tbody.innerHTML = fetchedData.map(row => `
+      <tr class="group">
+        <td class="p-4 whitespace-nowrap">${formatDate(row['Purchase Date'])}</td>
+        <td class="p-4 font-medium text-gray-800 dark:text-gray-200">${escapeHtml(row.Name)}</td>
+        <td class="p-4"><span class="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded text-xs font-bold border border-indigo-100 dark:border-indigo-800/50">${escapeHtml(row.Spec)}</span></td>
+        <td class="p-4 font-semibold text-emerald-600 dark:text-emerald-400">${formatCurrency(row.Price)}</td>
+        <td class="p-4 text-xs">${escapeHtml(row.Branch)}</td>
+        <td class="p-4 text-xs">${escapeHtml(row.Salesman)}</td>
+        <td class="p-4 text-right whitespace-nowrap">
+          
+          <button onclick="downloadPdfForRecord(event, ${row.id})" class="text-emerald-500 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 p-2 rounded-lg transition-colors mr-2" title="Download PDF">
+            <i class="fas fa-download"></i>
+          </button>
+          <button onclick="editRecord(${row.id})" class="text-indigo-500 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 p-2 rounded-lg transition-colors mr-2" title="Edit">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button onclick="deleteRecord(${row.id})" class="text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/30 p-2 rounded-lg transition-colors" title="Delete">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ── Modal Handling ────────────────────────────────────────────────
+  function openModal(id = null) {
+    document.getElementById('recordForm').reset();
+    document.getElementById('recordId').value = '';
+    
+    if (id) {
+      document.getElementById('modalTitle').textContent = 'Edit Record';
+      var row = fetchedData.find(r => r.id === id);
+      if (row) {
+        document.getElementById('recordId').value = row.id;
+        document.getElementById('fieldDate').value = row['Purchase Date'] || '';
+        document.getElementById('fieldName').value = row.Name || '';
+        document.getElementById('fieldMob').value = row.Mob || '';
+        document.getElementById('fieldSpec').value = row.Spec || '';
+        document.getElementById('fieldBattery').value = row.Battery || '';
+        document.getElementById('fieldPrice').value = row.Price || '';
+        document.getElementById('fieldBranch').value = row.Branch || '';
+        document.getElementById('fieldSalesman').value = row.Salesman || '';
+        document.getElementById('fieldMotor').value = row['Motor No'] || '';
+        document.getElementById('fieldVin').value = row.VIN || '';
+        document.getElementById('fieldAddress').value = row.Address || '';
+        
+        let additionalData = {};
+        if (row.Data) {
+          try { additionalData = JSON.parse(row.Data); } catch(e){}
+        }
+        document.getElementById('fieldFinance').value = (additionalData['Means of Finance'] || '').toUpperCase();
+        document.getElementById('fieldVehicleCompany').value = additionalData['Vehicle Company'] || '';
+        document.getElementById('fieldBatteryCompany').value = additionalData['Battery Company Name'] || '';
+        document.getElementById('fieldBatterySerial').value = additionalData['Battery Serial Number'] || '';
+        document.getElementById('fieldColor').value = additionalData['Color'] || '';
+        document.getElementById('fieldChargerCompany').value = additionalData['Charger Company'] || '';
+        document.getElementById('fieldChargerSerial').value = additionalData['Charger Serial Number'] || '';
+        document.getElementById('fieldRemark').value = additionalData['Remark'] || '';
+        document.getElementById('fieldInvoiceNumber').value = additionalData['Invoice Number'] || '';
+        
+        // Store existing base64 in a dataset attribute so we don't lose it if no new file is uploaded
+        document.getElementById('fieldInvoiceFile').dataset.existingBase64 = additionalData['InvoiceBase64'] || '';
+        document.getElementById('fieldVehiclePhoto').dataset.existingBase64 = additionalData['VehiclePhoto'] || '';
+        document.getElementById('fieldDeliveryPhoto').dataset.existingBase64 = additionalData['DeliveryPhoto'] || '';
+        
+        if (additionalData['InvoiceBase64']) {
+          document.getElementById('invoiceFileStatus').innerHTML = `<button type="button" onclick="openPreview(document.getElementById('fieldInvoiceFile').dataset.existingBase64, 'Invoice')" class="text-indigo-500 hover:underline inline-flex items-center gap-1"><i class="fas fa-eye"></i> View Invoice</button> <span class="text-gray-400 ml-1">(Select new file to replace)</span>`;
+        } else {
+          document.getElementById('invoiceFileStatus').textContent = 'No invoice uploaded';
+        }
+
+        if (additionalData['VehiclePhoto']) {
+          document.getElementById('vehiclePhotoStatus').innerHTML = `<button type="button" onclick="openPreview(document.getElementById('fieldVehiclePhoto').dataset.existingBase64, 'Vehicle Photo')" class="text-indigo-500 hover:underline inline-flex items-center gap-1"><i class="fas fa-eye"></i> View Photo</button> <span class="text-gray-400 ml-1">(Select new file to replace)</span>`;
+        } else {
+          document.getElementById('vehiclePhotoStatus').textContent = 'No photo uploaded';
+        }
+
+        if (additionalData['DeliveryPhoto']) {
+          document.getElementById('deliveryPhotoStatus').innerHTML = `<button type="button" onclick="openPreview(document.getElementById('fieldDeliveryPhoto').dataset.existingBase64, 'Delivery Photo')" class="text-indigo-500 hover:underline inline-flex items-center gap-1"><i class="fas fa-eye"></i> View Photo</button> <span class="text-gray-400 ml-1">(Select new file to replace)</span>`;
+        } else {
+          document.getElementById('deliveryPhotoStatus').textContent = 'No photo uploaded';
+        }
+        
+        
+        var w = additionalData.Warranty || {};
+        ['Motor', 'Controller', 'Battery'].forEach(comp => {
+          document.getElementById('w' + comp + 'Repl').value = w[comp]?.Repl || '';
+          document.getElementById('w' + comp + 'Serv').value = w[comp]?.Serv || '';
+        });
+        
+        currentHistory = additionalData.History || [];
+        document.getElementById('copyLinkBtn').classList.remove('hidden');
       }
+    } else {
+      document.getElementById('modalTitle').textContent = 'Add New Record';
+      document.getElementById('fieldInvoiceNumber').value = 'BSA-' + Date.now();
+      document.getElementById('invoiceFileStatus').textContent = '';
+      document.getElementById('fieldInvoiceFile').dataset.existingBase64 = '';
       
-      document.getElementById('previewModal').classList.add('open');
-    }
-
-    function closePreview() {
-      document.getElementById('previewModal').classList.remove('open');
-      setTimeout(() => { document.getElementById('previewContainer').innerHTML = ''; }, 300);
-    }
-
-    // ── Generate PDF Card ─────────────────────────────────────────────
-    function downloadCard() {
-      if (!currentRecordData) return;
-      const r = currentRecordData.row;
-      const d = currentRecordData.addData;
-
-      // Generate Background Watermark
-      const wmText = `${r.Name || 'Unknown'} - ${r.Spec || 'N/A'} - ${r.VIN || 'N/A'}`;
-      const wmCanvas = document.createElement('canvas');
-      wmCanvas.width = 200;
-      wmCanvas.height = 120;
-      const wmCtx = wmCanvas.getContext('2d');
-      wmCtx.translate(100, 60);
-      wmCtx.rotate(-Math.PI / 6);
-      wmCtx.font = '700 10px Outfit, sans-serif';
-      wmCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      wmCtx.textAlign = 'center';
-      wmCtx.textBaseline = 'middle';
-      wmCtx.fillText(wmText, 0, 0);
-      const wmUrl = wmCanvas.toDataURL('image/png');
-      document.getElementById('pdfFront').style.backgroundImage = `url(${wmUrl})`;
-      document.getElementById('pdfBack').style.backgroundImage = `url(${wmUrl})`;
-
-      // Populate hidden template
-      document.getElementById('pdfInvoice').textContent = d['Invoice Number'] || 'N/A';
-      document.getElementById('pdfName').textContent = r.Name || 'Unknown';
-      document.getElementById('pdfPhone').textContent = r.Mob || 'N/A';
-      document.getElementById('pdfModel').textContent = r.Spec || 'N/A';
-      document.getElementById('pdfColor').textContent = d.Color || 'N/A';
-      document.getElementById('pdfVin').textContent = r.VIN || 'N/A';
-      document.getElementById('pdfMotor').textContent = r['Motor No'] || 'N/A';
-      document.getElementById('pdfBattery').textContent = r.Battery || 'N/A';
-      document.getElementById('pdfDate').textContent = formatDate(r['Purchase Date']);
-      document.getElementById('pdfAddress').textContent = r.Address || 'N/A';
+      document.getElementById('vehiclePhotoStatus').textContent = '';
+      document.getElementById('fieldVehiclePhoto').dataset.existingBase64 = '';
       
-      document.getElementById('pdfVehicleCompany').textContent = d['Vehicle Company'] || 'N/A';
-      document.getElementById('pdfBatteryCompany').textContent = d['Battery Company Name'] || 'N/A';
-      document.getElementById('pdfChargerCompany').textContent = d['Charger Company'] || 'N/A';
-      document.getElementById('pdfBatterySerial').textContent = d['Battery Serial Number'] || 'N/A';
-
-      if (d.VehiclePhoto) {
-        document.getElementById('pdfPhoto').src = d.VehiclePhoto;
-        document.getElementById('pdfPhoto').style.display = 'block';
-        document.getElementById('pdfNoPhoto').style.display = 'none';
-      } else {
-        document.getElementById('pdfPhoto').style.display = 'none';
-        document.getElementById('pdfNoPhoto').style.display = 'flex';
-      }
-
-      // Generate QR Code
-      const qrContainer = document.getElementById('pdfQrCode');
-      qrContainer.innerHTML = '';
-      const portalUrl = window.location.origin + window.location.pathname + '?id=' + encodeURIComponent(d['Invoice Number'] || '');
-      new QRCode(qrContainer, {
-        text: portalUrl,
-        width: 180,
-        height: 180,
-        colorDark : "#0f172a",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
+      document.getElementById('deliveryPhotoStatus').textContent = '';
+      document.getElementById('fieldDeliveryPhoto').dataset.existingBase64 = '';
+      
+      ['Motor', 'Controller', 'Battery'].forEach(comp => {
+        document.getElementById('w' + comp + 'Repl').value = '';
+        document.getElementById('w' + comp + 'Serv').value = '';
       });
-
-      // Briefly unhide for rendering
-      var wrapper = document.getElementById('pdfCardWrapper');
-      wrapper.style.display = 'block';
       
-      var element = document.getElementById('pdfCard');
-      var opt = {
-        margin:       0,
-        filename:     'Customer_Card_' + (d['Invoice Number'] || 'BSA').replace(/[^a-zA-Z0-9-]/g, '') + '.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, logging: false },
-        jsPDF:        { unit: 'px', format: [856, 540], orientation: 'landscape' }
+      currentHistory = [];
+      document.getElementById('copyLinkBtn').classList.add('hidden');
+    }
+    
+    document.getElementById('historyDate').value = new Date().toISOString().split('T')[0];
+    updateWarrantyStatus();
+    renderHistoryList();
+    
+    document.getElementById('recordModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('recordModal').classList.remove('open');
+  }
+
+
+  function getCustomerUrl(invoiceNo) {
+    let basePath = window.location.pathname;
+    if (basePath.includes('admin.html')) {
+      basePath = basePath.replace(/admin\.html.*$/, 'customer.html');
+    } else {
+      if (!basePath.endsWith('/')) basePath += '/';
+      basePath += 'customer.html';
+    }
+    return window.location.origin + basePath + '?id=' + encodeURIComponent(invoiceNo);
+  }
+
+  function copyCustomerLink() {
+    var inv = document.getElementById('fieldInvoiceNumber').value;
+    if (!inv) return;
+    var url = getCustomerUrl(inv);
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Customer Link Copied to Clipboard!');
+    }).catch(err => {
+      showToast('Failed to copy link', 'error');
+    });
+  }
+
+  // ── Preview Functions ─────────────────────────────────────────────
+  function openPreview(base64, filename) {
+    document.getElementById('previewTitle').textContent = filename || 'File Preview';
+    var container = document.getElementById('previewContainer');
+    
+    if (base64.startsWith('data:image')) {
+      container.innerHTML = `<img src="${base64}" class="max-w-full h-auto rounded shadow-lg" alt="Preview">`;
+    } else if (base64.startsWith('data:application/pdf')) {
+      container.innerHTML = `<iframe src="${base64}" class="w-full h-[75vh] border-0 rounded shadow-lg bg-white"></iframe>`;
+    } else {
+      container.innerHTML = `<div class="text-center"><p class="text-gray-500 dark:text-gray-400 mb-3">Preview not available for this file type.</p><a href="${base64}" download="${filename || 'download'}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"><i class="fas fa-download mr-1"></i> Download File</a></div>`;
+    }
+    
+    document.getElementById('previewModal').classList.remove('opacity-0', 'pointer-events-none');
+  }
+
+  function closePreview() {
+    document.getElementById('previewModal').classList.add('opacity-0', 'pointer-events-none');
+    setTimeout(() => { document.getElementById('previewContainer').innerHTML = ''; }, 300);
+  }
+
+  function openHistoryPreview(index) {
+    var h = currentHistory[index];
+    if(h) openPreview(h.FileBase64, h.FileName);
+  }
+
+  function getBase64(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) { resolve(null); return; }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  }
+
+  // ── Warranty Functions ────────────────────────────────────────────
+  function calcWarrantyStatus(purchaseDateStr, replMonths, servMonths) {
+    if (!purchaseDateStr || (!replMonths && !servMonths)) return { text: 'N/A', class: 'bg-gray-200 dark:bg-gray-700 text-gray-500' };
+    
+    var purchaseDate = new Date(purchaseDateStr);
+    if(isNaN(purchaseDate)) return { text: 'N/A', class: 'bg-gray-200 dark:bg-gray-700 text-gray-500' };
+    
+    var now = new Date();
+    
+    var replDate = new Date(purchaseDate);
+    replDate.setMonth(replDate.getMonth() + parseInt(replMonths || 0));
+    
+    var servDate = new Date(replDate);
+    servDate.setMonth(servDate.getMonth() + parseInt(servMonths || 0));
+    
+    if (now <= replDate) {
+      return { text: 'Replacement', class: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50' };
+    } else if (now <= servDate) {
+      return { text: 'Service Only', class: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50' };
+    } else {
+      return { text: 'Expired', class: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50' };
+    }
+  }
+
+  function updateWarrantyStatus() {
+    var pDate = document.getElementById('fieldDate').value;
+    
+    ['Motor', 'Controller', 'Battery'].forEach(comp => {
+      var repl = document.getElementById('w' + comp + 'Repl').value;
+      var serv = document.getElementById('w' + comp + 'Serv').value;
+      var status = calcWarrantyStatus(pDate, repl, serv);
+      var span = document.getElementById('status' + comp);
+      span.textContent = status.text;
+      span.className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${status.class}`;
+    });
+  }
+
+  // ── History Functions ─────────────────────────────────────────────
+  function renderHistoryList() {
+    var container = document.getElementById('historyList');
+    if (currentHistory.length === 0) {
+      container.innerHTML = '<p class="text-xs text-gray-400 italic">No history entries yet.</p>';
+      return;
+    }
+    
+    container.innerHTML = currentHistory.map((h, i) => `
+      <div class="p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg flex flex-col gap-1">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-bold text-gray-500">${formatDate(h.Date)}</span>
+          <button type="button" onclick="removeHistoryEntry(${i})" class="text-red-400 hover:text-red-600 text-xs"><i class="fas fa-times"></i></button>
+        </div>
+        <p class="text-sm text-gray-700 dark:text-gray-300">${escapeHtml(h.Details)}</p>
+        ${h.FileBase64 ? `
+          <div class="flex gap-3 mt-1 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+            <button type="button" onclick="openHistoryPreview(${i})" class="text-xs font-semibold text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 inline-flex items-center gap-1 transition-colors"><i class="fas fa-eye"></i> Preview</button>
+            <a href="${h.FileBase64}" download="${h.FileName || 'attachment'}" class="text-xs font-semibold text-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 inline-flex items-center gap-1 transition-colors"><i class="fas fa-download"></i> Download</a>
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+  }
+
+  function removeHistoryEntry(index) {
+    currentHistory.splice(index, 1);
+    renderHistoryList();
+  }
+
+  async function addHistoryEntry(e) {
+    var date = document.getElementById('historyDate').value;
+    var notes = document.getElementById('historyNotes').value;
+    var fileInput = document.getElementById('historyFile');
+    
+    if (!notes) { showToast('Please enter some details', 'error'); return; }
+    
+    var btn = e.currentTarget;
+    var originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    btn.disabled = true;
+    
+    try {
+      var base64File = await getBase64(fileInput.files[0]);
+      
+      currentHistory.push({
+        Date: date,
+        Details: notes,
+        FileBase64: base64File || '',
+        FileName: fileInput.files[0] ? fileInput.files[0].name : ''
+      });
+      
+      document.getElementById('historyNotes').value = '';
+      document.getElementById('historyFile').value = '';
+      renderHistoryList();
+    } catch(err) {
+      showToast('Failed to process file', 'error');
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // ── Save Record (Create/Update) ───────────────────────────────────
+  async function saveRecord(e) {
+    e.preventDefault();
+    var id = document.getElementById('recordId').value;
+    var btn = document.getElementById('saveBtn');
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Saving...</span>';
+    btn.disabled = true;
+
+    try {
+      // Handle file conversion
+      var fileInput = document.getElementById('fieldInvoiceFile');
+      var base64File = await getBase64(fileInput.files[0]);
+      if (!base64File) {
+        base64File = fileInput.dataset.existingBase64 || '';
+      }
+
+      var vehiclePhotoInput = document.getElementById('fieldVehiclePhoto');
+      var base64VehiclePhoto = await getBase64(vehiclePhotoInput.files[0]);
+      if (!base64VehiclePhoto) base64VehiclePhoto = vehiclePhotoInput.dataset.existingBase64 || '';
+
+      var deliveryPhotoInput = document.getElementById('fieldDeliveryPhoto');
+      var base64DeliveryPhoto = await getBase64(deliveryPhotoInput.files[0]);
+      if (!base64DeliveryPhoto) base64DeliveryPhoto = deliveryPhotoInput.dataset.existingBase64 || '';
+      
+      // Auto-generate invoice number if empty
+      var invNum = document.getElementById('fieldInvoiceNumber').value;
+      if (!invNum) invNum = 'BSA-' + Date.now();
+
+      var additionalData = {
+        "Means of Finance": document.getElementById('fieldFinance').value,
+        "Vehicle Company": document.getElementById('fieldVehicleCompany').value,
+        "Battery Company Name": document.getElementById('fieldBatteryCompany').value,
+        "Battery Serial Number": document.getElementById('fieldBatterySerial').value,
+        "Color": document.getElementById('fieldColor').value,
+        "Charger Company": document.getElementById('fieldChargerCompany').value,
+        "Charger Serial Number": document.getElementById('fieldChargerSerial').value,
+        "Remark": document.getElementById('fieldRemark').value,
+        "Invoice Number": invNum,
+        "InvoiceBase64": base64File,
+        "VehiclePhoto": base64VehiclePhoto,
+        "DeliveryPhoto": base64DeliveryPhoto,
+        "History": currentHistory,
+        "Warranty": {
+          "Motor": { "Repl": document.getElementById('wMotorRepl').value, "Serv": document.getElementById('wMotorServ').value },
+          "Controller": { "Repl": document.getElementById('wControllerRepl').value, "Serv": document.getElementById('wControllerServ').value },
+          "Battery": { "Repl": document.getElementById('wBatteryRepl').value, "Serv": document.getElementById('wBatteryServ').value }
+        }
       };
 
-      // Change button state
-      var btn = event.currentTarget;
-      var originalHtml = btn.innerHTML;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-      btn.disabled = true;
+      var payload = {
+        "Purchase Date": document.getElementById('fieldDate').value,
+        "Name": document.getElementById('fieldName').value,
+        "Mob": document.getElementById('fieldMob').value,
+        "Spec": document.getElementById('fieldSpec').value,
+        "Battery": document.getElementById('fieldBattery').value,
+        "Price": document.getElementById('fieldPrice').value ? document.getElementById('fieldPrice').value.toString() : "0",
+        "Branch": document.getElementById('fieldBranch').value,
+        "Salesman": document.getElementById('fieldSalesman').value,
+        "Motor No": document.getElementById('fieldMotor').value,
+        "VIN": document.getElementById('fieldVin').value,
+        "Address": document.getElementById('fieldAddress').value,
+        "Data": JSON.stringify(additionalData)
+      };
 
-      html2pdf().set(opt).from(element).save().then(() => {
-        wrapper.style.display = 'none';
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-      }).catch(err => {
-        console.error('PDF Error:', err);
-        wrapper.style.display = 'none';
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-        alert('Failed to generate PDF. Please try again.');
-      });
+      var url = id ? `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/${id}/?user_field_names=true` : API_URL;
+      var method = id ? 'PATCH' : 'POST';
+
+      var res = await fetch(url, { method: method, headers: HEADERS, body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error('API Error ' + res.status);
+      
+      showToast(id ? 'Record updated successfully!' : 'Record added successfully!');
+      closeModal();
+      loadData(); // refresh list
+    } catch(err) {
+      console.error(err);
+      showToast('Failed to save record.', 'error');
+    } finally {
+      btn.innerHTML = '<i class="fas fa-save"></i> <span>Save Record</span>';
+      btn.disabled = false;
     }
-  </script>
+  }
+
+  // ── Delete Record ─────────────────────────────────────────────────
+  async function deleteRecord(id) {
+    if (!confirm('Are you sure you want to delete this record? This action cannot be undone.')) return;
+    
+    try {
+      var res = await fetch(`https://api.baserow.io/api/database/rows/table/${TABLE_ID}/${id}/`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Token ' + API_KEY }
+      });
+      if (!res.ok && res.status !== 204) throw new Error('API Error ' + res.status);
+      
+      showToast('Record deleted successfully!');
+      loadData(); // refresh list
+    } catch(err) {
+      console.error(err);
+      showToast('Failed to delete record.', 'error');
+    }
+  }
+
+  // Global functions attached to window so they work in HTML onclick attributes
+  window.loadData = loadData;
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.saveRecord = saveRecord;
+  window.editRecord = openModal; // openModal handles edit logic if ID is passed
+  window.deleteRecord = deleteRecord;
+  window.addHistoryEntry = addHistoryEntry;
+  window.removeHistoryEntry = removeHistoryEntry;
+
+  // Initialize
+  window.onload = loadData;
+
+  window.downloadPdfForRecord = downloadPdfForRecord;
+
+  // ── PDF Generation ────────────────────────────────────────────────
+  function downloadPdfForRecord(event, id) {
+    event.preventDefault();
+    const btn = event.currentTarget;
+    const row = fetchedData.find(r => r.id === id);
+    if (!row) return;
+    
+    let d = {};
+    if (row.Data) {
+      try { d = JSON.parse(row.Data); } catch(e){}
+    }
+
+    // Generate Background Watermark
+    const wmText = `${row.Name || 'Unknown'} - ${row.Spec || 'N/A'} - ${row.VIN || 'N/A'}`;
+    const wmCanvas = document.createElement('canvas');
+    wmCanvas.width = 200;
+    wmCanvas.height = 120;
+    const wmCtx = wmCanvas.getContext('2d');
+    wmCtx.translate(100, 60);
+    wmCtx.rotate(-Math.PI / 6);
+    wmCtx.font = '700 10px Outfit, sans-serif';
+    wmCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    wmCtx.textAlign = 'center';
+    wmCtx.textBaseline = 'middle';
+    wmCtx.fillText(wmText, 0, 0);
+    const wmUrl = wmCanvas.toDataURL('image/png');
+    document.getElementById('pdfFront').style.backgroundImage = `url(${wmUrl})`;
+    document.getElementById('pdfBack').style.backgroundImage = `url(${wmUrl})`;
+
+    // Populate hidden template
+    document.getElementById('pdfInvoice').textContent = d['Invoice Number'] || 'N/A';
+    document.getElementById('pdfName').textContent = row.Name || 'Unknown';
+    document.getElementById('pdfPhone').textContent = row.Mob || 'N/A';
+    document.getElementById('pdfModel').textContent = row.Spec || 'N/A';
+    document.getElementById('pdfColor').textContent = d.Color || 'N/A';
+    document.getElementById('pdfVin').textContent = row.VIN || 'N/A';
+    document.getElementById('pdfMotor').textContent = row['Motor No'] || 'N/A';
+    document.getElementById('pdfBattery').textContent = row.Battery || 'N/A';
+    document.getElementById('pdfDate').textContent = formatDate(row['Purchase Date']);
+    document.getElementById('pdfAddress').textContent = row.Address || 'N/A';
+    
+    document.getElementById('pdfVehicleCompany').textContent = d['Vehicle Company'] || 'N/A';
+    document.getElementById('pdfBatteryCompany').textContent = d['Battery Company Name'] || 'N/A';
+    document.getElementById('pdfChargerCompany').textContent = d['Charger Company'] || 'N/A';
+    document.getElementById('pdfBatterySerial').textContent = d['Battery Serial Number'] || 'N/A';
+
+    if (d.VehiclePhoto) {
+      document.getElementById('pdfPhoto').src = d.VehiclePhoto;
+      document.getElementById('pdfPhoto').style.display = 'block';
+      document.getElementById('pdfNoPhoto').style.display = 'none';
+    } else {
+      document.getElementById('pdfPhoto').style.display = 'none';
+      document.getElementById('pdfNoPhoto').style.display = 'flex';
+    }
+
+    
+    // Generate QR Code
+    const qrContainer = document.getElementById('pdfQrCode');
+    qrContainer.innerHTML = '';
+    const portalUrl = getCustomerUrl(d['Invoice Number'] || '');
+    new QRCode(qrContainer, {
+      text: portalUrl,
+      width: 180,
+      height: 180,
+      colorDark : "#0f172a",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+    });
+
+    generatePdfFromHtml(row.Name || 'Customer', btn);
+  }
+
+  function generatePdfFromHtml(customerName, btn) {
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    const pdfCardWrapper = document.getElementById('pdfCardWrapper');
+    pdfCardWrapper.style.display = 'block';
+    const pdfFront = document.getElementById('pdfFront');
+    const pdfBack = document.getElementById('pdfBack');
+
+    const opt = { scale: 2, useCORS: true, backgroundColor: '#ffffff' };
+
+    Promise.all([
+      html2canvas(pdfFront, opt),
+      html2canvas(pdfBack, opt)
+    ]).then(canvases => {
+      const { jsPDF } = window.jspdf;
+      // 856x540 px is roughly 86x54 mm (standard CR80 ID card size)
+      const pdf = new jsPDF('l', 'mm', [86, 54]);
+
+      const imgDataFront = canvases[0].toDataURL('image/jpeg', 0.75);
+      pdf.addImage(imgDataFront, 'JPEG', 0, 0, 86, 54, '', 'FAST');
+
+      pdf.addPage([86, 54], 'l');
+      const imgDataBack = canvases[1].toDataURL('image/jpeg', 0.75);
+      pdf.addImage(imgDataBack, 'JPEG', 0, 0, 86, 54, '', 'FAST');
+
+      pdf.save(`Vehicle_ID_Card_${customerName}.pdf`);
+      pdfCardWrapper.style.display = 'none';
+      if (btn && btn.tagName === 'BUTTON') btn.innerHTML = origHtml;
+    }).catch(err => {
+      console.error(err);
+      alert('Error generating PDF');
+      pdfCardWrapper.style.display = 'none';
+      if (btn && btn.tagName === 'BUTTON') btn.innerHTML = origHtml;
+    });
+  }
+
+</script>
 </body>
 </html>
